@@ -11,6 +11,7 @@ public static class Sample_0001
     /// </summary>
     public static void Run()
     {   
+        RitaEngine.Base.Log.Config(Log.Display.OnConsole);
         string path = @"C:\Users\Administrator\Documents\ProjectRita\Assets\";
 
         //ALL CODE TO CREATE INITIALIZE PLATFORM SYSTEM
@@ -83,6 +84,7 @@ public static class Sample_0001
             input.Release();
             win.Release();
             clock.Release();
+            Log.Release();
         }
         
     }

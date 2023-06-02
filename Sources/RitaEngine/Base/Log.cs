@@ -13,7 +13,7 @@ private static string _file="log.txt";
 private delegate void PFN_Display(int color,string header, int line , string file, string method,string message);
 private static PFN_Display _display = ToNull;
 
-private static void Release()
+public static void Release()
 {
     _file = null!;
     _display = null!;
@@ -55,7 +55,7 @@ private static void ToFile(int color,string header, int line ,string file, strin
 }
 
 //TODO : add level all only critical only error verbose ( capabilities  debug)  and add show : Only Yours OR both=  Yours and system 
-private static void Config(Display output,string file="")
+public static void Config(Display output,string file="")
 {
     if( output == Display.OnConsole)
         _display = ToConsole;
