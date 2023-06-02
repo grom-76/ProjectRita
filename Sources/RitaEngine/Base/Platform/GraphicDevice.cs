@@ -21,6 +21,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
     private GraphicDeviceLoaderFunction _loader;
     private GraphicInstanceFunction _instance;
 
+    // TODO : PUT all functions in one struct ?? but how to readonly 
     private GraphicDeviceData _data; // inside => Instance Device Render Infos 
 
     public GraphicRenderConfig Render =new();

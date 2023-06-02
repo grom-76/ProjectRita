@@ -64,11 +64,11 @@ struct Instance  => GraphicDeviceConfig => ? layer, dll ,
     public VkViewport Viewport  = new();
     public VkRect2D Scissor = new();
 
+    //TODO : check in select physical device to get all info 
+
     public ulong tick_timeout = ulong.MaxValue;
     public nint vulkan = nint.Zero;
     public bool VertexOutsideShader = false;
-
-
 
     public GraphicDeviceData() {_address = AddressOfPtrThis( ) ;}
     public void Release()
