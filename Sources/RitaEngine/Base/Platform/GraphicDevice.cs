@@ -862,6 +862,79 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         }
     }
 
+    #region  Descirptor Set
+//     private unsafe static void CreateUniformBuffers(ref GraphicDeviceStaticData vk) {
+//         VkDeviceSize bufferSize = (uint)Marshal.SizeOf<UniformBufferObject>();
+
+//         vk.uniformBuffers = new VkBuffer[vk.MAX_FRAMES_IN_FLIGHT];
+//         vk.uniformBuffersMemory = new VkDeviceMemory[vk.MAX_FRAMES_IN_FLIGHT];
+
+//         for (int i = 0; i < vk.MAX_FRAMES_IN_FLIGHT; i++) 
+//         {
+//             // CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
+//             CreateStagingBuffer(ref vk,bufferSize, 
+//                 (uint)Vulkan.VkBufferUsageFlagBits.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT , 
+//                 (uint)Vulkan.VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | (uint)Vulkan.VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT , 
+//                 ref vk.uniformBuffers[i], 
+//                 ref vk.uniformBuffersMemory[i]);
+//         }
+//     }
+
+//     private static unsafe void CreateDescriptorPool(ref GraphicDeviceStaticData vk, ref GraphicPipelineConfig gfx)
+//     {
+//         Vulkan.VkDescriptorPoolSize poolSize = new();
+//             poolSize.type =Vulkan.VkDescriptorType. VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+//             poolSize.descriptorCount = (uint32_t)(vk.MAX_FRAMES_IN_FLIGHT);
+
+//         Vulkan.VkDescriptorPoolCreateInfo poolInfo= new();
+//             poolInfo.sType =Vulkan.VkStructureType. VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+//             poolInfo.poolSizeCount = 1;
+//             poolInfo.pPoolSizes = &poolSize;
+//             poolInfo.maxSets = (uint32_t)(vk.MAX_FRAMES_IN_FLIGHT);
+
+//         fixed(VkDescriptorPool* pool =  &vk.descriptorPool){
+//             Vulkan.vkCreateDescriptorPool(vk._device, &poolInfo, null,pool ).Check("failed to create descriptor pool!");
+//         }
+//     }
+
+//     private static unsafe void CreateDescriptorSets(ref GraphicDeviceStaticData vk, ref GraphicPipelineConfig gfx) 
+//     {
+
+//         // std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
+//         // VkDescriptorSetLayout[] layouts  =  
+
+//         Vulkan.VkDescriptorSetAllocateInfo allocInfo = new();
+//             allocInfo.sType = Vulkan.VkStructureType.VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+//             allocInfo.descriptorPool = vk.descriptorPool;
+//             allocInfo.descriptorSetCount = (uint)(vk.MAX_FRAMES_IN_FLIGHT);
+//             allocInfo.pSetLayouts = layouts.data();
+
+//         vk.descriptorSets = new VkDescriptorSet[ vk.MAX_FRAMES_IN_FLIGHT];
+
+//         Vulkan.vkAllocateDescriptorSets(vk._device, &allocInfo, vk.descriptorSets).Check("failed to allocate descriptor sets!");
+        
+
+//         for (int i = 0; i <  vk.MAX_FRAMES_IN_FLIGHT; i++) {
+//             Vulkan.VkDescriptorBufferInfo bufferInfo = new();
+//             bufferInfo.buffer = vk.uniformBuffers[i];
+//             bufferInfo.offset = 0;
+//             bufferInfo.range = (uint)Marshal.SizeOf<UniformBufferObject>();
+
+//             Vulkan.VkWriteDescriptorSet descriptorWrite = new();
+//             descriptorWrite.sType = Vulkan.VkStructureType.VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+//             descriptorWrite.dstSet = vk.descriptorSets[i];
+//             descriptorWrite.dstBinding = 0;
+//             descriptorWrite.dstArrayElement = 0;
+//             descriptorWrite.descriptorType = Vulkan.VkDescriptorType. VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+//             descriptorWrite.descriptorCount = 1;
+//             descriptorWrite.pBufferInfo = &bufferInfo;
+
+//             Vulkan.vkUpdateDescriptorSets(vk._device, 1, &descriptorWrite, 0, null);
+//         }
+//     }
+
+    #endregion
+
     #endregion
 
     #region Synchronisation & cache control (  Fence = memory barrier )
