@@ -1,6 +1,6 @@
 namespace RitaEngine.Base.Platform.Structures;
 
-using RitaEngine.Base.Platform.Native.Window;
+using RitaEngine.Base.Platform.API.Window;
 
 [ StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public readonly struct InputFunctions : IDisposable

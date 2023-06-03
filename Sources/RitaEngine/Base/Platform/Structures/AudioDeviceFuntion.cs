@@ -2,7 +2,7 @@ namespace RitaEngine.Base.Platform.Structures;
 
 
 using System;
-using RitaEngine.Base.Platform.Native.DirectX.XAudio;
+using RitaEngine.Base.Platform.API.DirectX.XAudio;
 
 
 [ StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]

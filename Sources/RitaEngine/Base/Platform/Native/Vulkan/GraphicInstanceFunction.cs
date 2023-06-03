@@ -1,4 +1,4 @@
-namespace RitaEngine.Base.Platform.Native.Vulkan;
+namespace RitaEngine.Base.Platform.API.Vulkan;
 
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;

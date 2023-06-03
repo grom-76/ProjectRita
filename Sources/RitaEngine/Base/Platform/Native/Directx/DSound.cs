@@ -1,4 +1,4 @@
-namespace RitaEngine.Base.Platform.Native.DirectX.DSound;
+namespace RitaEngine.Base.Platform.API.DirectX.DSound;
 
 using DWORD = System.UInt32; // A 32-bit unsigned integer. The range is 0 through 4294967295 decimal.
 using LPCWSTR = System.Char;//An LPCWSTR is a 32-bit pointer to a constant string of 16-bit Unicode characters, which MAY be null-terminated.

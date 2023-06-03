@@ -1,4 +1,8 @@
+
+
 namespace RitaEngine.Base.Platform.Structures;
+
+using RitaEngine.Base.Platform.API.Window;
 
 [ StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public struct InputData : IEquatable<InputData>
@@ -15,7 +19,7 @@ public struct InputData : IEquatable<InputData>
     public unsafe void* WindowHandle= null;
     private nint _address = nint.Zero;
     public int MouseDPI =0;
-    public int MouseState =(int) Native.Window.CursorInfoFlags.Hidden;
+    public int MouseState =(int) CursorInfoFlags.Hidden;
     public int Mouse_CurrentFrame_Position_X =0;
     public int Mouse_CurrentFrame_Position_Y =0;
     public int Mouse_PreviousFrame_Position_X =0;

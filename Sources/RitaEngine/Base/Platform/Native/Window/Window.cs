@@ -1,4 +1,4 @@
-namespace RitaEngine.Base.Platform.Native.Window;
+namespace RitaEngine.Base.Platform.API.Window;
 
 // HARDWARE , OS BACKEND , INTEROP , NATIVE
 

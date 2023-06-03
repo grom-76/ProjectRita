@@ -1,6 +1,6 @@
 namespace RitaEngine.Base.Platform.Structures;
 
-using RitaEngine.Base.Platform.Native.Vulkan;
+using RitaEngine.Base.Platform.API.Vulkan;
 
 public unsafe delegate void* PFN_vkGetInstanceProcAddr(VkInstance module , string name);
 

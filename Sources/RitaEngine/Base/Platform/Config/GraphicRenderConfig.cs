@@ -2,7 +2,7 @@ namespace RitaEngine.Base.Platform.Config; //https://github.com/Syncaidius/Molte
 
 using System.Collections.Generic;
 using RitaEngine.Base.Math.Color;
-using RitaEngine.Base.Platform.Native.Vulkan;
+using RitaEngine.Base.Platform.API.Vulkan;
 
 /// <summary>
 /// RENAME WITH PIPELINE

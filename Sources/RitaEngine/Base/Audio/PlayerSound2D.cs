@@ -2,8 +2,8 @@ namespace RitaEngine.Base.Audio;
 
 using System;
 using RitaEngine.Base.Platform;
-using RitaEngine.Base.Platform.Native.DirectX;
-using RitaEngine.Base.Platform.Native.DirectX.XAudio;
+using RitaEngine.Base.Platform.API.DirectX;
+using RitaEngine.Base.Platform.API.DirectX.XAudio;
 using RitaEngine.Base.Platform.Structures;
 using RitaEngine.Base.Resources.Sound;
 

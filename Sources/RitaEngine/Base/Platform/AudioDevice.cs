@@ -3,7 +3,7 @@
 namespace RitaEngine.Base.Platform ;
 
 
-using RitaEngine.Base.Platform.Native.DirectX.XAudio;
+using RitaEngine.Base.Platform.API.DirectX.XAudio;
 using RitaEngine.Base.Platform.Structures;
 using RitaEngine.Base.Platform.Config;
 

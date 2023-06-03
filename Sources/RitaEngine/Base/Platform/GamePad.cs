@@ -1,7 +1,7 @@
 namespace RitaEngine.Base.Platform ;// OS SYSTEMS// LAUNCHER CONTEXT DEVICE MACHINE , User Interface , Output
 
 using RitaEngine.Base.Platform.Config;
-using RitaEngine.Base.Platform.Native.DirectX.XInput;
+using RitaEngine.Base.Platform.API.DirectX.XInput;
 using RitaEngine.Base.Platform.Structures;
 
 

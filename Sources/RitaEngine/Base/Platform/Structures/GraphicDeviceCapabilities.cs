@@ -1,7 +1,7 @@
 namespace RitaEngine.Base.Platform.Structures;
 
 using System.Collections.Generic;
-using RitaEngine.Base.Platform.Native.Vulkan;
+using RitaEngine.Base.Platform.API.Vulkan;
 
 [StructLayout(LayoutKind.Sequential, Pack = RitaEngine.Base.BaseHelper.FORCE_ALIGNEMENT), SkipLocalsInit]
 public unsafe struct GraphicDeviceCapabilities : IEquatable<GraphicDeviceCapabilities>

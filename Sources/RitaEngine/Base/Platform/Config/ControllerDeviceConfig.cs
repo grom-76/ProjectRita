@@ -6,7 +6,7 @@ public sealed class ControllerDeviceConfig : IDisposable
 {
    
     //??? XInput wmm ,  MAx Controller 
-    public int MaxController =  RitaEngine.Base.Platform.Native.DirectX.XInput.Constants.XUSER_MAX_COUNT;
+    public int MaxController =  RitaEngine.Base.Platform.API.DirectX.XInput.Constants.XUSER_MAX_COUNT;
     public float DeadZone =0.24f; //Todo change dead zone ?
     public float threshold = 0.2f;
 

@@ -1,5 +1,5 @@
 
-namespace RitaEngine.Base.Platform.Native.DirectX;
+namespace RitaEngine.Base.Platform.API.DirectX;
 
 
 using System.Runtime.CompilerServices;

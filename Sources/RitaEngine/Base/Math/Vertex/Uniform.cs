@@ -32,8 +32,8 @@ public struct Position2f_Color3f
     public int Stride = Unsafe.SizeOf<Position2f_Color3f>();
     public nint OffsetPosition =  Marshal.OffsetOf<Position2f_Color3f>( nameof(Position));
     public nint OffsetColor =  Marshal.OffsetOf<Position2f_Color3f>( nameof(Color));
-    public uint FormatPosition = (uint)RitaEngine.Base.Platform.Native.Vulkan.VkFormat.VK_FORMAT_R32G32_SFLOAT;
-    public uint FormatColor =(uint)RitaEngine.Base.Platform.Native.Vulkan.VkFormat.VK_FORMAT_R32G32_SFLOAT;
+    public uint FormatPosition = (uint)RitaEngine.Base.Platform.API.Vulkan.VkFormat.VK_FORMAT_R32G32_SFLOAT;
+    public uint FormatColor =(uint)RitaEngine.Base.Platform.API.Vulkan.VkFormat.VK_FORMAT_R32G32_SFLOAT;
 
 
     public Position2f_Color3f( float x , float y , float r , float g , float b)

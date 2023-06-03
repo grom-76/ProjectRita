@@ -6,7 +6,7 @@ using System.IO;
 using RitaEngine.Base.Debug;
 using RitaEngine.Base.Math.Color;
 using RitaEngine.Base.Platform.Config;
-using RitaEngine.Base.Platform.Native.Vulkan;
+using RitaEngine.Base.Platform.API.Vulkan;
 using RitaEngine.Base.Platform.Structures;
 using RitaEngine.Base.Strings;
 

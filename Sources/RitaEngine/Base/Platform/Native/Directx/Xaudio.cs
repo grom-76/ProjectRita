@@ -1,4 +1,4 @@
-namespace RitaEngine.Base.Platform.Native.DirectX.XAudio;
+namespace RitaEngine.Base.Platform.API.DirectX.XAudio;
 
 
 using System.Runtime.CompilerServices;

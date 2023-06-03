@@ -1,4 +1,4 @@
-namespace RitaEngine.Base.Platform.Native.Window;
+namespace RitaEngine.Base.Platform.API.Window;
 
 /* WAVE form wFormatTag IDs */
 public static class WAVE_FORMAT_TAGS
