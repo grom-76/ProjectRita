@@ -9,8 +9,10 @@ public unsafe struct GraphicDeviceData : IEquatable<GraphicDeviceData>
 /*
 struct Instance  => GraphicDeviceConfig => ? layer, dll , 
 */
-    public GraphicDeviceCapabilities Infos;
+    public GraphicDeviceCapabilities Infos=new();
     
+    public VkFramebuffer[] VkFramebuffers = null!;//need for render => NEEDVALID SWAP CHAIN
+
     private nint _address = nint.Zero;
 
     public VkInstance VkInstance = VkInstance.Null;
@@ -40,8 +42,7 @@ struct Instance  => GraphicDeviceConfig => ? layer, dll ,
     public VkRenderPass VkRenderPass = VkRenderPass.Null;
 
     //FrameBuffer
-    public VkFramebuffer[] VkFramebuffers = null!;//need for render => NEEDVALID SWAP CHAIN
-
+    
     //Command Pool 
     public VkCommandBuffer[] VkCommandBuffers = null!;// TODO same number than MAX FRAME FILGHT  TODO MAXFRAME FILGHT in settings ?
     public VkCommandPool VkCommandPool = VkCommandPool.Null;// not used for draw but importante??? only need to create command buffer 

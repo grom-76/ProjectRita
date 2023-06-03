@@ -2006,7 +2006,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
     }
     private static int CurrentFrame =0;
 
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    // [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     private static unsafe  void DrawPipeline( ref GraphicDeviceFunction func, ref GraphicDeviceData data )
     {
         uint imageIndex=0;

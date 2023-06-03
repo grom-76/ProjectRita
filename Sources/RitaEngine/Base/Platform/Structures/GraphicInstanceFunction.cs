@@ -1,4 +1,4 @@
-namespace RitaEngine.Base.Platform.API.Vulkan;
+namespace RitaEngine.Base.Platform.Structures;
 
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
@@ -6,9 +6,10 @@ using System;
 
 using ConstChar = System.Byte;
 using RitaEngine.Base.Platform.Structures;
+using RitaEngine.Base.Platform.API.Vulkan;
 
-[SkipLocalsInit, StructLayout(LayoutKind.Sequential ,Pack = 4)]
-public readonly struct GraphicInstanceFunction
+[SkipLocalsInit, StructLayout(LayoutKind.Sequential ,Pack = BaseHelper.FORCE_ALIGNEMENT)]
+public readonly struct GraphicInstanceFunction : IEquatable<GraphicInstanceFunction>
 {
 #region Intance
 #region VK_VERSION_1_0
@@ -291,9 +292,10 @@ public unsafe readonly  delegate* unmanaged< VkPhysicalDevice, UInt32 ,UInt32 > 
 
 
 #endregion
-
+	readonly nint _address = nint.Zero;
     public unsafe GraphicInstanceFunction(PFN_vkGetInstanceProcAddr load , VkInstance instance)
     {
+		_address = AddressOfPtrThis();
         if (VK.VK_KHR_win32_surface )
         {
             vkDestroySurfaceKHR=  (delegate* unmanaged<VkInstance, VkSurfaceKHR,VkAllocationCallbacks*  , void>)load(instance,nameof(vkDestroySurfaceKHR));
@@ -494,4 +496,16 @@ public unsafe readonly  delegate* unmanaged< VkPhysicalDevice, UInt32 ,UInt32 > 
 		}
 
     }
+
+	        public unsafe nint AddressOfPtrThis( ){fixed (void* pointer = &this)  { return((nint) pointer ) ; }  }
+    #region OVERRIDE
+    public override string ToString() => string.Format($"Graphic Instances" );
+    public unsafe override int GetHashCode() => HashCode.Combine( ((nint)0).ToInt32()  ,  ((nint)0).ToInt32(),  ((nint)0).ToInt32(), ((nint)0).ToInt32() ) ;
+    public override bool Equals(object? obj) => obj is GraphicInstanceFunction context && this.Equals(context) ;
+    public unsafe bool Equals(GraphicInstanceFunction? other)=> other is GraphicInstanceFunction input && ( ((nint)vkCreateDevice).ToInt64()).Equals(((nint)input.vkCreateDevice).ToInt64() );
+    public static bool operator ==(GraphicInstanceFunction  left, GraphicInstanceFunction right) => left.Equals(right);
+    public static bool operator !=(GraphicInstanceFunction  left, GraphicInstanceFunction  right) => !left.Equals(right);
+    public void Dispose() {  }
+    #endregion
+
 }

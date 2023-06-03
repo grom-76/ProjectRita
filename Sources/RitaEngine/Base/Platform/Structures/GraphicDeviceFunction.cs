@@ -1,14 +1,15 @@
-namespace RitaEngine.Base.Platform.API.Vulkan;
+namespace RitaEngine.Base.Platform.Structures;
 
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 using System;
 using System.Security;
 using ConstChar = System.Char;
-using RitaEngine.Base.Platform.Structures;
 
-[SkipLocalsInit, StructLayout(LayoutKind.Sequential ,Pack = 4)]
-public readonly struct GraphicDeviceFunction
+using RitaEngine.Base.Platform.API.Vulkan;
+
+[SkipLocalsInit, StructLayout(LayoutKind.Sequential ,Pack = BaseHelper.FORCE_ALIGNEMENT)]
+public readonly struct GraphicDeviceFunction : IEquatable<GraphicDeviceFunction>
 {
 #region Intance
 #region VK_VERSION_1_0
@@ -688,9 +689,10 @@ public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkBuffer,UInt64,VkB
 // typedef VkResult (VKAPI_PTR *PFN_vkGetDeviceGroupSurfacePresentModes2EXT)(VkDevice device, const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo, VkDeviceGroupPresentModeFlagsKHR* pModes);
 #endregion
 
-
+	readonly nint _address = nint.Zero;
     public unsafe GraphicDeviceFunction( PFN_vkGetDeviceProcAddr load , VkDevice device)
     {
+		_address = AddressOfPtrThis();
 		if (VK.VK_KHR_win32_surface )
         {
             
@@ -1236,4 +1238,15 @@ public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkBuffer,UInt64,VkB
 		}
         
     }
+
+	public unsafe nint AddressOfPtrThis( ){fixed (void* pointer = &this)  { return((nint) pointer ) ; }  }
+    #region OVERRIDE
+    public override string ToString() => string.Format($"Graphic Device Function" );
+    public unsafe override int GetHashCode() => HashCode.Combine( ((nint)0).ToInt32()  ,  ((nint)0).ToInt32(),  ((nint)0).ToInt32(), ((nint)0).ToInt32() ) ;
+    public override bool Equals(object? obj) => obj is GraphicDeviceFunction context && this.Equals(context) ;
+    public unsafe bool Equals(GraphicDeviceFunction? other)=> other is GraphicDeviceFunction input && ( ((nint)vkGetDeviceQueue).ToInt64()).Equals(((nint)input.vkGetDeviceQueue).ToInt64() );
+    public static bool operator ==(GraphicDeviceFunction  left, GraphicDeviceFunction right) => left.Equals(right);
+    public static bool operator !=(GraphicDeviceFunction  left, GraphicDeviceFunction  right) => !left.Equals(right);
+    public void Dispose() {  }
+    #endregion
 }
