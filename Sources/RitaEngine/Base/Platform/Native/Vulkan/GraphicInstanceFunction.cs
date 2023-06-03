@@ -37,71 +37,16 @@ public unsafe readonly  delegate* unmanaged< VkPhysicalDevice,VkPhysicalDeviceIm
 public unsafe readonly  delegate* unmanaged< VkPhysicalDevice,UInt32*,VkQueueFamilyProperties2*,void > vkGetPhysicalDeviceQueueFamilyProperties2 = null;
 public unsafe readonly  delegate* unmanaged< VkPhysicalDevice,VkPhysicalDeviceMemoryProperties2*,void > vkGetPhysicalDeviceMemoryProperties2 = null;
 public unsafe readonly  delegate* unmanaged< VkPhysicalDevice,VkPhysicalDeviceSparseImageFormatInfo2*,UInt32*,VkSparseImageFormatProperties2*,void > vkGetPhysicalDeviceSparseImageFormatProperties2 = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkCommandPool,UInt32,void > vkTrimCommandPool = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkDeviceQueueInfo2*,VkQueue*,void > vkGetDeviceQueue2 = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkSamplerYcbcrConversionCreateInfo*,VkAllocationCallbacks*,VkSamplerYcbcrConversion*,VkResult > vkCreateSamplerYcbcrConversion = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkSamplerYcbcrConversion,VkAllocationCallbacks*,void > vkDestroySamplerYcbcrConversion = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkDescriptorUpdateTemplateCreateInfo*,VkAllocationCallbacks*,VkDescriptorUpdateTemplate*,VkResult > vkCreateDescriptorUpdateTemplate = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkDescriptorUpdateTemplate,VkAllocationCallbacks*,void > vkDestroyDescriptorUpdateTemplate = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkDescriptorSet,VkDescriptorUpdateTemplate,void*,void > vkUpdateDescriptorSetWithTemplate = null;
 public unsafe readonly  delegate* unmanaged< VkPhysicalDevice,VkPhysicalDeviceExternalBufferInfo*,VkExternalBufferProperties*,void > vkGetPhysicalDeviceExternalBufferProperties = null;
 public unsafe readonly  delegate* unmanaged< VkPhysicalDevice,VkPhysicalDeviceExternalFenceInfo*,VkExternalFenceProperties*,void > vkGetPhysicalDeviceExternalFenceProperties = null;
 public unsafe readonly  delegate* unmanaged< VkPhysicalDevice,VkPhysicalDeviceExternalSemaphoreInfo*,VkExternalSemaphoreProperties*,void > vkGetPhysicalDeviceExternalSemaphoreProperties = null;
 public unsafe readonly  delegate* unmanaged< VkDevice,VkDescriptorSetLayoutCreateInfo*,VkDescriptorSetLayoutSupport*,void > vkGetDescriptorSetLayoutSupport = null;
 #endregion
 #region VK_VERSION_1_2
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkBuffer,UInt64,VkBuffer,UInt64,UInt32,UInt32,void > vkCmdDrawIndirectCount = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkBuffer,UInt64,VkBuffer,UInt64,UInt32,UInt32,void > vkCmdDrawIndexedIndirectCount = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkRenderPassCreateInfo2*,VkAllocationCallbacks*,VkRenderPass*,VkResult > vkCreateRenderPass2 = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkRenderPassBeginInfo*,VkSubpassBeginInfo*,void > vkCmdBeginRenderPass2 = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkSubpassBeginInfo*,VkSubpassEndInfo*,void > vkCmdNextSubpass2 = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkSubpassEndInfo*,void > vkCmdEndRenderPass2 = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkQueryPool,UInt32,UInt32,void > vkResetQueryPool = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkSemaphore,UInt64*,VkResult > vkGetSemaphoreCounterValue = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkSemaphoreWaitInfo*,UInt64,VkResult > vkWaitSemaphores = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkSemaphoreSignalInfo*,VkResult > vkSignalSemaphore = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkBufferDeviceAddressInfo*,UInt64 > vkGetBufferDeviceAddress = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkBufferDeviceAddressInfo*,UInt64 > vkGetBufferOpaqueCaptureAddress = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkDeviceMemoryOpaqueCaptureAddressInfo*,UInt64 > vkGetDeviceMemoryOpaqueCaptureAddress = null;
 #endregion
 #region VK_VERSION_1_3
 public unsafe readonly  delegate* unmanaged< VkPhysicalDevice,UInt32*,VkPhysicalDeviceToolProperties*,VkResult > vkGetPhysicalDeviceToolProperties = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkPrivateDataSlotCreateInfo*,VkAllocationCallbacks*,VkPrivateDataSlot*,VkResult > vkCreatePrivateDataSlot = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkPrivateDataSlot,VkAllocationCallbacks*,void > vkDestroyPrivateDataSlot = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkObjectType,UInt64,VkPrivateDataSlot,UInt64,VkResult > vkSetPrivateData = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkObjectType,UInt64,VkPrivateDataSlot,UInt64*,void > vkGetPrivateData = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkEvent,VkDependencyInfo*,void > vkCmdSetEvent2 = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkEvent,UInt64,void > vkCmdResetEvent2 = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,UInt32,VkEvent*,VkDependencyInfo*,void > vkCmdWaitEvents2 = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkDependencyInfo*,void > vkCmdPipelineBarrier2 = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,UInt64,VkQueryPool,UInt32,void > vkCmdWriteTimestamp2 = null;
-public unsafe readonly  delegate* unmanaged< VkQueue,UInt32,VkSubmitInfo2*,VkFence,VkResult > vkQueueSubmit2 = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkCopyBufferInfo2*,void > vkCmdCopyBuffer2 = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkCopyImageInfo2*,void > vkCmdCopyImage2 = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkCopyBufferToImageInfo2*,void > vkCmdCopyBufferToImage2 = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkCopyImageToBufferInfo2*,void > vkCmdCopyImageToBuffer2 = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkBlitImageInfo2*,void > vkCmdBlitImage2 = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkResolveImageInfo2*,void > vkCmdResolveImage2 = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkRenderingInfo*,void > vkCmdBeginRendering = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,void > vkCmdEndRendering = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,UInt32,void > vkCmdSetCullMode = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkFrontFace,void > vkCmdSetFrontFace = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkPrimitiveTopology,void > vkCmdSetPrimitiveTopology = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,UInt32,VkViewport*,void > vkCmdSetViewportWithCount = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,UInt32,VkRect2D*,void > vkCmdSetScissorWithCount = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,UInt32,UInt32,VkBuffer*,UInt64*,UInt64*,UInt64*,void > vkCmdBindVertexBuffers2 = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,UInt32,void > vkCmdSetDepthTestEnable = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,UInt32,void > vkCmdSetDepthWriteEnable = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkCompareOp,void > vkCmdSetDepthCompareOp = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,UInt32,void > vkCmdSetDepthBoundsTestEnable = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,UInt32,void > vkCmdSetStencilTestEnable = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,UInt32,VkStencilOp,VkStencilOp,VkStencilOp,VkCompareOp,void > vkCmdSetStencilOp = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,UInt32,void > vkCmdSetRasterizerDiscardEnable = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,UInt32,void > vkCmdSetDepthBiasEnable = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,UInt32,void > vkCmdSetPrimitiveRestartEnable = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkDeviceBufferMemoryRequirements*,VkMemoryRequirements2*,void > vkGetDeviceBufferMemoryRequirements = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkDeviceImageMemoryRequirements*,VkMemoryRequirements2*,void > vkGetDeviceImageMemoryRequirements = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkDeviceImageMemoryRequirements*,UInt32*,VkSparseImageMemoryRequirements2*,void > vkGetDeviceImageSparseMemoryRequirements = null;
+
 #endregion
 #region VK_KHR_surface
 public unsafe readonly  delegate* unmanaged< VkInstance,VkSurfaceKHR,VkAllocationCallbacks*,void > vkDestroySurfaceKHR = null;
@@ -133,10 +78,7 @@ public unsafe readonly  delegate* unmanaged< VkInstance,VkDisplaySurfaceCreateIn
 #region VK_KHR_display_swapchain
 public unsafe readonly  delegate* unmanaged< VkDevice,UInt32,VkSwapchainCreateInfoKHR*,VkAllocationCallbacks*,VkSwapchainKHR*,VkResult > vkCreateSharedSwapchainsKHR = null;
 #endregion
-#region VK_KHR_dynamic_rendering
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkRenderingInfo*,void > vkCmdBeginRenderingKHR = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,void > vkCmdEndRenderingKHR = null;
-#endregion
+
 #region VK_KHR_get_physical_device_properties2
 public unsafe readonly  delegate* unmanaged< VkPhysicalDevice,VkPhysicalDeviceFeatures2*,void > vkGetPhysicalDeviceFeatures2KHR = null;
 public unsafe readonly  delegate* unmanaged< VkPhysicalDevice,VkPhysicalDeviceProperties2*,void > vkGetPhysicalDeviceProperties2KHR = null;
@@ -146,14 +88,7 @@ public unsafe readonly  delegate* unmanaged< VkPhysicalDevice,UInt32*,VkQueueFam
 public unsafe readonly  delegate* unmanaged< VkPhysicalDevice,VkPhysicalDeviceMemoryProperties2*,void > vkGetPhysicalDeviceMemoryProperties2KHR = null;
 public unsafe readonly  delegate* unmanaged< VkPhysicalDevice,VkPhysicalDeviceSparseImageFormatInfo2*,UInt32*,VkSparseImageFormatProperties2*,void > vkGetPhysicalDeviceSparseImageFormatProperties2KHR = null;
 #endregion
-#region VK_KHR_device_group
-public unsafe readonly  delegate* unmanaged< VkDevice,UInt32,UInt32,UInt32,UInt32*,void > vkGetDeviceGroupPeerMemoryFeaturesKHR = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,UInt32,void > vkCmdSetDeviceMaskKHR = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,UInt32,UInt32,UInt32,UInt32,UInt32,UInt32,void > vkCmdDispatchBaseKHR = null;
-#endregion
-#region VK_KHR_maintenance1
-public unsafe readonly  delegate* unmanaged< VkDevice,VkCommandPool,UInt32,void > vkTrimCommandPoolKHR = null;
-#endregion
+
 #region VK_KHR_device_group_creation
 public unsafe readonly  delegate* unmanaged< VkInstance,UInt32*,VkPhysicalDeviceGroupProperties*,VkResult > vkEnumeratePhysicalDeviceGroupsKHR = null;
 #endregion
@@ -167,28 +102,7 @@ public unsafe readonly  delegate* unmanaged< VkDevice,VkExternalMemoryHandleType
 #region VK_KHR_external_semaphore_capabilities
 public unsafe readonly  delegate* unmanaged< VkPhysicalDevice,VkPhysicalDeviceExternalSemaphoreInfo*,VkExternalSemaphoreProperties*,void > vkGetPhysicalDeviceExternalSemaphorePropertiesKHR = null;
 #endregion
-#region VK_KHR_external_semaphore_fd
-public unsafe readonly  delegate* unmanaged< VkDevice,VkImportSemaphoreFdInfoKHR*,VkResult > vkImportSemaphoreFdKHR = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkSemaphoreGetFdInfoKHR*,int*,VkResult > vkGetSemaphoreFdKHR = null;
-#endregion
-#region VK_KHR_push_descriptor
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkPipelineBindPoint,VkPipelineLayout,UInt32,UInt32,VkWriteDescriptorSet*,void > vkCmdPushDescriptorSetKHR = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkDescriptorUpdateTemplate,VkPipelineLayout,UInt32,void*,void > vkCmdPushDescriptorSetWithTemplateKHR = null;
-#endregion
-#region VK_KHR_descriptor_update_template
-public unsafe readonly  delegate* unmanaged< VkDevice,VkDescriptorUpdateTemplateCreateInfo*,VkAllocationCallbacks*,VkDescriptorUpdateTemplate*,VkResult > vkCreateDescriptorUpdateTemplateKHR = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkDescriptorUpdateTemplate,VkAllocationCallbacks*,void > vkDestroyDescriptorUpdateTemplateKHR = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkDescriptorSet,VkDescriptorUpdateTemplate,void*,void > vkUpdateDescriptorSetWithTemplateKHR = null;
-#endregion
-#region VK_KHR_create_renderpass2
-public unsafe readonly  delegate* unmanaged< VkDevice,VkRenderPassCreateInfo2*,VkAllocationCallbacks*,VkRenderPass*,VkResult > vkCreateRenderPass2KHR = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkRenderPassBeginInfo*,VkSubpassBeginInfo*,void > vkCmdBeginRenderPass2KHR = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkSubpassBeginInfo*,VkSubpassEndInfo*,void > vkCmdNextSubpass2KHR = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkSubpassEndInfo*,void > vkCmdEndRenderPass2KHR = null;
-#endregion
-#region VK_KHR_shared_presentable_image
-public unsafe readonly  delegate* unmanaged< VkDevice,VkSwapchainKHR,VkResult > vkGetSwapchainStatusKHR = null;
-#endregion
+
 #region VK_KHR_external_fence_capabilities
 public unsafe readonly  delegate* unmanaged< VkPhysicalDevice,VkPhysicalDeviceExternalFenceInfo*,VkExternalFenceProperties*,void > vkGetPhysicalDeviceExternalFencePropertiesKHR = null;
 #endregion
@@ -212,31 +126,7 @@ public unsafe readonly  delegate* unmanaged< VkPhysicalDevice,UInt32*,VkDisplayP
 public unsafe readonly  delegate* unmanaged< VkPhysicalDevice,VkDisplayKHR,UInt32*,VkDisplayModeProperties2KHR*,VkResult > vkGetDisplayModeProperties2KHR = null;
 public unsafe readonly  delegate* unmanaged< VkPhysicalDevice,VkDisplayPlaneInfo2KHR*,VkDisplayPlaneCapabilities2KHR*,VkResult > vkGetDisplayPlaneCapabilities2KHR = null;
 #endregion
-#region VK_KHR_get_memory_requirements2
-public unsafe readonly  delegate* unmanaged< VkDevice,VkImageMemoryRequirementsInfo2*,VkMemoryRequirements2*,void > vkGetImageMemoryRequirements2KHR = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkBufferMemoryRequirementsInfo2*,VkMemoryRequirements2*,void > vkGetBufferMemoryRequirements2KHR = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkImageSparseMemoryRequirementsInfo2*,UInt32*,VkSparseImageMemoryRequirements2*,void > vkGetImageSparseMemoryRequirements2KHR = null;
-#endregion
-#region VK_KHR_sampler_ycbcr_conversion
-public unsafe readonly  delegate* unmanaged< VkDevice,VkSamplerYcbcrConversionCreateInfo*,VkAllocationCallbacks*,VkSamplerYcbcrConversion*,VkResult > vkCreateSamplerYcbcrConversionKHR = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkSamplerYcbcrConversion,VkAllocationCallbacks*,void > vkDestroySamplerYcbcrConversionKHR = null;
-#endregion
-#region VK_KHR_bind_memory2
-public unsafe readonly  delegate* unmanaged< VkDevice,UInt32,VkBindBufferMemoryInfo*,VkResult > vkBindBufferMemory2KHR = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,UInt32,VkBindImageMemoryInfo*,VkResult > vkBindImageMemory2KHR = null;
-#endregion
-#region VK_KHR_maintenance3
-public unsafe readonly  delegate* unmanaged< VkDevice,VkDescriptorSetLayoutCreateInfo*,VkDescriptorSetLayoutSupport*,void > vkGetDescriptorSetLayoutSupportKHR = null;
-#endregion
-#region VK_KHR_draw_indirect_count
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkBuffer,UInt64,VkBuffer,UInt64,UInt32,UInt32,void > vkCmdDrawIndirectCountKHR = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkBuffer,UInt64,VkBuffer,UInt64,UInt32,UInt32,void > vkCmdDrawIndexedIndirectCountKHR = null;
-#endregion
-#region VK_KHR_timeline_semaphore
-public unsafe readonly  delegate* unmanaged< VkDevice,VkSemaphore,UInt64*,VkResult > vkGetSemaphoreCounterValueKHR = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkSemaphoreWaitInfo*,UInt64,VkResult > vkWaitSemaphoresKHR = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkSemaphoreSignalInfo*,VkResult > vkSignalSemaphoreKHR = null;
-#endregion
+
 #region VK_KHR_fragment_shading_rate
 public unsafe readonly  delegate* unmanaged< VkPhysicalDevice,UInt32*,VkPhysicalDeviceFragmentShadingRateKHR*,VkResult > vkGetPhysicalDeviceFragmentShadingRatesKHR = null;
 public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkExtent2D*,VkFragmentShadingRateCombinerOpKHR,void > vkCmdSetFragmentShadingRateKHR = null;
@@ -244,49 +134,7 @@ public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkExtent2D*,VkFragm
 #region VK_KHR_present_wait
 public unsafe readonly  delegate* unmanaged< VkDevice,VkSwapchainKHR,UInt64,UInt64,VkResult > vkWaitForPresentKHR = null;
 #endregion
-#region VK_KHR_buffer_device_address
-public unsafe readonly  delegate* unmanaged< VkDevice,VkBufferDeviceAddressInfo*,UInt64 > vkGetBufferDeviceAddressKHR = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkBufferDeviceAddressInfo*,UInt64 > vkGetBufferOpaqueCaptureAddressKHR = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkDeviceMemoryOpaqueCaptureAddressInfo*,UInt64 > vkGetDeviceMemoryOpaqueCaptureAddressKHR = null;
-#endregion
-#region VK_KHR_deferred_host_operations
-public unsafe readonly  delegate* unmanaged< VkDevice,VkAllocationCallbacks*,VkDeferredOperationKHR*,VkResult > vkCreateDeferredOperationKHR = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkDeferredOperationKHR,VkAllocationCallbacks*,void > vkDestroyDeferredOperationKHR = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkDeferredOperationKHR,UInt32 > vkGetDeferredOperationMaxConcurrencyKHR = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkDeferredOperationKHR,VkResult > vkGetDeferredOperationResultKHR = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkDeferredOperationKHR,VkResult > vkDeferredOperationJoinKHR = null;
-#endregion
-#region VK_KHR_pipeline_executable_properties
-public unsafe readonly  delegate* unmanaged< VkDevice,VkPipelineInfoKHR*,UInt32*,VkPipelineExecutablePropertiesKHR*,VkResult > vkGetPipelineExecutablePropertiesKHR = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkPipelineExecutableInfoKHR*,UInt32*,VkPipelineExecutableStatisticKHR*,VkResult > vkGetPipelineExecutableStatisticsKHR = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkPipelineExecutableInfoKHR*,UInt32*,VkPipelineExecutableInternalRepresentationKHR*,VkResult > vkGetPipelineExecutableInternalRepresentationsKHR = null;
-#endregion
-#region VK_KHR_synchronization2
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkEvent,VkDependencyInfo*,void > vkCmdSetEvent2KHR = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkEvent,UInt64,void > vkCmdResetEvent2KHR = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,UInt32,VkEvent*,VkDependencyInfo*,void > vkCmdWaitEvents2KHR = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkDependencyInfo*,void > vkCmdPipelineBarrier2KHR = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,UInt64,VkQueryPool,UInt32,void > vkCmdWriteTimestamp2KHR = null;
-public unsafe readonly  delegate* unmanaged< VkQueue,UInt32,VkSubmitInfo2*,VkFence,VkResult > vkQueueSubmit2KHR = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,UInt64,VkBuffer,UInt64,UInt32,void > vkCmdWriteBufferMarker2AMD = null;
-public unsafe readonly  delegate* unmanaged< VkQueue,UInt32*,VkCheckpointData2NV*,void > vkGetQueueCheckpointData2NV = null;
-#endregion
-#region VK_KHR_copy_commands2
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkCopyBufferInfo2*,void > vkCmdCopyBuffer2KHR = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkCopyImageInfo2*,void > vkCmdCopyImage2KHR = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkCopyBufferToImageInfo2*,void > vkCmdCopyBufferToImage2KHR = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkCopyImageToBufferInfo2*,void > vkCmdCopyImageToBuffer2KHR = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkBlitImageInfo2*,void > vkCmdBlitImage2KHR = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkResolveImageInfo2*,void > vkCmdResolveImage2KHR = null;
-#endregion
-#region VK_KHR_ray_tracing_maintenance1
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,UInt64,void > vkCmdTraceRaysIndirect2KHR = null;
-#endregion
-#region VK_KHR_maintenance4
-public unsafe readonly  delegate* unmanaged< VkDevice,VkDeviceBufferMemoryRequirements*,VkMemoryRequirements2*,void > vkGetDeviceBufferMemoryRequirementsKHR = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkDeviceImageMemoryRequirements*,VkMemoryRequirements2*,void > vkGetDeviceImageMemoryRequirementsKHR = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkDeviceImageMemoryRequirements*,UInt32*,VkSparseImageMemoryRequirements2*,void > vkGetDeviceImageSparseMemoryRequirementsKHR = null;
-#endregion
+
 #region VK_EXT_debug_report
 public unsafe readonly  delegate* unmanaged< VkInstance,VkDebugReportCallbackCreateInfoEXT*,VkAllocationCallbacks*,VkDebugReportCallbackEXT*,VkResult > vkCreateDebugReportCallbackEXT = null;
 public unsafe readonly  delegate* unmanaged< VkInstance,VkDebugReportCallbackEXT,VkAllocationCallbacks*,void > vkDestroyDebugReportCallbackEXT = null;
@@ -299,54 +147,18 @@ public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkDebugMarkerMarker
 public unsafe readonly  delegate* unmanaged< VkCommandBuffer,void > vkCmdDebugMarkerEndEXT = null;
 public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkDebugMarkerMarkerInfoEXT*,void > vkCmdDebugMarkerInsertEXT = null;
 #endregion
-#region VK_EXT_transform_feedback
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,UInt32,UInt32,VkBuffer*,UInt64*,UInt64*,void > vkCmdBindTransformFeedbackBuffersEXT = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,UInt32,UInt32,VkBuffer*,UInt64*,void > vkCmdBeginTransformFeedbackEXT = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,UInt32,UInt32,VkBuffer*,UInt64*,void > vkCmdEndTransformFeedbackEXT = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkQueryPool,UInt32,UInt32,UInt32,void > vkCmdBeginQueryIndexedEXT = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkQueryPool,UInt32,UInt32,void > vkCmdEndQueryIndexedEXT = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,UInt32,UInt32,VkBuffer,UInt64,UInt32,UInt32,void > vkCmdDrawIndirectByteCountEXT = null;
-#endregion
-#region VK_NVX_binary_import
-public unsafe readonly  delegate* unmanaged< VkDevice,VkCuModuleCreateInfoNVX*,VkAllocationCallbacks*,VkCuModuleNVX*,VkResult > vkCreateCuModuleNVX = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkCuFunctionCreateInfoNVX*,VkAllocationCallbacks*,VkCuFunctionNVX*,VkResult > vkCreateCuFunctionNVX = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkCuModuleNVX,VkAllocationCallbacks*,void > vkDestroyCuModuleNVX = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkCuFunctionNVX,VkAllocationCallbacks*,void > vkDestroyCuFunctionNVX = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkCuLaunchInfoNVX*,void > vkCmdCuLaunchKernelNVX = null;
-#endregion
-#region VK_NVX_image_view_handle
-public unsafe readonly  delegate* unmanaged< VkDevice,VkImageViewHandleInfoNVX*,UInt32 > vkGetImageViewHandleNVX = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkImageView,VkImageViewAddressPropertiesNVX*,VkResult > vkGetImageViewAddressNVX = null;
-#endregion
-#region VK_AMD_draw_indirect_count
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkBuffer,UInt64,VkBuffer,UInt64,UInt32,UInt32,void > vkCmdDrawIndirectCountAMD = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkBuffer,UInt64,VkBuffer,UInt64,UInt32,UInt32,void > vkCmdDrawIndexedIndirectCountAMD = null;
-#endregion
-#region VK_AMD_shader_info
-public unsafe readonly  delegate* unmanaged< VkDevice,VkPipeline,VkShaderStageFlagBits,VkShaderInfoTypeAMD,Int32*,void*,VkResult > vkGetShaderInfoAMD = null;
-#endregion
+
 #region VK_NV_external_memory_capabilities
 public unsafe readonly  delegate* unmanaged< VkPhysicalDevice,VkFormat,VkImageType,VkImageTiling,UInt32,UInt32,UInt32,VkExternalImageFormatPropertiesNV*,VkResult > vkGetPhysicalDeviceExternalImageFormatPropertiesNV = null;
 #endregion
-#region VK_EXT_conditional_rendering
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkConditionalRenderingBeginInfoEXT*,void > vkCmdBeginConditionalRenderingEXT = null;
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,void > vkCmdEndConditionalRenderingEXT = null;
-#endregion
-#region VK_NV_clip_space_w_scaling
-public unsafe readonly  delegate* unmanaged< VkCommandBuffer,UInt32,UInt32,VkViewportWScalingNV*,void > vkCmdSetViewportWScalingNV = null;
-#endregion
+
 #region VK_EXT_direct_mode_display
 public unsafe readonly  delegate* unmanaged< VkPhysicalDevice,VkDisplayKHR,VkResult > vkReleaseDisplayEXT = null;
 #endregion
 #region VK_EXT_display_surface_counter
 public unsafe readonly  delegate* unmanaged< VkPhysicalDevice,VkSurfaceKHR,VkSurfaceCapabilities2EXT*,VkResult > vkGetPhysicalDeviceSurfaceCapabilities2EXT = null;
 #endregion
-#region VK_EXT_display_control
-public unsafe readonly  delegate* unmanaged< VkDevice,VkDisplayKHR,VkDisplayPowerInfoEXT*,VkResult > vkDisplayPowerControlEXT = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkDeviceEventInfoEXT*,VkAllocationCallbacks*,VkFence*,VkResult > vkRegisterDeviceEventEXT = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkDisplayKHR,VkDisplayEventInfoEXT*,VkAllocationCallbacks*,VkFence*,VkResult > vkRegisterDisplayEventEXT = null;
-public unsafe readonly  delegate* unmanaged< VkDevice,VkSwapchainKHR,VkSurfaceCounterFlagBitsEXT,UInt64*,VkResult > vkGetSwapchainCounterEXT = null;
-#endregion
+
 
 #region VK_EXT_debug_utils
 public unsafe readonly  delegate* unmanaged< VkDevice,VkDebugUtilsObjectNameInfoEXT*,VkResult > vkSetDebugUtilsObjectNameEXT = null;
@@ -549,7 +361,7 @@ public unsafe readonly  delegate* unmanaged< VkPhysicalDevice, UInt32 ,UInt32 > 
 			vkGetPhysicalDeviceFormatProperties2KHR = (delegate* unmanaged<VkPhysicalDevice,VkFormat,VkFormatProperties2*,void>) load(instance,nameof(vkGetPhysicalDeviceFormatProperties2KHR)); 
 			vkGetPhysicalDeviceImageFormatProperties2KHR = (delegate* unmanaged<VkPhysicalDevice,VkPhysicalDeviceImageFormatInfo2*,VkImageFormatProperties2*,VkResult>) load(instance,nameof(vkGetPhysicalDeviceImageFormatProperties2KHR)); 
 			vkGetPhysicalDeviceQueueFamilyProperties2KHR = (delegate* unmanaged<VkPhysicalDevice,UInt32*,VkQueueFamilyProperties2*,void>) load(instance,nameof(vkGetPhysicalDeviceQueueFamilyProperties2KHR)); 
-			// vkGetPhysicalDeviceMemoryProperties2KHR = (delegate* unmanaged<VkPhysicalDevice,VkPhysicalDeviceMemoryProperties2*,void>) load(instance,nameof(vkGetPhysicalDeviceMemoryProperties2KHR)); 
+			vkGetPhysicalDeviceMemoryProperties2KHR = (delegate* unmanaged<VkPhysicalDevice,VkPhysicalDeviceMemoryProperties2*,void>) load(instance,nameof(vkGetPhysicalDeviceMemoryProperties2KHR)); 
 			vkGetPhysicalDeviceSparseImageFormatProperties2KHR = (delegate* unmanaged<VkPhysicalDevice,VkPhysicalDeviceSparseImageFormatInfo2*,UInt32*,VkSparseImageFormatProperties2*,void>) load(instance,nameof(vkGetPhysicalDeviceSparseImageFormatProperties2KHR)); 
 		}
 		
