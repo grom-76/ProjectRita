@@ -6,12 +6,10 @@
 
     Window 8 10 11
     Driver avec vulkan installé
-    [SDK .Net 6.0](https://dotnet.microsoft.com/download/dotnet/6.0)
+    [ SDK .Net7.0 ](https://dotnet.microsoft.com/en-us/download)
     Visual studio code
-    .Net 6.0 desktop/console runtime ( facultatif  )
     git
     VS code extension DOC : omnisharp / C#Extension
-    hide obj folder
 
 ### Utilisation
 
@@ -51,23 +49,25 @@
 
 ### get started like Viking:  c++ as sdl / raylib / glfw / sfml /
 
-    program.cs
-        using var game = new MCJEngine.GameContext( );
-        game.Surface.Settigns.Title ="Mon Jeu";
-        game.Create();
+```c#
+// program.cs
+    using var game = new MCJEngine.GameContext( );
+    game.Surface.Settigns.Title ="Mon Jeu";
+    game.Create();
 
-        while( game.HasQit() )
+    while( game.HasQit() )
+    {
+        game.Update();
+
+        if(game.HasRenderReady())
         {
-            game.Update();
 
-            if(game.HasRenderReady())
-            {
-
-                game.DisplayOn();
-            }
+            game.DisplayOn();
         }
+    }
 
-        game.Dispose(); // not necessary if use keyword using 
+    game.Dispose(); // not necessary if use keyword using 
+```
 
 ### Compilation / Execution
 
