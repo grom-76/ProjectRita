@@ -20,9 +20,6 @@ using HRESULT = System.UInt32;
 [SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack = 4), SkipLocalsInit]
 public unsafe static class Constants
 {
-    
-
-
     #region CONSTANTS
     // Numeric boundary values
     public const uint  XAUDIO2_MAX_BUFFER_BYTES        =0x80000000;    // Maximum bytes allowed in a source buffer
@@ -1907,9 +1904,5 @@ public unsafe partial struct X3DAUDIO_LISTENER
         public const float XAUDIO2FX_REVERB_DEFAULT_ROOM_SIZE = 100.0f;
         public const int XAUDIO2FX_REVERB_DEFAULT_DISABLE_LATE_FIELD = 0;
     }
-
-
-
-
 
 #endregion
