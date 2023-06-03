@@ -1244,7 +1244,7 @@ public unsafe readonly  delegate* unmanaged< VkCommandBuffer,VkBuffer,UInt64,VkB
     public override string ToString() => string.Format($"Graphic Device Function" );
     public unsafe override int GetHashCode() => HashCode.Combine( ((nint)0).ToInt32()  ,  ((nint)0).ToInt32(),  ((nint)0).ToInt32(), ((nint)0).ToInt32() ) ;
     public override bool Equals(object? obj) => obj is GraphicDeviceFunction context && this.Equals(context) ;
-    public unsafe bool Equals(GraphicDeviceFunction? other)=> other is GraphicDeviceFunction input && ( ((nint)vkGetDeviceQueue).ToInt64()).Equals(((nint)input.vkGetDeviceQueue).ToInt64() );
+    public unsafe bool Equals(GraphicDeviceFunction other)=> other is GraphicDeviceFunction input && ( ((nint)vkGetDeviceQueue).ToInt64()).Equals(((nint)input.vkGetDeviceQueue).ToInt64() );
     public static bool operator ==(GraphicDeviceFunction  left, GraphicDeviceFunction right) => left.Equals(right);
     public static bool operator !=(GraphicDeviceFunction  left, GraphicDeviceFunction  right) => !left.Equals(right);
     public void Dispose() {  }

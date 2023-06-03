@@ -502,7 +502,7 @@ public unsafe readonly  delegate* unmanaged< VkPhysicalDevice, UInt32 ,UInt32 > 
     public override string ToString() => string.Format($"Graphic Instances" );
     public unsafe override int GetHashCode() => HashCode.Combine( ((nint)0).ToInt32()  ,  ((nint)0).ToInt32(),  ((nint)0).ToInt32(), ((nint)0).ToInt32() ) ;
     public override bool Equals(object? obj) => obj is GraphicInstanceFunction context && this.Equals(context) ;
-    public unsafe bool Equals(GraphicInstanceFunction? other)=> other is GraphicInstanceFunction input && ( ((nint)vkCreateDevice).ToInt64()).Equals(((nint)input.vkCreateDevice).ToInt64() );
+    public unsafe bool Equals(GraphicInstanceFunction other)=> other is GraphicInstanceFunction input && ( ((nint)vkCreateDevice).ToInt64()).Equals(((nint)input.vkCreateDevice).ToInt64() );
     public static bool operator ==(GraphicInstanceFunction  left, GraphicInstanceFunction right) => left.Equals(right);
     public static bool operator !=(GraphicInstanceFunction  left, GraphicInstanceFunction  right) => !left.Equals(right);
     public void Dispose() {  }
