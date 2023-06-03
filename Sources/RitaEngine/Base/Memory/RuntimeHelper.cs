@@ -437,7 +437,8 @@ public unsafe static class CRuntime
                 _handle = GCHandle.Alloc(data, GCHandleType.Pinned);
                 var addr = _handle.AddrOfPinnedObject();
                 _ptr = addr.ToPointer();
-                ElementSize = Marshal.SizeOf(typeof(T));
+                // ElementSize = Marshal.SizeOf(typeof(T));
+                ElementSize = Unsafe.SizeOf<T>();
                 Count = data.Length;
                 _size = ElementSize * data.Length;
             }

@@ -9,7 +9,7 @@ public unsafe struct GraphicDeviceData : IEquatable<GraphicDeviceData>
 /*
 struct Instance  => GraphicDeviceConfig => ? layer, dll , 
 */
-    public GraphicDeviceCapabilities Infos = new();
+    public GraphicDeviceCapabilities Infos;
     
     private nint _address = nint.Zero;
 

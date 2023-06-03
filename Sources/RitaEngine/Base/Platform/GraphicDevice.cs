@@ -34,6 +34,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
     public unsafe void Init(Window win )
     {
         _data = new();
+        // _data.Infos = new();
         _data.vulkan = Libraries.Load( Config.VulkanDllName);
         _loader = new( Libraries.GetUnsafeSymbol, _data.vulkan);
 

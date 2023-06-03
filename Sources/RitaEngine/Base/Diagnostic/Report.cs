@@ -1,12 +1,11 @@
+#if DEBUG
+namespace RitaEngine.Base.Debug;
 
 
-namespace RitaEngine.Base.Debug
-{
+using System.Diagnostics;
+using System.Threading.Tasks;
 
-        using System.Diagnostics;
-    using System.Threading.Tasks;
-
-    [SuppressUnmanagedCodeSecurity,SkipLocalsInit, StructLayout(LayoutKind.Sequential )]
+[SuppressUnmanagedCodeSecurity,SkipLocalsInit, StructLayout(LayoutKind.Sequential )]
 public static class Report
 { 
     /// <summary>
@@ -505,6 +504,4 @@ public static class Report
 
    
 }//createdumpFile // REPORT //Profiler // Performance //Diagnostic
-
-
-}
+#endif
