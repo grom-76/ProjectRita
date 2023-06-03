@@ -59,8 +59,8 @@ namespace RitaEngine.Advanced
         public class Triggers{} //ECS  see : 
     }
    
-    public class RitaEngineMain{} //like monogame
-    public class RitaEngineSystem {} // like raylib
+    
+    // public class RitaEngineSystem or COntext {} // like raylib
    
     namespace Multiplayer
     {

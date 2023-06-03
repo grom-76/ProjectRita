@@ -47,6 +47,9 @@ public struct Window : IEquatable<Window>
 
         Config.Dispose();
     }
+
+    public bool IsForeGround =>_data.IsFocused ;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Show() => Show(ref _data , ref _funcs);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -80,6 +83,13 @@ public struct Window : IEquatable<Window>
                 // Config.GraphicDevice.Surface.Width =Utils.LOWORD(lParam);
                 // REGraphicDevice.ReCreateSwapChain( ref _data.GraphicDevice,(uint)Utils.LOWORD(lParam),(uint)Utils.HIWORD(lParam));
                 return 0;
+            case Constants.WM_SETFOCUS :
+                _data.IsFocused = true;
+                return (_funcs.DefWindowProcA(hWnd, message, wParam, lParam));
+            case Constants.WM_KILLFOCUS :
+                _data.IsFocused = false;
+                Log.Info("Loose Focus");
+                return (_funcs.DefWindowProcA(hWnd, message, wParam, lParam));
             default:
                 return (_funcs.DefWindowProcA(hWnd, message, wParam, lParam));
         }

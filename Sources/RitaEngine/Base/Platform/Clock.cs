@@ -33,6 +33,8 @@ public struct Clock: IEquatable<Clock>
 
         Config.Dispose();
     }
+
+    public void Pause() => Pause(ref _data, ref _funcs);
     public void Release()
     {
         // nothing here ...
@@ -117,12 +119,12 @@ public struct Clock: IEquatable<Clock>
     private  static double GetElapsed_ms(ref ClockData data ,ref ClockFunctions func ) 
     => (GetTick(ref func) -  data.PreviousTick) * data.OneOverFrequency; 
 
-    private static void Pause(ref ClockData data )
+    private static void Pause(ref ClockData data  ,ref ClockFunctions func)
     {
         data.IsPaused = true;
+        data.PreviousTick = GetTick(ref func);
         //time stop
         //Save accumulate time  ( temps depuis le debut de la pause)
-
     }
     
     private static int GetApproximativFPS(ref ClockData data ,ref ClockFunctions func )
@@ -135,7 +137,7 @@ public struct Clock: IEquatable<Clock>
     public unsafe static void Update_Default( ref ClockData data ,ref ClockFunctions func  )
     {
         #if WIN64
-        data.FrameCount++;
+        // data.FrameCount++;
         data.Elapsed_ms = GetElapsed_ms(ref  data ,ref  func );
         data.PreviousTick = GetTick(ref func );
         #endif

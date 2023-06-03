@@ -7,10 +7,11 @@ public struct ClockData : IEquatable<ClockData>
 {
     public delegate void PFN_Update(ref ClockData data ,ref ClockFunctions func );
     public UInt64 PreviousTick =0;
-    public UInt64 FrameCount =0;
+    
     public double OneOverFrequency=0.0 ;
     public double Elapsed_ms=0.0;
     public double FixedTimeStep =0.0;
+
     public nint Kernel32 = nint.Zero;
     public PFN_Update LoopMethod = null!;
     private nint _address = nint.Zero;
