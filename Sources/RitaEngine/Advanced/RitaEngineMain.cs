@@ -64,12 +64,13 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
     {
         Load();   
         // USe Resource MAnager Here in Release Mode
+         GraphicDevice.BuildRender();
     }
 
     private void InternalWarmUp()
     {
         WarmUp();
-        // graphic.BuildRender();
+     
         win.Show();
     }
 
@@ -96,7 +97,7 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
             UpdateInputs();
 
             UpdateDraw();
-            graphic.Draw();
+            // graphic.Draw();
         }
     }
 

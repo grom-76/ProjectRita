@@ -25,7 +25,7 @@ public readonly struct ControllerDeviceFunction
         XInputGetState =( delegate* unmanaged<uint, XINPUT_STATE*,uint>) load( module, "XInputGetState" );
     }
 
-     public unsafe nint AddressOfPtrThis( ){fixed (void* pointer = &this)  { return((nint) pointer ) ; }  }
+    public unsafe nint AddressOfPtrThis( ){fixed (void* pointer = &this)  { return((nint) pointer ) ; }  }
     #region OVERRIDE
     public override string ToString() => string.Format($"Vector" );
     public unsafe override int GetHashCode() => HashCode.Combine( ((nint)XInputGetState).ToInt32()  ,  ((nint)XInputSetState).ToInt32(),  ((nint)XInputGetState).ToInt32(), ((nint) XInputGetCapabilities).ToInt32() ) ;

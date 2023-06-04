@@ -1,7 +1,5 @@
 namespace RitaEngine.Base.Platform;
 
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using RitaEngine.Base.Debug;
 using RitaEngine.Base.Math.Color;
@@ -9,7 +7,6 @@ using RitaEngine.Base.Platform.Config;
 using RitaEngine.Base.Platform.API.Vulkan;
 using RitaEngine.Base.Platform.Structures;
 using RitaEngine.Base.Strings;
-
 
 /// <summary>
 /// 
@@ -20,12 +17,10 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
     private GraphicDeviceFunction _device;
     private GraphicDeviceLoaderFunction _loader;
     private GraphicInstanceFunction _instance;
-
-    // TODO : PUT all functions in one struct ?? but how to readonly 
-    private GraphicDeviceData _data; // inside => Instance Device Render Infos 
+    private GraphicDeviceData _data =new(); // inside => Instance Device Render Infos 
 
     public GraphicRenderConfig Render =new();
-    public  GraphicDeviceConfig Config = new();
+    public GraphicDeviceConfig Config = new();
 
     private nint _address = nint.Zero;
 
@@ -33,8 +28,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
     public unsafe void Init(Window win )
     {
-        _data = new();
-        // _data.Infos = new();
+       
         _data.vulkan = Libraries.Load( Config.VulkanDllName);
         _loader = new( Libraries.GetUnsafeSymbol, _data.vulkan);
 
@@ -44,13 +38,13 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         _data.Infos.Width = win.GetWindowWidth();
         _data.Infos.Height = win.GetWindowheight();
         _data.Infos.EnableDebug = Config.EnableDebugMode;
-
+// INstance App
         CreateInstance(ref _loader,ref _data, out VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo);
 
         _instance = new( GraphicDeviceLoaderFunction.vkGetInstanceProcAddr , _data.VkInstance);
                 
         SetupDebugMessenger(ref _instance, ref _data,ref debugCreateInfo);
-        
+//DEVICE        
         
         CreateSurface(ref _instance,ref _data);
         
@@ -59,9 +53,8 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
         _device = new( GraphicDeviceLoaderFunction.vkGetDeviceProcAddr ,_data.VkDevice);
 
-//RENDER
-        CreateQueues( ref _device , ref _data);
-
+//SWAP CHAIN
+        
 
         CreateSwapChain( ref _device , ref _data);
         CreateImageViews( ref _device , ref _data );
@@ -69,8 +62,10 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         _data.MAX_FRAMES_IN_FLIGHT = Render.MAX_FRAMES_IN_FLIGHT;// only need this config
 
         CreateCommandPool(ref _device , ref _data);
-
+// DATA BARIERS SYNCHRO QUEUES        
         CreateSyncObjects(ref _device , ref _data);
+
+        CreateQueues( ref _device , ref _data);
     }
 
     public unsafe void Release()
@@ -94,6 +89,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         DisposeDebug(ref _instance,ref _data);
         DisposeInstance(ref _loader,ref _data);
         Libraries.Unload(_data.vulkan);
+        _data.Release();
     }
 
     
@@ -118,21 +114,20 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         CreateRenderPass(ref func,ref data, ref pipeline);
         CreateFramebuffers(ref func,ref data);
 
+        CreateCommandPool(ref func,ref data);
+        CreateCommandBuffer(ref func,ref data,ref pipeline);
         data.RenderAreaOffset.x =0;
         data.RenderAreaOffset.y =0;       
         data.ClearColor = new(ColorHelper.ToRGBA( (uint)pipeline.BackColorARGB),00000.0f,0);
 
         CreatePipeline(ref func, ref data,ref pipeline );
-        CreateCommandPool(ref func,ref data);
-        CreateCommandBuffer(ref func,ref data,ref pipeline);
-
     }
     
     private unsafe static void DisposeBuildRender(ref GraphicDeviceFunction func,ref GraphicDeviceData data  )
     {
         Pause(ref func,ref data);
         
-        // DisposeFrameBuffer(ref func,ref data);
+        DisposeFrameBuffer(ref func,ref data);
         DisposePipeline(ref func,ref data);
         DisposeRenderPass(ref func,ref data);
         DisposeCommandPool(ref func,ref data);
@@ -562,22 +557,22 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
         //NEW NEW nEW  see : https://registry.khronos.org/vulkan/specs/1.2-extensions/html/vkspec.html#VkPresentModeKHR
 
-        if (VK.VK_KHR_get_surface_capabilities2 )
-        {
-              VkPhysicalDeviceSurfaceInfo2KHR surfaceInfo2 = new();
-                surfaceInfo2.pNext = null;
-                surfaceInfo2.sType = VkStructureType.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR;
-                surfaceInfo2.surface = surface;
+        // if (VK.VK_KHR_get_surface_capabilities2 )
+        // {
+        //       VkPhysicalDeviceSurfaceInfo2KHR surfaceInfo2 = new();
+        //         surfaceInfo2.pNext = null;
+        //         surfaceInfo2.sType = VkStructureType.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR;
+        //         surfaceInfo2.surface = surface;
 
-            uint surfaceFormat2Count = 0;
-           func.vkGetPhysicalDeviceSurfaceFormats2KHR(physicalDevice,&surfaceInfo2,&surfaceFormat2Count,null ).Check("vkGetPhysicalDeviceSurfaceFormats2KHR");
+        //     uint surfaceFormat2Count = 0;
+        //    func.vkGetPhysicalDeviceSurfaceFormats2KHR(physicalDevice,&surfaceInfo2,&surfaceFormat2Count,null ).Check("vkGetPhysicalDeviceSurfaceFormats2KHR");
 
             
-            ReadOnlySpan<VkSurfaceFormat2KHR> surfaceFormats2 = new VkSurfaceFormat2KHR[surfaceFormat2Count];
-            fixed (VkSurfaceFormat2KHR* surfaceFormats2Ptr = surfaceFormats2)		{   
-            func.vkGetPhysicalDeviceSurfaceFormats2KHR(physicalDevice,&surfaceInfo2,&surfaceFormat2Count,surfaceFormats2Ptr ).Check("vkGetPhysicalDeviceSurfaceFormats2KHR");
-             }
-        }
+        //     ReadOnlySpan<VkSurfaceFormat2KHR> surfaceFormats2 = new VkSurfaceFormat2KHR[surfaceFormat2Count];
+        //     fixed (VkSurfaceFormat2KHR* surfaceFormats2Ptr = surfaceFormats2)		{   
+        //     func.vkGetPhysicalDeviceSurfaceFormats2KHR(physicalDevice,&surfaceInfo2,&surfaceFormat2Count,surfaceFormats2Ptr ).Check("vkGetPhysicalDeviceSurfaceFormats2KHR");
+        //      }
+        // }
         details.Formats = surfaceFormats;
         // TODO : PRESENT MODE  ENABLED VSYNC ?????
         uint presentModeCount = 0;
@@ -785,7 +780,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
     private static unsafe void CreateFramebuffers( ref GraphicDeviceFunction func,ref GraphicDeviceData data)
     {
         var size= data.VkSwapChainImageViews.Length;
-        data.VkFramebuffers = new VkFramebuffer[size] ;// swapChainFramebuffers.resize(swapChainImageViews.size());
+        // create frameubuufer array in data max 6  3 swapchain (triple bufer x 2 for stereoscopic// data.VkFramebuffers = new VkFramebuffer[size] ;// swapChainFramebuffers.resize(swapChainImageViews.size());
 
         for (int i = 0; i < size; i++)
         {
@@ -841,7 +836,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
     private static unsafe void CreateCommandBuffer(ref GraphicDeviceFunction func,ref GraphicDeviceData data ,ref GraphicRenderConfig pipeline) 
     {
-        data.VkCommandBuffers = new VkCommandBuffer[pipeline.MAX_FRAMES_IN_FLIGHT]; 
+        // data.VkCommandBuffers = new VkCommandBuffer[pipeline.MAX_FRAMES_IN_FLIGHT]; 
 
         VkCommandBufferAllocateInfo allocInfo =new();// New<VkCommandBufferAllocateInfo>();
             allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;

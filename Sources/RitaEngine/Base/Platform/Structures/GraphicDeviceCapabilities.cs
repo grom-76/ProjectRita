@@ -3,7 +3,7 @@ namespace RitaEngine.Base.Platform.Structures;
 using System.Collections.Generic;
 using RitaEngine.Base.Platform.API.Vulkan;
 
-[StructLayout(LayoutKind.Sequential, Pack = RitaEngine.Base.BaseHelper.FORCE_ALIGNEMENT), SkipLocalsInit]
+[ SkipLocalsInit]
 public unsafe struct GraphicDeviceCapabilities : IEquatable<GraphicDeviceCapabilities>
 {
     public VkPhysicalDeviceProperties PhysicalDeviceProperties = new();
@@ -12,7 +12,6 @@ public unsafe struct GraphicDeviceCapabilities : IEquatable<GraphicDeviceCapabil
     public string[] InstanceExtensions = null!;      
     public string[] DeviceExtensions = null!;
     public bool EnableDebug = false;
-    
     public byte[] GameName = null!;
     // public string GameVersion = string.Empty;
     public uint VkVersion =0;

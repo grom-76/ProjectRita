@@ -19,6 +19,7 @@ public static class Sample_0002
     public class MyGame : RitaEngine.Advanced.RitaEngineMain
     {
         string path = @"C:\Users\Administrator\Documents\ProjectRita\Assets\";
+        RitaEngine.Base.Audio.PlayerSound2D snd = new();
         //   RitaEngine.Base.Audio.PlayerSound2D snd = new( audio, path+  "demo.wav");
         public MyGame()
         {
@@ -40,22 +41,24 @@ public static class Sample_0002
 
         protected override void Load()
         {
+            snd.Init( AudioDevice ,  path+  "demo.wav" );
+
             GraphicDevice.Render.BackColorARGB = RitaEngine.Base.Math.Color.Palette.Lavender ;
             GraphicDevice.Render.FragmentEntryPoint ="main";
             GraphicDevice.Render.VertexEntryPoint ="main";
             GraphicDevice.Render.FragmentShaderFileNameSPV = path + "fragment_base.spv";
             GraphicDevice.Render.VertexShaderFileNameSPV = path + "vertex_base.spv";
-            GraphicDevice.BuildRender();
+
         }
 
         protected override void Release()
         {
-            
+            snd.Dispose();
         }
 
         protected override void UpdateDraw()
         {
-          
+           
         }
 
         protected override void UpdateInputs()
@@ -67,7 +70,7 @@ public static class Sample_0002
 
             if (Input.IsKeyPressed( RitaEngine.Base.Platform.InputKeys.Space ))
             {
-                // snd.PlaySource();
+                snd.PlaySource();
             }
  
         }

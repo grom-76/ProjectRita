@@ -20,7 +20,8 @@ public static class Sample_0001
         RitaEngine.Base.Platform.Inputs input = new();
         RitaEngine.Base.Platform.AudioDevice audio = new();
         RitaEngine.Base.Platform.GraphicDevice graphic = new();
-
+        
+        RitaEngine.Base.Audio.PlayerSound2D snd = new( );
         try
         {
             clock.Config.FixedTimeStep = 0.033;
@@ -42,7 +43,8 @@ public static class Sample_0001
             graphic.Init( win);
             // END INITIALIZE SYSTEM
 
-            RitaEngine.Base.Audio.PlayerSound2D snd = new( audio, path+  "demo.wav");
+            
+            snd.Init( audio, path+  "demo.wav");
 
             graphic.Render.BackColorARGB = RitaEngine.Base.Math.Color.Palette.Lavender ;
             graphic.Render.FragmentEntryPoint ="main";
