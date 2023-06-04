@@ -20,7 +20,7 @@ public static class Sample_0002
     {
         string path = @"C:\Users\Administrator\Documents\ProjectRita\Assets\";
         RitaEngine.Base.Audio.PlayerSound2D snd = new();
-        //   RitaEngine.Base.Audio.PlayerSound2D snd = new( audio, path+  "demo.wav");
+        
         public MyGame()
         {
             RitaEngine.Base.Log.Config(Log.Display.OnConsole);

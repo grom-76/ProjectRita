@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 using System.Security;
 using System.Threading.Tasks;
     // using AdvancedDLSupport;
-    using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Attributes;
 
     // [SuppressUnmanagedCodeSecurity]
     // public interface INativeLibrary
@@ -87,14 +87,44 @@ using System.Threading.Tasks;
         }
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack =4),SkipLocalsInit]
+    public unsafe struct Commands3 :  IEquatable<Commands3>
+    {
+        
+        public unsafe delegate* unmanaged<out UInt64, int> QueryPerformanceCounter = null;
+        public unsafe delegate* unmanaged<out UInt64, int> QueryPerformanceFrequency = null;  
+
+        public Commands3()
+        {
+           
+        }
+
+        public void Init()
+        {
+            var moduleKernel = NativeLibrary.Load("kernel32");
+
+            QueryPerformanceCounter = (delegate* unmanaged<out UInt64, int>) NativeLibrary.GetExport(moduleKernel, "QueryPerformanceCounter");
+            QueryPerformanceFrequency = (delegate* unmanaged<out UInt64, int>)NativeLibrary.GetExport(moduleKernel, "QueryPerformanceFrequency");
+        }
+
+        public bool Equals(Commands3 other) => false;
+        public override string ToString()  => string.Format($"Clock Commands" );
+	    public override int GetHashCode() => (int) 0;
+	    public override bool Equals(object? obj) => false;
+        public static bool operator ==(Commands3  left, Commands3 right) => left.Equals(right);
+	    public static bool operator !=(Commands3  left, Commands3  right) => !left.Equals(right);
+
+    }
+
     [SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack =4),SkipLocalsInit]
     public class TestInterop
     {
         Commands cmd ;
         Commands2 cmd2;
+        Commands3 cmd3;
 
 
-        [Params(10000, 100000)]
+        [Params(100_000, 1_000_000)]
         public int N;
 
         [GlobalSetup]
@@ -107,6 +137,10 @@ using System.Threading.Tasks;
             cmd2 = new();
 
             Function.Loader();
+
+            cmd3 = new();
+
+            cmd3.Init();
         }
 
 
@@ -131,6 +165,20 @@ using System.Threading.Tasks;
             for ( int i = 0 ; i < N ; i++)
             {
                 _= cmd2.QueryPerformanceCounter( out elpased);
+                previous -= elpased;
+
+            }
+        }
+
+        
+        [Benchmark]
+        public unsafe void Use_SimpleStruct()
+        {
+            ulong elpased = 0L;
+            ulong previous =0L;
+            for ( int i = 0 ; i < N ; i++)
+            {
+                _= cmd3.QueryPerformanceCounter( out elpased);
                 previous -= elpased;
 
             }

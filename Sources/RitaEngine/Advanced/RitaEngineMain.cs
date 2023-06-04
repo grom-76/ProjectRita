@@ -97,7 +97,7 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
             UpdateInputs();
 
             UpdateDraw();
-            // graphic.Draw();
+            graphic.Draw();
         }
     }
 

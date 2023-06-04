@@ -17,7 +17,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
     private GraphicDeviceFunction _device;
     private GraphicDeviceLoaderFunction _loader;
     private GraphicInstanceFunction _instance;
-    private GraphicDeviceData _data =new(); // inside => Instance Device Render Infos 
+    private GraphicDeviceData _data ; // inside => Instance Device Render Infos 
 
     public GraphicRenderConfig Render =new();
     public GraphicDeviceConfig Config = new();
@@ -28,7 +28,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
     public unsafe void Init(Window win )
     {
-       
+       _data = new();
         _data.vulkan = Libraries.Load( Config.VulkanDllName);
         _loader = new( Libraries.GetUnsafeSymbol, _data.vulkan);
 
@@ -116,6 +116,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
         CreateCommandPool(ref func,ref data);
         CreateCommandBuffer(ref func,ref data,ref pipeline);
+        
         data.RenderAreaOffset.x =0;
         data.RenderAreaOffset.y =0;       
         data.ClearColor = new(ColorHelper.ToRGBA( (uint)pipeline.BackColorARGB),00000.0f,0);
@@ -127,7 +128,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
     {
         Pause(ref func,ref data);
         
-        DisposeFrameBuffer(ref func,ref data);
+        // DisposeFrameBuffer(ref func,ref data);
         DisposePipeline(ref func,ref data);
         DisposeRenderPass(ref func,ref data);
         DisposeCommandPool(ref func,ref data);
@@ -423,15 +424,15 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         data.Infos.DeviceExtensions[propertyCount] = VK.VK_KHR_SWAPCHAIN_EXTENSION_NAME ;
         
 
-        fixed (VkPhysicalDeviceProperties* phd =   &data.Infos.PhysicalDeviceProperties){
-            func.vkGetPhysicalDeviceProperties(data.VkPhysicalDevice ,phd );
-        }
-        data.Infos.Limits = data.Infos.PhysicalDeviceProperties.limits;
+        // fixed (VkPhysicalDeviceProperties* phd =   &data.Infos.PhysicalDeviceProperties){
+        //     func.vkGetPhysicalDeviceProperties(data.VkPhysicalDevice ,phd );
+        // }
+        // data.Infos.Limits = data.Infos.PhysicalDeviceProperties.limits;
         
-        fixed ( VkPhysicalDeviceFeatures* features = &data.Infos.Features)
-        {
-            func.vkGetPhysicalDeviceFeatures(data.VkPhysicalDevice,features );
-        }
+        // fixed ( VkPhysicalDeviceFeatures* features = &data.Infos.Features)
+        // {
+        //     func.vkGetPhysicalDeviceFeatures(data.VkPhysicalDevice,features );
+        // }
             // DEVICE
             using var deviceExtensions = new StrArrayUnsafe(ref data.Infos.DeviceExtensions);
             VkDeviceCreateInfo createInfo = new(){

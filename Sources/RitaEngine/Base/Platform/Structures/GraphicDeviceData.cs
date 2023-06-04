@@ -3,7 +3,7 @@ namespace RitaEngine.Base.Platform.Structures;
 using RitaEngine.Base.Platform.API.Vulkan;
 
 [/*StructLayout(LayoutKind.Sequential, Pack = RitaEngine.Base.BaseHelper.FORCE_ALIGNEMENT),*/ SkipLocalsInit]
-public unsafe struct GraphicDeviceData : IEquatable<GraphicDeviceData>
+public struct GraphicDeviceData : IEquatable<GraphicDeviceData>
 {
     public GraphicDeviceCapabilities Infos=new();
     
@@ -14,6 +14,7 @@ public unsafe struct GraphicDeviceData : IEquatable<GraphicDeviceData>
     public VkSemaphore[] ImageAvailableSemaphores = new VkSemaphore[2];
     public VkSemaphore[] RenderFinishedSemaphores = new VkSemaphore[2];
     public VkFence[] InFlightFences = new VkFence[2];
+    public VkRenderPass VkRenderPass = VkRenderPass.Null;
 
     public VkInstance VkInstance = VkInstance.Null;
     public VkDebugUtilsMessengerEXT DebugMessenger = VkDebugUtilsMessengerEXT.Null;
@@ -23,7 +24,7 @@ public unsafe struct GraphicDeviceData : IEquatable<GraphicDeviceData>
     public VkQueue VkPresentQueue = VkQueue.Null;// used for draw 
     public VkQueue VkGraphicQueue = VkQueue.Null;// used for draw
     public VkSwapchainKHR VkSwapChain = VkSwapchainKHR.Null ;
-    public VkRenderPass VkRenderPass = VkRenderPass.Null;
+    
     public VkCommandPool VkCommandPool = VkCommandPool.Null;// not used for draw but importante??? only need to create command buffer 
     public VkPipelineLayout VkpipelineLayout = VkPipelineLayout.Null;
     public VkPipeline VkGraphicsPipeline = VkPipeline.Null;
@@ -42,10 +43,19 @@ public unsafe struct GraphicDeviceData : IEquatable<GraphicDeviceData>
     public int MAX_FRAMES_IN_FLIGHT =2;
     public bool VertexOutsideShader = false;
 
-    public GraphicDeviceData() {_address = AddressOfPtrThis( ) ;}
+    public GraphicDeviceData()
+    {
+        _address = AddressOfPtrThis( ) ;
+        var sizeEmpty = Unsafe.SizeOf<GraphicDeviceCapabilities>();
+        var size =  Marshal.SizeOf(this);
+        Log.Info($"Create Graphic Device DATA => size : {sizeEmpty}, {size } {_address:X}");
+    }
     
     public void Release()
     {
+        var sizeEmpty = Unsafe.SizeOf<GraphicDeviceCapabilities>();
+        var size =  Marshal.SizeOf(this);
+        Log.Info($"Release Graphic Device DATA => size : {sizeEmpty}, {size } {AddressOfPtrThis( ):X}");
         VkFramebuffers = null!;
         VkImages = null!;
         VkSwapChainImageViews = null!;
@@ -53,6 +63,7 @@ public unsafe struct GraphicDeviceData : IEquatable<GraphicDeviceData>
         ImageAvailableSemaphores = null!;
         RenderFinishedSemaphores = null!;
         InFlightFences = null!;
+        Infos.Release();
     }
 
     public unsafe nint AddressOfPtrThis( ) { 

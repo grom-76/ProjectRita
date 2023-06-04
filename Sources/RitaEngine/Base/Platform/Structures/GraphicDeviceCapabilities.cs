@@ -4,10 +4,19 @@ using System.Collections.Generic;
 using RitaEngine.Base.Platform.API.Vulkan;
 
 [ SkipLocalsInit]
-public unsafe struct GraphicDeviceCapabilities : IEquatable<GraphicDeviceCapabilities>
+public struct GraphicDeviceCapabilities : IEquatable<GraphicDeviceCapabilities>
 {
-    public VkPhysicalDeviceProperties PhysicalDeviceProperties = new();
-    private nint _address = nint.Zero;
+    // public VkPhysicalDeviceProperties PhysicalDeviceProperties = new();
+     #region VKDeivce
+    public VkSurfaceCapabilitiesKHR Capabilities;
+    public VkSurfaceFormatKHR[] Formats= null!;
+    public VkPresentModeKHR[] PresentModes = null!;
+    public VkPhysicalDeviceFeatures Features = new();
+    public VkPhysicalDeviceLimits Limits = new();
+    
+
+    #endregion
+    
     public string[] ValidationLayers = null!;
     public string[] InstanceExtensions = null!;      
     public string[] DeviceExtensions = null!;
@@ -17,33 +26,36 @@ public unsafe struct GraphicDeviceCapabilities : IEquatable<GraphicDeviceCapabil
     public uint VkVersion =0;
 
     #region Surface
-    public void* Handle =(void*)0;
-    public void* HInstance =(void*)0;
+    public unsafe void* Handle =(void*)0;
+    public unsafe void* HInstance =(void*)0;
     public int Width =1280;
     public int Height = 720;
 
     #endregion
 
- 
+    private nint _address = nint.Zero;
 
-    #region VKDeivce
-    public VkSurfaceCapabilitiesKHR Capabilities;
-    public VkSurfaceFormatKHR[] Formats= null!;
-    public VkPresentModeKHR[] PresentModes = null!;
-    public VkPhysicalDeviceFeatures Features = new();
-    public VkPhysicalDeviceLimits Limits = new();
-    
-
-    #endregion
-    public GraphicDeviceCapabilities() { _address = AddressOfPtrThis( ) ;
-        PhysicalDeviceProperties.sparseProperties = new();
-        PhysicalDeviceProperties.limits = new();
+   
+    public GraphicDeviceCapabilities() 
+    { 
+        var sizeEmpty = Unsafe.SizeOf<GraphicDeviceCapabilities>();
+        var size =  Marshal.SizeOf(this);
+         _address = AddressOfPtrThis( ) ;
+        Log.Info($"Create Graphic Device Capabilities => size : {sizeEmpty}, {size } {_address:X} ");
+       
+        // PhysicalDeviceProperties.sparseProperties = new();
+        // PhysicalDeviceProperties.limits = new();
     }
     public void Release()
     {
+        var sizeEmpty = Unsafe.SizeOf<GraphicDeviceCapabilities>();
+        var size =  Marshal.SizeOf(this);
+        Log.Info($"Release Graphic Device Capabilities => size : {sizeEmpty}, {size } {AddressOfPtrThis( ):X}");
         DeviceExtensions = null!;
         ValidationLayers = null!;
         InstanceExtensions = null!;
+        Formats= null!;
+        PresentModes = null!;
     }
 
      public unsafe nint AddressOfPtrThis( ) { 
