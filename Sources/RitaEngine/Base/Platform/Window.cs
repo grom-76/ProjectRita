@@ -42,6 +42,7 @@ public struct Window : IEquatable<Window>
         _data.WndProc = this.WndProc2;
         // _data.Style =  Constants.WS_CAPTION | Constants.WS_SYSMENU /*| Constants.WS_VISIBLE */| Constants.WS_THICKFRAME;
         MonitorsInfo( ref _data , ref _funcs);
+        
         Create(ref _data, ref _funcs , Config);
         //Logically Here Dispose COnfig don''t need anywhere 
 
@@ -198,6 +199,8 @@ private static bool Focused = false;
         var EngineNameChars = Encoding.UTF8.GetBytes(RitaEngine.Base.BaseHelper.ENGINE_NAME);
         data.Title =Encoding.UTF8.GetBytes(config.Title);
 
+        AdjustSize(ref data ,ref funcs);
+
         WNDCLASSEXA wcex = new ();
         wcex.cbSize = (uint)Marshal.SizeOf( wcex) ;
         wcex.style = Constants.CS_OWNDC  | Constants.CS_HREDRAW | Constants.CS_VREDRAW ;//CS_HREDRAW | CS_VREDRAW | CS_OWNDC
@@ -255,26 +258,32 @@ private static bool Focused = false;
         //  If the function fails, the return value is zero. The function fails if iDevNum is greater than the largest device index
         //  This setting is the screen DPI, or dots per inch.
         // 
-        /* GET SCALING FACTOR 
-            int LogicalScreenHeight = GetDeviceCaps( GetDC(hwnd), (int)DeviceCap.VERTRES  10) ;
-            int PhysicalScreenHeight = GetDeviceCaps( GetDc(hwnd), (int)DeviceCap.DESKTOPVERTRES 117 ); 
+        //  GET SCALING FACTOR 
+            var hdc =  funcs.GetDC(null) ;   
+            int LogicalScreenHeight = funcs.GetDeviceCaps( hdc, (int)DEVICE_CAP.VERTRES  ) ;
+            int PhysicalScreenHeight = funcs.GetDeviceCaps( hdc, (int)DEVICE_CAP.DESKTOPVERTRES  ); 
+            int LogicalScreenWidth = funcs.GetDeviceCaps( hdc, (int)DEVICE_CAP.HORZRES  ) ;
+            int PhysicalScreenWidth = funcs.GetDeviceCaps( hdc, (int)DEVICE_CAP.DESKTOPHORZRES  ); 
+            
             float ScreenScalingFactor = (float)PhysicalScreenHeight / (float)LogicalScreenHeight;
-            ScreenScalingFactor; // 1.25 = 125%
-            int Xdpi = GetDeviceCaps(desktop, (int)DeviceCap.LOGPIXELSX 88);
-            int Ydpi = GetDeviceCaps(desktop, (int)DeviceCap.LOGPIXELSY 90);    
-        */
+            int Xdpi = funcs.GetDeviceCaps(hdc, (int)DEVICE_CAP.LOGPIXELSX );
+            int Ydpi = funcs.GetDeviceCaps(hdc, (int)DEVICE_CAP.LOGPIXELSY );    
+        
+            funcs.ReleaseDC(null, hdc);
+            // ScreenScalingFactor; // 1.25 = 125%
+            
     }
-    private static void MonitorInit(ref WindowData data ,ref WindowFunction funcs)
+    private unsafe  static void AdjustSize(ref WindowData data ,ref WindowFunction funcs)
     {
-    #if WIN
+    #if WIN64
 
-//         Win32.RECT rect = new((int)data.left, (int)data.top,  (int)(data.Width + data.left) ,(int)(data.Height + data.top) );
+        RECT rect = new((int)data.Left, (int)data.Top,  (int)(data.Width + data.Left) ,(int)(data.Height + data.Top) );
         
-//         _= Win32.AdjustWindowRect(&rect,data._style,0);
+        _= funcs.AdjustWindowRect(&rect,data.Style,0);
         
-//         data.Width = (rect.Right - rect.Left);
-//         data.Height = (rect.Bottom - rect.Top);
-//         Log.Info($"Adjust Win RECT [Width={ data.Width},Height={ data.Height}, top= { data.top}left={ data.left}, style { config.Style}]");
+        data.Width = (rect.Right - rect.Left);
+        data.Height = (rect.Bottom - rect.Top);
+        Log.Info($"Adjust Win RECT [Width={ data.Width},Height={ data.Height}, top= { data.Top}left={ data.Left}, style { data.Style}]");
 
     #else
     
