@@ -11,7 +11,14 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
     #region PUBLIC ACCESS 
 
     /// <summary> Ctor Empty for settings game use each instance </summary>
-    public RitaEngineMain() {     }
+    public RitaEngineMain()
+    {     
+        graphicDeviceConfig = new();
+        graphicRenderConfig = new();
+        graphicDeviceData = new();
+
+        graphic = new( graphicDeviceConfig , graphicRenderConfig , graphicDeviceData );
+    }
     
     /// <summary>  Just Run  with try catch  </summary>
     public void Run()
@@ -65,7 +72,7 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
     {
         Load();   
         // USe Resource MAnager Here in Release Mode
-        graphic.BuildRender();
+        // graphic.BuildRender();
        
     }
 
@@ -87,8 +94,8 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
             #if !DEBUG
             if (!win.IsForeGround())
             {
-                clock.Pause();
-                graphic.Pause();
+                // clock.Pause();
+                // graphic.Pause();
                 continue;
             }
             #endif
@@ -100,7 +107,7 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
             UpdateInputs();
 
             UpdateDraw();
-            graphic.Draw();
+            // graphic.Draw();
         }
     }
 
@@ -126,15 +133,19 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
     RitaEngine.Base.Platform.Window win = new();
     RitaEngine.Base.Platform.Inputs input = new();
     RitaEngine.Base.Platform.AudioDevice audio = new();
-    RitaEngine.Base.Platform.GraphicDevice graphic = new();
+    RitaEngine.Base.Platform.GraphicDevice graphic ;
+    RitaEngine.Base.Platform.Config.GraphicDeviceConfig graphicDeviceConfig;
+    RitaEngine.Base.Platform.Config.GraphicRenderConfig graphicRenderConfig;
+    RitaEngine.Base.Platform.Structures.GraphicDeviceData graphicDeviceData;
+    
     private bool _disposed = false ;
 
     #endregion
 
-    public ref RitaEngine.Base.Platform.Clock Clock => ref clock;
-    public ref RitaEngine.Base.Platform.Window Window => ref win;
-    public ref RitaEngine.Base.Platform.Inputs Input => ref input;
-    public ref RitaEngine.Base.Platform.AudioDevice AudioDevice => ref  audio;
+    public ref readonly RitaEngine.Base.Platform.Clock Clock => ref clock;
+    public ref readonly RitaEngine.Base.Platform.Window Window => ref win;
+    public ref readonly RitaEngine.Base.Platform.Inputs Input => ref input;
+    public ref readonly RitaEngine.Base.Platform.AudioDevice AudioDevice => ref  audio;
     public ref RitaEngine.Base.Platform.GraphicDevice GraphicDevice => ref graphic;
 
 
