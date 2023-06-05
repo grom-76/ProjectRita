@@ -89,6 +89,7 @@ public static class Constants
         SW_SHOWMAXIMIZED =3, SW_MAXIMIZE =3, SW_SHOWNOACTIVATE=4, SW_SHOW=5, SW_MINIMIZE=6,
         SW_SHOWMINNOACTIVE=7, SW_SHOWNA =8, SW_RESTORE=9, SW_SHOWDEFAULT=10,  SW_FORCEMINIMIZE=11;
 
+    public const  uint WM_INPUT =  0x00FF;
     public const uint WM_ACTIVATE           = 0x0006;
     public const uint WM_ACTIVATEAPP        = 0x001C;
     public const uint WM_AFXFIRST           = 0x0360;

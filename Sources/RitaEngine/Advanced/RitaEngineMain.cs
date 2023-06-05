@@ -65,8 +65,8 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
     {
         Load();   
         // USe Resource MAnager Here in Release Mode
-        // graphic.BuildRender();
-        GraphicDevice.BuildRender();
+        graphic.BuildRender();
+       
     }
 
     private void InternalWarmUp()
@@ -81,11 +81,12 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
        
         while(win.ShouldClose())
         {
+          
             win.DispatchPending();
 
             #if !DEBUG
-            if (!win.IsForeGround){
-
+            if (!win.IsForeGround())
+            {
                 clock.Pause();
                 graphic.Pause();
                 continue;

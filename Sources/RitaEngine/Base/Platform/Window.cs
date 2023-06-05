@@ -39,7 +39,7 @@ public struct Window : IEquatable<Window>
         _data.Kernel = Libraries.Load( Config.System_KernelDllName );
         _data.Gdi =  Libraries.Load( Config.System_Gdi32DllName );
         _funcs = new(Libraries.GetUnsafeSymbol, _data.User32 , _data.Kernel, _data.Gdi);
-        _data.WndProc = this.WndProc;
+        _data.WndProc = this.WndProc2;
         // _data.Style =  Constants.WS_CAPTION | Constants.WS_SYSMENU /*| Constants.WS_VISIBLE */| Constants.WS_THICKFRAME;
         MonitorsInfo( ref _data , ref _funcs);
         Create(ref _data, ref _funcs , Config);
@@ -47,8 +47,8 @@ public struct Window : IEquatable<Window>
 
         Config.Dispose();
     }
-
-    public bool IsForeGround =>_data.IsFocused ;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool IsForeGround() {return Focused; } 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Show() => Show(ref _data , ref _funcs);
@@ -61,43 +61,129 @@ public struct Window : IEquatable<Window>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Release() => Release(ref _data , ref _funcs);
     
+private static bool Focused = false;
+
     #region STATIC IMPLEMENT
+    // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    // private unsafe nint WndProc( void* hWnd, uint message,  nuint wParam,  nint lParam)
+    // {
+    //     #if WIN64
+    //     switch (message)
+    //     {
+    //         // case Constants.WM_PAINT:
+    //         //     return (_funcs.DefWindowProcA(hWnd, message, wParam, lParam));
+    //         case Constants.WM_DESTROY:
+    //             return 0;
+    //         case Constants.WM_QUIT:
+    //             return 0;
+    //         case Constants.WM_CLOSE :
+    //             _funcs.PostQuitMessage(0);
+    //             _data.IsRun = false;
+    //             return 0;
+    //         // case Constants.WM_SIZE :
+    //         //     // Config.GraphicDevice.Surface.Height =  Utils.HIWORD(lParam);
+    //         //     // Config.GraphicDevice.Surface.Width =Utils.LOWORD(lParam);
+    //         //     // REGraphicDevice.ReCreateSwapChain( ref _data.GraphicDevice,(uint)Utils.LOWORD(lParam),(uint)Utils.HIWORD(lParam));
+    //         //      return (_funcs.DefWindowProcA(hWnd, message, wParam, lParam));
+    //         case Constants.WM_SETFOCUS :
+    //             Focused =true;
+    //              return (_funcs.DefWindowProcA(hWnd, message, wParam, lParam));
+    //         case Constants.WM_KILLFOCUS :
+    //             Focused = false;
+    //              return (_funcs.DefWindowProcA(hWnd, message, wParam, lParam));
+    //         default:
+    //             return (_funcs.DefWindowProcA(hWnd, message, wParam, lParam));
+    //     }
+    //     #elif LINUX64
+
+    //     #endif
+
+    // } 
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private unsafe nint WndProc( void* hWnd, uint message,  nuint wParam,  nint lParam)
-    {
-        #if WIN64
-        switch (message)
-        {
-            case Constants.WM_PAINT:
-                return 0;
-            case Constants.WM_DESTROY:
-                return 0;
-            case Constants.WM_QUIT:
-                return 0;
-            case Constants.WM_CLOSE :
-                _funcs.PostQuitMessage(0);
-                _data.IsRun = false;
-                return 0;
-            case Constants.WM_SIZE :
-                // Config.GraphicDevice.Surface.Height =  Utils.HIWORD(lParam);
-                // Config.GraphicDevice.Surface.Width =Utils.LOWORD(lParam);
-                // REGraphicDevice.ReCreateSwapChain( ref _data.GraphicDevice,(uint)Utils.LOWORD(lParam),(uint)Utils.HIWORD(lParam));
-                return 0;
-            case Constants.WM_SETFOCUS :
-                _data.IsFocused = true;
-                return (_funcs.DefWindowProcA(hWnd, message, wParam, lParam));
-            case Constants.WM_KILLFOCUS :
-                _data.IsFocused = false;
-                Log.Info("Loose Focus");
-                return (_funcs.DefWindowProcA(hWnd, message, wParam, lParam));
-            default:
-                return (_funcs.DefWindowProcA(hWnd, message, wParam, lParam));
-        }
-        #elif LINUX64
+    private unsafe nint WndProc2( void* hWnd, uint message,  nuint wParam,  nint lParam)
+		=>  message switch {
+			Constants.WM_QUIT  => Win32OnQuit(hWnd,message,wParam,lParam),//QUIT
+			Constants.WM_CLOSE => Win32OnClose(hWnd,message,wParam,lParam),//CLOSE
+			Constants.WM_DESTROY => Win32OnDestroy(hWnd,message,wParam,lParam),//DESTROy
+			Constants.WM_SETFOCUS => Win32OnSetFocus(hWnd,message,wParam,lParam),//SETFOCUS
+			Constants.WM_KILLFOCUS => Win32OnKillFocus(hWnd,message,wParam,lParam),//KILLFOCUS
+			Constants.WM_SHOWWINDOW => Win32OnShowWindow(hWnd,message,wParam,lParam),//SHOWWINDOW
+			Constants.WM_LBUTTONDOWN or Constants.WM_RBUTTONDOWN or Constants.WM_MBUTTONDOWN or Constants.WM_XBUTTONDOWN or
+			Constants.WM_LBUTTONUP or Constants.WM_RBUTTONUP or Constants.WM_MBUTTONUP or 
+			Constants.WM_XBUTTONUP => Win32OnMouseButtonClic(hWnd,message,wParam,lParam),
+			Constants.WM_KEYDOWN or  Constants.WM_SYSKEYDOWN or Constants.WM_KEYUP or
+			Constants.WM_SYSKEYUP=> Win32OnKeyPress(hWnd,message,wParam,lParam),
+			Constants.WM_INPUT=> Win32OnInput(hWnd,message,wParam,lParam),
+			Constants.WM_SIZE => Win32OnSize(hWnd,message,wParam,lParam),
+			_=> _funcs.DefWindowProcA(hWnd, message, wParam, lParam)
+		};
 
-        #endif
+	private unsafe nint Win32OnSize(void* hWnd, uint message, nuint wParam, nint lParam)
+	{
+		// OnSize(wParam,lParam);
+		return _funcs.DefWindowProcA(hWnd, message, wParam, lParam);
+	}
 
-    } 
+	private  unsafe nint Win32OnInput(void* hWnd, uint message, nuint wParam, nint lParam)
+	{
+		// OnInput(wParam,lParam);
+		return _funcs.DefWindowProcA(hWnd, message, wParam, lParam);
+	}
+	private  unsafe nint Win32OnKeyPress(void* hWnd, uint message, nuint wParam, nint lParam)
+	{
+		// OnKeyPress(wParam,lParam);
+		return _funcs.DefWindowProcA(hWnd, message, wParam, lParam);
+	}
+	private  unsafe nint Win32OnMouseButtonClic(void* hWnd, uint message, nuint wParam, nint lParam)
+	{
+		// OnMouseButtonClic!(wParam,lParam);
+		return _funcs.DefWindowProcA(hWnd, message, wParam, lParam);
+	}
+	private   unsafe nint Win32OnQuit(void* hWnd, uint message, nuint wParam, nint lParam)
+	{
+		// OnQuit!(wParam,lParam);
+		return _funcs.DefWindowProcA(hWnd, message, wParam, lParam);
+	}
+
+	private  unsafe nint Win32OnShowWindow(void* hWnd, uint message, nuint wParam, nint lParam)
+	{
+		// OnShowWindow!(wParam,lParam);
+		return _funcs.DefWindowProcA(hWnd, message, wParam, lParam);
+	}
+
+	private  unsafe nint Win32OnSetFocus(void* hWnd, uint message, nuint wParam, nint lParam)
+	{
+        Focused =true;
+		// OnSetFocus!(wParam,lParam);
+		// _isfocused =false;
+		return _funcs.DefWindowProcA(hWnd, message, wParam, lParam);
+	}
+
+	private  unsafe nint Win32OnKillFocus(void* hWnd, uint message, nuint wParam, nint lParam)
+	{
+        Focused = false;
+		// OnKillFocus!(wParam,lParam);
+		// _isfocused = false;
+		return _funcs.DefWindowProcA(hWnd, message, wParam, lParam);
+	}
+
+	private  unsafe nint Win32OnDestroy(void* hWnd, uint message, nuint wParam, nint lParam)
+	{
+		_=hWnd;_=message;
+		// OnDestroy!(wParam,lParam);
+		_funcs.PostQuitMessage(0);
+		return nint.Zero;
+	}
+
+	private  unsafe nint Win32OnClose(void* hWnd, uint message, nuint wParam, nint lParam)
+	{
+		_=hWnd;_=message;
+		// OnClose!(wParam,lParam);
+        _data.IsRun = false;
+		_funcs.PostQuitMessage(0);
+		return nint.Zero;
+	}
 
     private unsafe static int Create(ref WindowData data ,ref WindowFunction funcs,  in Config.WindowConfig config)
     {
@@ -325,12 +411,25 @@ if (uMsg == m_ShowStageMessage) {
     {
         #if WIN64
 
+        // fixed (MSG* msg = &data.Msg){
+        //     data.IsRun = funcs.GetMessageA(msg, null, 0,  0)>0;
+        //     
+        //     _=funcs.TranslateMessage(msg);
+        //     _=funcs.DispatchMessageA(msg);
+        // } 
+
         fixed (MSG* msg = &data.Msg){
-            data.IsRun = funcs.GetMessageA(msg, null, 0,  0)>0;
+            while( funcs.PeekMessageA(msg,null,0,0,1) > 0 )  
+            {
+                data.IsRun =  msg->message != Constants. WM_QUIT ;
+                _=funcs.TranslateMessage(msg);
+                _=funcs.DispatchMessageA(msg);
+            }
+            // data.IsRun = funcs.GetMessageA(msg, null, 0,  0)>0;
             // data.IsRun = msg.Message == WM.QUIT;
-            _=funcs.TranslateMessage(msg);
-            _=funcs.DispatchMessageA(msg);
+            
         } 
+
 
         #else
 

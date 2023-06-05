@@ -20,8 +20,6 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
     private GraphicInstanceFunction _instance = new();
     private GraphicDeviceData _data=new() ; // inside => Instance Device Render Infos 
 
-
-
     public GraphicRenderConfig Render =new();
     public GraphicDeviceConfig Config = new();
     public GraphicDeviceCapabilities Infos=new();
