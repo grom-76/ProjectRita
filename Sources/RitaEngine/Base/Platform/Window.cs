@@ -143,7 +143,7 @@ private static bool Focused = false;
 	private   unsafe nint Win32OnQuit(void* hWnd, uint message, nuint wParam, nint lParam)
 	{
 		// OnQuit!(wParam,lParam);
-		return _funcs.DefWindowProcA(hWnd, message, wParam, lParam);
+		return 0;
 	}
 
 	private  unsafe nint Win32OnShowWindow(void* hWnd, uint message, nuint wParam, nint lParam)
@@ -172,6 +172,7 @@ private static bool Focused = false;
 	{
 		_=hWnd;_=message;
 		// OnDestroy!(wParam,lParam);
+        _data.IsRun = false;
 		_funcs.PostQuitMessage(0);
 		return nint.Zero;
 	}
