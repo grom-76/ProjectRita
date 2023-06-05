@@ -5,7 +5,7 @@ using RitaEngine.Base.Platform.API.Vulkan;
 [/*StructLayout(LayoutKind.Sequential, Pack = RitaEngine.Base.BaseHelper.FORCE_ALIGNEMENT),*/ SkipLocalsInit]
 public struct GraphicDeviceData : IEquatable<GraphicDeviceData>
 {
-    public GraphicDeviceCapabilities Infos=new();
+    // public GraphicDeviceCapabilities Infos=new();
     
     public VkFramebuffer[] VkFramebuffers = new VkFramebuffer[3];//need for render => NEEDVALID SWAP CHAIN
     public VkCommandBuffer[] VkCommandBuffers = new VkCommandBuffer[3];// TODO same number than MAX FRAME FILGHT  TODO MAXFRAME FILGHT in settings ?  
@@ -36,7 +36,7 @@ public struct GraphicDeviceData : IEquatable<GraphicDeviceData>
     public VkRect2D Scissor = new();
     public VkFormat VkFormat = VkFormat.VK_FORMAT_UNDEFINED;
     public ulong tick_timeout = ulong.MaxValue;
-    public nint vulkan = nint.Zero;
+    
     private nint _address = nint.Zero;
     public uint VkGraphicFamilyIndice =0;
     public uint VkPresentFamilyIndice=0;
@@ -63,7 +63,7 @@ public struct GraphicDeviceData : IEquatable<GraphicDeviceData>
         ImageAvailableSemaphores = null!;
         RenderFinishedSemaphores = null!;
         InFlightFences = null!;
-        Infos.Release();
+        // Infos.Release();
     }
 
     public unsafe nint AddressOfPtrThis( ) { 

@@ -8,27 +8,34 @@ public unsafe delegate void* PFN_vkGetDeviceProcAddr(VkDevice module , string na
 
 
 [ StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
-public readonly struct GraphicDeviceLoaderFunction
+public /*readonly*/ struct GraphicDeviceLoaderFunction : IEquatable<GraphicDeviceLoaderFunction>
 {
-
     private  unsafe static delegate* unmanaged<VkInstance,byte*  , void*> FuncvkGetInstanceProcAddr =null;//)(VkInstance instance, byte* pName);
 	private  unsafe static delegate* unmanaged<VkDevice,byte*  , void*> FuncvkGetDeviceProcAddr = null;// typedef vkVoidFunction vkGetDeviceProcAddr)(VkDevice device, byte* pName);
 
-    public unsafe readonly delegate* unmanaged< UInt32*,VkLayerProperties*,VkResult > vkEnumerateInstanceLayerProperties = null;
-    public unsafe readonly delegate* unmanaged< UInt32*,VkResult > vkEnumerateInstanceVersion = null;
-    public unsafe readonly delegate* unmanaged< char*,UInt32*,VkExtensionProperties*,VkResult > vkEnumerateInstanceExtensionProperties = null;
-    public unsafe readonly delegate* unmanaged< VkInstanceCreateInfo*,VkAllocationCallbacks*,VkInstance*,VkResult > vkCreateInstance = null;
-    public unsafe readonly delegate* unmanaged< VkInstance,VkAllocationCallbacks*,void > vkDestroyInstance = null;
+    public unsafe /*readonly*/ delegate* unmanaged< UInt32*,VkLayerProperties*,VkResult > vkEnumerateInstanceLayerProperties = null;
+    public unsafe /*readonly*/ delegate* unmanaged< UInt32*,VkResult > vkEnumerateInstanceVersion = null;
+    public unsafe /*readonly*/ delegate* unmanaged< char*,UInt32*,VkExtensionProperties*,VkResult > vkEnumerateInstanceExtensionProperties = null;
+    public unsafe /*readonly*/ delegate* unmanaged< VkInstanceCreateInfo*,VkAllocationCallbacks*,VkInstance*,VkResult > vkCreateInstance = null;
+    public unsafe /*readonly*/ delegate* unmanaged< VkInstance,VkAllocationCallbacks*,void > vkDestroyInstance = null;
 
-    public unsafe GraphicDeviceLoaderFunction(PFN_GetSymbolPointer load, nint module  )
+    public nint vulkan = nint.Zero;
+    private nint _address = nint.Zero;
+
+    public unsafe GraphicDeviceLoaderFunction( ) {  _address = AddressOfPtrThis(); }
+
+    public unsafe void Init( string VulkanDLLName )
     {
-        vkEnumerateInstanceLayerProperties =(delegate* unmanaged< UInt32*,VkLayerProperties*,VkResult>) load( module,nameof(vkEnumerateInstanceLayerProperties)) ;
-        vkEnumerateInstanceVersion =  (delegate* unmanaged<UInt32*  , VkResult>)load( module,nameof(vkEnumerateInstanceVersion)) ;
-        vkEnumerateInstanceExtensionProperties = (delegate* unmanaged<char*,UInt32*,VkExtensionProperties*,VkResult>) load( module,nameof(vkEnumerateInstanceExtensionProperties)) ;
-        vkCreateInstance = (delegate* unmanaged<VkInstanceCreateInfo*,VkAllocationCallbacks*,VkInstance*  , VkResult> )load(module,nameof(vkCreateInstance));
-        vkDestroyInstance = (delegate* unmanaged<VkInstance  ,VkAllocationCallbacks*, void> ) load(module,nameof(vkDestroyInstance));
-        FuncvkGetInstanceProcAddr = (delegate* unmanaged<VkInstance,byte*  , void*>) load(module,nameof(vkGetInstanceProcAddr));
-        FuncvkGetDeviceProcAddr = ( delegate* unmanaged<VkDevice,byte*  , void*>) load(module,nameof(vkGetDeviceProcAddr));
+        vulkan = Libraries.Load(VulkanDLLName);
+        if ( vulkan == nint.Zero) throw new Exception("Vulkan Dll not found");
+
+        vkEnumerateInstanceLayerProperties =(delegate* unmanaged< UInt32*,VkLayerProperties*,VkResult>) Libraries.GetUnsafeSymbol( vulkan,nameof(vkEnumerateInstanceLayerProperties)) ;
+        vkEnumerateInstanceVersion =  (delegate* unmanaged<UInt32*  , VkResult>)Libraries.GetUnsafeSymbol(vulkan,nameof(vkEnumerateInstanceVersion)) ;
+        vkEnumerateInstanceExtensionProperties = (delegate* unmanaged<char*,UInt32*,VkExtensionProperties*,VkResult>)Libraries.GetUnsafeSymbol(vulkan,nameof(vkEnumerateInstanceExtensionProperties)) ;
+        vkCreateInstance = (delegate* unmanaged<VkInstanceCreateInfo*,VkAllocationCallbacks*,VkInstance*  , VkResult> )Libraries.GetUnsafeSymbol(vulkan,nameof(vkCreateInstance));
+        vkDestroyInstance = (delegate* unmanaged<VkInstance  ,VkAllocationCallbacks*, void> ) Libraries.GetUnsafeSymbol(vulkan,nameof(vkDestroyInstance));
+        FuncvkGetInstanceProcAddr = (delegate* unmanaged<VkInstance,byte*  , void*>) Libraries.GetUnsafeSymbol(vulkan,nameof(vkGetInstanceProcAddr));
+        FuncvkGetDeviceProcAddr = ( delegate* unmanaged<VkDevice,byte*  , void*>) Libraries.GetUnsafeSymbol(vulkan,nameof(vkGetDeviceProcAddr));
     }
 
     public unsafe static void* vkGetInstanceProcAddr(VkInstance instance, string name)
@@ -51,15 +58,25 @@ public readonly struct GraphicDeviceLoaderFunction
         return result;
     }
 
-        public unsafe nint AddressOfPtrThis( ){fixed (void* pointer = &this)  { return((nint) pointer ) ; }  }
+    public unsafe nint AddressOfPtrThis( ){fixed (void* pointer = &this)  { return((nint) pointer ) ; }  }
     #region OVERRIDE
     public override string ToString() => string.Format($"Vector" );
     public unsafe override int GetHashCode() => HashCode.Combine( ((nint)0).ToInt32()  ,  ((nint)0).ToInt32(),  ((nint)0).ToInt32(), ((nint)0).ToInt32() ) ;
     public override bool Equals(object? obj) => obj is GraphicDeviceLoaderFunction context && this.Equals(context) ;
-    public unsafe bool Equals(GraphicDeviceLoaderFunction? other)=> other is GraphicDeviceLoaderFunction input && ( ((nint)vkEnumerateInstanceLayerProperties).ToInt64()).Equals(((nint)input.vkEnumerateInstanceLayerProperties).ToInt64() );
+    public unsafe bool Equals(GraphicDeviceLoaderFunction other)=> other is GraphicDeviceLoaderFunction input && ( ((nint)vkEnumerateInstanceLayerProperties).ToInt64()).Equals(((nint)input.vkEnumerateInstanceLayerProperties).ToInt64() );
     public static bool operator ==(GraphicDeviceLoaderFunction  left, GraphicDeviceLoaderFunction right) => left.Equals(right);
     public static bool operator !=(GraphicDeviceLoaderFunction  left, GraphicDeviceLoaderFunction  right) => !left.Equals(right);
-    public void Dispose() {  }
+    public unsafe void Release() 
+    {  
+        Libraries.Unload(vulkan);
+        vkEnumerateInstanceLayerProperties =null;
+        vkEnumerateInstanceVersion =null;
+        vkEnumerateInstanceExtensionProperties =null;
+        vkCreateInstance =null;
+        vkDestroyInstance =null;
+        FuncvkGetInstanceProcAddr =null;
+        FuncvkGetDeviceProcAddr =null;
+    }
     #endregion
 }
 

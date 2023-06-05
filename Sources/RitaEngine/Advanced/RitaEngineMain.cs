@@ -53,9 +53,10 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
         Init();
         clock.Init();
         win.Init();
+        graphic.Init( win);
         input.Init( win);
         audio.Init();
-        graphic.Init( win);
+        
     }
 
   
@@ -64,7 +65,8 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
     {
         Load();   
         // USe Resource MAnager Here in Release Mode
-         GraphicDevice.BuildRender();
+        // graphic.BuildRender();
+        GraphicDevice.BuildRender();
     }
 
     private void InternalWarmUp()
@@ -128,11 +130,11 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
 
     #endregion
 
-    public ref readonly RitaEngine.Base.Platform.Clock Clock => ref clock;
-    public ref readonly RitaEngine.Base.Platform.Window Window => ref win;
-    public ref readonly RitaEngine.Base.Platform.Inputs Input => ref input;
-    public ref readonly RitaEngine.Base.Platform.AudioDevice AudioDevice => ref  audio;
-    public ref readonly RitaEngine.Base.Platform.GraphicDevice GraphicDevice => ref graphic;
+    public ref RitaEngine.Base.Platform.Clock Clock => ref clock;
+    public ref RitaEngine.Base.Platform.Window Window => ref win;
+    public ref RitaEngine.Base.Platform.Inputs Input => ref input;
+    public ref RitaEngine.Base.Platform.AudioDevice AudioDevice => ref  audio;
+    public ref RitaEngine.Base.Platform.GraphicDevice GraphicDevice => ref graphic;
 
 
     #region [ Abstract to override ]

@@ -14,13 +14,17 @@ using RitaEngine.Base.Strings;
 [SkipLocalsInit, StructLayout(LayoutKind.Sequential ,Pack =  BaseHelper.FORCE_ALIGNEMENT)]
 public struct GraphicDevice : IEquatable<GraphicDevice>
 {
-    private GraphicDeviceFunction _device;
-    private GraphicDeviceLoaderFunction _loader;
-    private GraphicInstanceFunction _instance;
-    private GraphicDeviceData _data ; // inside => Instance Device Render Infos 
+    
+    private GraphicDeviceFunction _device=new();
+    private GraphicDeviceLoaderFunction _loader= new();
+    private GraphicInstanceFunction _instance = new();
+    private GraphicDeviceData _data=new() ; // inside => Instance Device Render Infos 
+
+
 
     public GraphicRenderConfig Render =new();
     public GraphicDeviceConfig Config = new();
+    public GraphicDeviceCapabilities Infos=new();
 
     private nint _address = nint.Zero;
 
@@ -28,35 +32,33 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
     public unsafe void Init(Window win )
     {
-       _data = new();
-        _data.vulkan = Libraries.Load( Config.VulkanDllName);
-        _loader = new( Libraries.GetUnsafeSymbol, _data.vulkan);
+       _loader.Init( Config.VulkanDllName);
 
-        _data.Infos.GameName  = win.GetWindowName();
-        _data.Infos.Handle = win.GetWindowHandle();
-        _data.Infos.HInstance = win.GetWindowHInstance();
-        _data.Infos.Width = win.GetWindowWidth();
-        _data.Infos.Height = win.GetWindowheight();
-        _data.Infos.EnableDebug = Config.EnableDebugMode;
+        Infos.GameName  = win.GetWindowName();
+        Infos.Handle = win.GetWindowHandle();
+        Infos.HInstance = win.GetWindowHInstance();
+        Infos.Width = win.GetWindowWidth();
+        Infos.Height = win.GetWindowheight();
+        Infos.EnableDebug = Config.EnableDebugMode;
 // INstance App
-        CreateInstance(ref _loader,ref _data, out VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo);
+        CreateInstance(ref _loader,ref _data,ref Infos, out VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo);
 
-        _instance = new( GraphicDeviceLoaderFunction.vkGetInstanceProcAddr , _data.VkInstance);
+        _instance.Init( GraphicDeviceLoaderFunction.vkGetInstanceProcAddr , _data.VkInstance);
                 
-        SetupDebugMessenger(ref _instance, ref _data,ref debugCreateInfo);
+        SetupDebugMessenger(ref _instance, ref _data,ref Infos,ref debugCreateInfo);
 //DEVICE        
         
-        CreateSurface(ref _instance,ref _data);
+        CreateSurface(ref _instance,ref _data,ref Infos);
         
-        SelectPhysicalDevice(ref _instance ,ref _data );
-        CreateLogicalDevice(ref _instance ,ref _data  );
+        SelectPhysicalDevice(ref _instance ,ref _data, ref Infos);
+        CreateLogicalDevice(ref _instance ,ref _data, ref Infos  );
 
-        _device = new( GraphicDeviceLoaderFunction.vkGetDeviceProcAddr ,_data.VkDevice);
+        _device.Init( GraphicDeviceLoaderFunction.vkGetDeviceProcAddr ,_data.VkDevice);
 
 //SWAP CHAIN
         
 
-        CreateSwapChain( ref _device , ref _data);
+        CreateSwapChain( ref _device , ref _data,ref Infos);
         CreateImageViews( ref _device , ref _data );
        
         _data.MAX_FRAMES_IN_FLIGHT = Render.MAX_FRAMES_IN_FLIGHT;// only need this config
@@ -88,8 +90,10 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         DisposeSurface(ref _instance, ref _data);
         DisposeDebug(ref _instance,ref _data);
         DisposeInstance(ref _loader,ref _data);
-        Libraries.Unload(_data.vulkan);
+       
         _data.Release();
+        _instance.Release();
+        _loader.Release();
     }
 
     
@@ -98,7 +102,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
     public void BuildRender() => BuildRender(ref _device, ref _data, ref Render);
 
-    public void Draw() => DrawPipeline(ref _device, ref _data);
+    public void Draw() => DrawPipeline(ref _device, ref _data,ref Infos);
    
     #region private PRUPOSE
 
@@ -134,7 +138,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         DisposeCommandPool(ref func,ref data);
     }
 
-    private unsafe static void ReCreateSwapChain(ref GraphicDeviceFunction func,ref GraphicDeviceData data)
+    private unsafe static void ReCreateSwapChain(ref GraphicDeviceFunction func,ref GraphicDeviceData data,ref GraphicDeviceCapabilities infos)
     {
         if ( data.VkDevice == VkDevice.Null)return ;
 
@@ -150,7 +154,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         DisposeSwapChain(ref func,ref data);
         DisposeFrameBuffer(ref func,ref data);
        
-        CreateSwapChain(ref func,ref data);
+        CreateSwapChain(ref func,ref data, ref infos);
         CreateImageViews(ref func, ref data);
         CreateFramebuffers(ref func,ref data);
     }
@@ -162,7 +166,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
     #region Instance
 
-    private unsafe static void CreateInstance(ref GraphicDeviceLoaderFunction func,ref GraphicDeviceData data , out VkDebugUtilsMessengerCreateInfoEXT  debugCreateInfo)
+    private unsafe static void CreateInstance(ref GraphicDeviceLoaderFunction func,ref GraphicDeviceData data ,ref GraphicDeviceCapabilities Infos, out VkDebugUtilsMessengerCreateInfoEXT  debugCreateInfo)
     {
         //Enumerate instance layer         
         uint layerCount = 0;
@@ -173,10 +177,10 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         VkLayerProperties* layerProperties = stackalloc VkLayerProperties[(int)layerCount];// ReadOnlySpan<VkLayerProperties> pp = stackalloc VkLayerProperties[(int)count];
         func.vkEnumerateInstanceLayerProperties(&layerCount, layerProperties).Check("Enumerate instance Layer list");
 
-        data.Infos.ValidationLayers = new  string[ layerCount ];
+        Infos.ValidationLayers = new  string[ layerCount ];
         for (int i = 0; i < layerCount; i++) {
             var length = Strings.StrHelper.Strlen( layerProperties[i].layerName );
-            data.Infos.ValidationLayers[i] = Encoding.UTF8.GetString(  layerProperties[i].layerName, (int) length );// new string(layerProperties[i].layerName); //Encoding.UTF8.GetString(  layerProperties[i].layerName, (int) length );
+            Infos.ValidationLayers[i] = Encoding.UTF8.GetString(  layerProperties[i].layerName, (int) length );// new string(layerProperties[i].layerName); //Encoding.UTF8.GetString(  layerProperties[i].layerName, (int) length );
         }
         // infos.ValidationLayers[layerCount] =  config.Instance.ValidationLayerExtensions[0] ;
         //--------------------------------------------------------------------
@@ -191,10 +195,10 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         VkExtensionProperties* props = stackalloc VkExtensionProperties[(int)extCount];
         func.vkEnumerateInstanceExtensionProperties(null, &extCount, props).Check( "Enumerate Extension Name List");
 
-        data.Infos.InstanceExtensions = new string[extCount ];
+        Infos.InstanceExtensions = new string[extCount ];
         for (int i = 0; i < extCount; i++){
             var length = Strings.StrHelper.Strlen( props[i].extensionName);
-            data.Infos.InstanceExtensions[i] =Encoding.UTF8.GetString(  props[i].extensionName, (int) length );// new string( props[i].extensionName) ;//Encoding.UTF8.GetString(  props[i].extensionName, (int) length );
+            Infos.InstanceExtensions[i] =Encoding.UTF8.GetString(  props[i].extensionName, (int) length );// new string( props[i].extensionName) ;//Encoding.UTF8.GetString(  props[i].extensionName, (int) length );
         }
         //--------------------CREATE INFO et POPULATE DEBUG------------------------------------------------
         debugCreateInfo = new();
@@ -206,7 +210,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
             debugCreateInfo.pUserData = null;
         //--------------------CREATE INFO et POPULATE DEBUG------------------------------------------------
         var EngineName = Encoding.UTF8.GetBytes(RitaEngine.Base.BaseHelper.ENGINE_NAME);// RitaEngine.Base.BaseHelper.ENGINE_NAME.ToCharArray();//Encoding.UTF8.GetBytes(RitaEngine.Device.RitaEngineDeviceConfig.EngineName);
-        // var GameName = Encoding.UTF8.GetBytes(data.Infos.GameName);// data.Infos.GameName;//
+        // var GameName = Encoding.UTF8.GetBytes(Infos.GameName);// Infos.GameName;//
         VkApplicationInfo appInfo=new();
             appInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_APPLICATION_INFO;
             appInfo.apiVersion = VK.VK_API_VERSION_1_3; //ver;
@@ -214,26 +218,26 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
             appInfo.engineVersion= VK.VK_MAKE_VERSION(1,0,0);
             appInfo.pNext =null;
 
-        fixed(byte* ptr = &EngineName[0] ,  app = &data.Infos.GameName[0] ) {
+        fixed(byte* ptr = &EngineName[0] ,  app = &Infos.GameName[0] ) {
             appInfo.pApplicationName =app;
             appInfo.pEngineName = ptr;
         }
 
-        using var extNames = new RitaEngine.Base.Strings.StrArrayUnsafe(ref data.Infos.InstanceExtensions) ;
-        using var layerNames = new RitaEngine.Base.Strings.StrArrayUnsafe(ref data.Infos.ValidationLayers);
+        using var extNames = new RitaEngine.Base.Strings.StrArrayUnsafe(ref Infos.InstanceExtensions) ;
+        using var layerNames = new RitaEngine.Base.Strings.StrArrayUnsafe(ref Infos.ValidationLayers);
 
         VkInstanceCreateInfo instanceCreateInfo = new();
             instanceCreateInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
             instanceCreateInfo.pApplicationInfo =&appInfo;
             fixed(VkDebugUtilsMessengerCreateInfoEXT* dbg =  &debugCreateInfo)
             {
-                instanceCreateInfo.pNext= !data.Infos.EnableDebug ? null :  dbg;
+                instanceCreateInfo.pNext= !Infos.EnableDebug ? null :  dbg;
             }
            
             instanceCreateInfo.ppEnabledExtensionNames = extNames;
             instanceCreateInfo.enabledExtensionCount =extNames.Count;
             
-            if ( data.Infos.EnableDebug)            {
+            if ( Infos.EnableDebug)            {
 
                 instanceCreateInfo.enabledLayerCount = layerNames.Count;
                 instanceCreateInfo.ppEnabledLayerNames = layerNames;
@@ -251,8 +255,8 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         // infos.VkInstanceAdress = data.VkInstance.ToString();
 
         VK.VK_KHR_swapchain=true;// //Special dont understand pour chage swapchain car nvidia n'a pas l'extension presente
-        VkHelper.ValidateExtensionsForLoad(ref data.Infos.InstanceExtensions,ver );
-        data.Infos.VkVersion = ver;
+        VkHelper.ValidateExtensionsForLoad(ref Infos.InstanceExtensions,ver );
+        Infos.VkVersion = ver;
     }
 
     private unsafe static void DisposeInstance(ref GraphicDeviceLoaderFunction func,ref GraphicDeviceData data)
@@ -270,9 +274,9 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
     #region Debug
 
-    private static unsafe void SetupDebugMessenger(ref GraphicInstanceFunction func,ref GraphicDeviceData data ,ref VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo)
+    private static unsafe void SetupDebugMessenger(ref GraphicInstanceFunction func,ref GraphicDeviceData data ,ref GraphicDeviceCapabilities Infos,ref VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo)
     {
-        if ( !data.Infos.EnableDebug  )return ;
+        if ( !Infos.EnableDebug  )return ;
         
         fixed (VkDebugUtilsMessengerCreateInfoEXT* dbgInfo =  &debugCreateInfo ){
             fixed(VkDebugUtilsMessengerEXT* dbg = &data.DebugMessenger ){
@@ -318,12 +322,12 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
     #region WSI  Window System Integration
     
-    private static unsafe void CreateSurface( ref GraphicInstanceFunction func,ref GraphicDeviceData data )
+    private static unsafe void CreateSurface( ref GraphicInstanceFunction func,ref GraphicDeviceData data ,ref GraphicDeviceCapabilities Infos)
     {
         #if WIN64
         VkWin32SurfaceCreateInfoKHR sci = default ;
-            sci .hinstance = data.Infos.HInstance;
-            sci .hwnd = data.Infos.Handle;
+            sci .hinstance = Infos.HInstance;
+            sci .hwnd = Infos.Handle;
             sci .pNext = null;
             sci .flags = 0;
             sci .sType = VkStructureType.VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
@@ -348,7 +352,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
     
     #region DEvice
 
-    private static unsafe void SelectPhysicalDevice( ref GraphicInstanceFunction func,ref GraphicDeviceData data )
+    private static unsafe void SelectPhysicalDevice( ref GraphicInstanceFunction func,ref GraphicDeviceData data ,ref GraphicDeviceCapabilities Infos)
     {
         //Find Queue Family and QueryChainsupport ????
         // (data.VkGraphicFamilyIndice,data.VkPresentFamilyIndice) = FindQueueFamilies(data.VkPhysicalDevice,data.VkSurface);
@@ -374,16 +378,16 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         }
 
         SwapChainSupportDetails swap = QuerySwapChainSupport( ref func , data.VkPhysicalDevice , data.VkSurface  );
-        data.Infos.Capabilities = swap.Capabilities;
-        data.Infos.PresentModes = swap.PresentModes.ToArray();
-        data.Infos.Formats = swap.Formats.ToArray(); 
+        Infos.Capabilities = swap.Capabilities;
+        Infos.PresentModes = swap.PresentModes.ToArray();
+        Infos.Formats = swap.Formats.ToArray(); 
 
         Guard.ThrowWhenConditionIsTrue( data.VkPhysicalDevice.IsNull , "Physical device is null ");
         // //FOR INFO .... bool in GraphicDeviceSettings.WithInfo       if ( !settings.Instance.GetDeviceInfo ) return;
         Log.Info($"Create Physical device {data.VkPhysicalDevice}");
     }
     
-    private static unsafe void CreateLogicalDevice(ref GraphicInstanceFunction func,ref GraphicDeviceData data )
+    private static unsafe void CreateLogicalDevice(ref GraphicInstanceFunction func,ref GraphicDeviceData data ,ref GraphicDeviceCapabilities Infos)
     {
         var (graphicsFamily, presentFamily) = FindQueueFamilies(ref func,data.VkPhysicalDevice, data.VkSurface);
         data.VkGraphicFamilyIndice = graphicsFamily;
@@ -415,37 +419,37 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         VkExtensionProperties* properties = stackalloc VkExtensionProperties[(int)propertyCount];  
         func.vkEnumerateDeviceExtensionProperties(data.VkPhysicalDevice, null, &propertyCount, properties).Check();
 
-        data.Infos.DeviceExtensions = new string[propertyCount + 1];
+        Infos.DeviceExtensions = new string[propertyCount + 1];
 
         for (int i = 0; i < propertyCount; i++){
             var length =  Strings.StrHelper.Strlen( properties[i].extensionName);
-            data.Infos.DeviceExtensions[i] = Encoding.UTF8.GetString( properties[i].extensionName, (int) length ); //new string(properties[i].extensionName); //
+            Infos.DeviceExtensions[i] = Encoding.UTF8.GetString( properties[i].extensionName, (int) length ); //new string(properties[i].extensionName); //
         }
-        data.Infos.DeviceExtensions[propertyCount] = VK.VK_KHR_SWAPCHAIN_EXTENSION_NAME ;
+        Infos.DeviceExtensions[propertyCount] = VK.VK_KHR_SWAPCHAIN_EXTENSION_NAME ;
         
 
-        // fixed (VkPhysicalDeviceProperties* phd =   &data.Infos.PhysicalDeviceProperties){
+        // fixed (VkPhysicalDeviceProperties* phd =   &Infos.PhysicalDeviceProperties){
         //     func.vkGetPhysicalDeviceProperties(data.VkPhysicalDevice ,phd );
         // }
-        // data.Infos.Limits = data.Infos.PhysicalDeviceProperties.limits;
+        // Infos.Limits = Infos.PhysicalDeviceProperties.limits;
         
-        // fixed ( VkPhysicalDeviceFeatures* features = &data.Infos.Features)
+        // fixed ( VkPhysicalDeviceFeatures* features = &Infos.Features)
         // {
         //     func.vkGetPhysicalDeviceFeatures(data.VkPhysicalDevice,features );
         // }
             // DEVICE
-            using var deviceExtensions = new StrArrayUnsafe(ref data.Infos.DeviceExtensions);
-            VkDeviceCreateInfo createInfo = new(){
-                sType =  VkStructureType.VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-                queueCreateInfoCount = (uint)queueCount,
-                pQueueCreateInfos = queueCreateInfos,
-                pEnabledFeatures = null,
-                enabledExtensionCount = (uint)deviceExtensions.Count,
-                ppEnabledExtensionNames = deviceExtensions,
-                pNext = null ,
-            };
-            using var layerNames = new RitaEngine.Base.Strings.StrArrayUnsafe(ref data.Infos.ValidationLayers);
-            if ( data.Infos.EnableDebug)
+            using var deviceExtensions = new StrArrayUnsafe(ref Infos.DeviceExtensions);
+            VkDeviceCreateInfo createInfo = default;
+                createInfo.sType =  VkStructureType.VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+                createInfo.queueCreateInfoCount = (uint)queueCount;
+                createInfo.pQueueCreateInfos = queueCreateInfos;
+                createInfo.pEnabledFeatures = null;
+                createInfo.enabledExtensionCount = (uint)deviceExtensions.Count;
+                createInfo.ppEnabledExtensionNames = deviceExtensions;
+                createInfo.pNext = null ;
+            
+            using var layerNames = new RitaEngine.Base.Strings.StrArrayUnsafe(ref Infos.ValidationLayers);
+            if ( Infos.EnableDebug)
             {
                 
                 createInfo.enabledLayerCount = layerNames.Count ;
@@ -461,7 +465,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
                 func.vkCreateDevice(data.VkPhysicalDevice, &createInfo, null, device).Check("Error creation vkDevice");
             }
        
-       VkHelper.ValidateExtensionsForLoad(ref data.Infos.DeviceExtensions,data.Infos.VkVersion );
+       VkHelper.ValidateExtensionsForLoad(ref Infos.DeviceExtensions,Infos.VkVersion );
 
        Log.Info($"Create Device :{data.VkDevice}");
 
@@ -615,22 +619,22 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
     #region SWAP CHAIN
     private static uint ClampUInt(uint value, uint min, uint max) =>value < min ? min : value > max ? max : value;
     
-    private static unsafe void CreateSwapChain(ref GraphicDeviceFunction func,ref GraphicDeviceData data )
+    private static unsafe void CreateSwapChain(ref GraphicDeviceFunction func,ref GraphicDeviceData data,ref GraphicDeviceCapabilities Infos)
     {
-        VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(data.Infos.Formats);
-        VkPresentModeKHR presentMode = ChooseSwapPresentMode(data.Infos.PresentModes);
+        VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(Infos.Formats);
+        VkPresentModeKHR presentMode = ChooseSwapPresentMode(Infos.PresentModes);
 
         // Choose Swap Extend
         //need surface ..........
 
         data.VkSurfaceArea = new VkExtent2D(){
-            width = ClampUInt( (uint)data.Infos.Width, data.Infos.Capabilities.minImageExtent.width, data.Infos.Capabilities.maxImageExtent.width),
-            height = ClampUInt( (uint)data.Infos.Height, data.Infos.Capabilities.minImageExtent.height, data.Infos.Capabilities.maxImageExtent.height),
+            width = ClampUInt( (uint)Infos.Width, Infos.Capabilities.minImageExtent.width, Infos.Capabilities.maxImageExtent.width),
+            height = ClampUInt( (uint)Infos.Height, Infos.Capabilities.minImageExtent.height, Infos.Capabilities.maxImageExtent.height),
         };
 
-        uint imageCount = data.Infos.Capabilities.minImageCount + 1;
-        if (data.Infos.Capabilities.maxImageCount > 0 && imageCount > data.Infos.Capabilities.maxImageCount) {
-            imageCount = data.Infos.Capabilities.maxImageCount;
+        uint imageCount = Infos.Capabilities.minImageCount + 1;
+        if (Infos.Capabilities.maxImageCount > 0 && imageCount > Infos.Capabilities.maxImageCount) {
+            imageCount = Infos.Capabilities.maxImageCount;
         }
 
         // (data.VkGraphicFamilyIndice,data.VkPresentFamilyIndice) = FindQueueFamilies(data.VkPhysicalDevice,data.VkSurface);
@@ -654,7 +658,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
                 createInfo.imageSharingMode = VkSharingMode.VK_SHARING_MODE_EXCLUSIVE;
             }
             
-            createInfo.preTransform = data.Infos.Capabilities.currentTransform;
+            createInfo.preTransform = Infos.Capabilities.currentTransform;
             createInfo.compositeAlpha = VkCompositeAlphaFlagBitsKHR.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
             createInfo.presentMode = presentMode;
             createInfo.clipped = VK.VK_TRUE;
@@ -690,7 +694,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         Log.Info($"Create {size} Image View use Format : {data.VkFormat}");
         for (int i = 0; i < size; i++)
         {
-            VkImageViewCreateInfo imageViewCreateInfo= new();//New<VkImageViewCreateInfo>();
+            VkImageViewCreateInfo imageViewCreateInfo= default;//New<VkImageViewCreateInfo>();
                 imageViewCreateInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO; //VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
                 imageViewCreateInfo.image = data.VkImages[i];
                 imageViewCreateInfo.viewType = VkImageViewType.VK_IMAGE_VIEW_TYPE_2D;// VK_IMAGE_VIEW_TYPE_2D ;//VkImageViewType.VK_IMAGE_VIEW_TYPE_2D;// VK_IMAGE_VIEW_TYPE_2D;
@@ -823,7 +827,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
     private static unsafe void CreateCommandPool(ref GraphicDeviceFunction func,ref GraphicDeviceData data  ) 
     {
         
-        VkCommandPoolCreateInfo poolInfo = new();
+        VkCommandPoolCreateInfo poolInfo = default;
             poolInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;//VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
             poolInfo.flags = (uint)VkCommandPoolCreateFlagBits.VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;// VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
             poolInfo.queueFamilyIndex =data.VkGraphicFamilyIndice;
@@ -839,7 +843,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
     {
         // data.VkCommandBuffers = new VkCommandBuffer[pipeline.MAX_FRAMES_IN_FLIGHT]; 
 
-        VkCommandBufferAllocateInfo allocInfo =new();// New<VkCommandBufferAllocateInfo>();
+        VkCommandBufferAllocateInfo allocInfo =default;// New<VkCommandBufferAllocateInfo>();
             allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
             allocInfo.commandPool = data.VkCommandPool;
             allocInfo.level = VkCommandBufferLevel.VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -1507,12 +1511,12 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         data.RenderFinishedSemaphores = new VkSemaphore[data.MAX_FRAMES_IN_FLIGHT];// renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
         data.InFlightFences = new VkFence[data.MAX_FRAMES_IN_FLIGHT];// inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
 
-        VkSemaphoreCreateInfo semaphoreInfo =new();// New<VkSemaphoreCreateInfo>();
+        VkSemaphoreCreateInfo semaphoreInfo =default;// New<VkSemaphoreCreateInfo>();
             semaphoreInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
             semaphoreInfo.flags =0;
             semaphoreInfo.pNext =null;
 
-        VkFenceCreateInfo fenceInfo= new();//New<VkFenceCreateInfo>();
+        VkFenceCreateInfo fenceInfo= default;//New<VkFenceCreateInfo>();
             fenceInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
             fenceInfo.flags = (uint)VkFenceCreateFlagBits.VK_FENCE_CREATE_SIGNALED_BIT;
 
@@ -1564,7 +1568,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
     private static unsafe void CreateRenderPass(ref GraphicDeviceFunction func,ref GraphicDeviceData data,ref GraphicRenderConfig pipeline) 
     {
         // COLOR 
-        VkAttachmentDescription colorAttachment =new();// New<VkAttachmentDescription>(); //new(){
+        VkAttachmentDescription colorAttachment =default;// New<VkAttachmentDescription>(); //new(){
             colorAttachment.format = data.VkFormat;
             colorAttachment.samples = VkSampleCountFlagBits.VK_SAMPLE_COUNT_1_BIT;
             colorAttachment.loadOp = VkAttachmentLoadOp.VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -1577,11 +1581,11 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
             colorAttachment.finalLayout = VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED;
 
         // POST PROCESSING       
-         VkAttachmentReference colorAttachmentRef = new();// New<VkAttachmentReference>();//new() {
+         VkAttachmentReference colorAttachmentRef = default;// New<VkAttachmentReference>();//new() {
             colorAttachmentRef.attachment = 0;
             colorAttachmentRef.layout =VkImageLayout. VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-        VkSubpassDescription subpass = new() ;//New<VkSubpassDescription>(); //new(){
+        VkSubpassDescription subpass = default ;//New<VkSubpassDescription>(); //new(){
             subpass.pipelineBindPoint = VkPipelineBindPoint. VK_PIPELINE_BIND_POINT_GRAPHICS;
             subpass.colorAttachmentCount = 1;
             subpass.pColorAttachments = &colorAttachmentRef;
@@ -1592,7 +1596,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
             // subpass.pPreserveAttachments = null;
             // subpass.preserveAttachmentCount=0;
 
-        VkSubpassDependency dependency =new(); //  New <VkSubpassDependency>();
+        VkSubpassDependency dependency =default; //  New <VkSubpassDependency>();
             dependency.srcSubpass = VK.VK_SUBPASS_EXTERNAL;
             dependency.dstSubpass = 0;
             dependency.srcStageMask = (uint)VkPipelineStageFlagBits. VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -1602,7 +1606,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
             dependency.dependencyFlags =0;
 
         //RENDER PASS 
-        VkRenderPassCreateInfo renderPassInfo = new();// New<VkRenderPassCreateInfo>();//new()
+        VkRenderPassCreateInfo renderPassInfo = default;// New<VkRenderPassCreateInfo>();//new()
             renderPassInfo.sType = VkStructureType. VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
             renderPassInfo.attachmentCount = 1;
             renderPassInfo.pAttachments = &colorAttachment;
@@ -1635,7 +1639,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
     {
         ReadOnlySpan<byte> span = File.ReadAllBytes( shaderfragmentfileSPV ).AsSpan();
          
-        VkShaderModuleCreateInfo createInfoFrag = new();
+        VkShaderModuleCreateInfo createInfoFrag =default;
             createInfoFrag.sType= VkStructureType.VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
             createInfoFrag.codeSize=(int)span.Length;
             createInfoFrag.pCode= (uint*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(span));
@@ -1650,7 +1654,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
     private unsafe static void Pipeline_CreateDescriptorSet(ref GraphicDeviceFunction func,ref GraphicDeviceData data  )
     {
          //UNFORM MVP 
-        VkPipelineLayoutCreateInfo pipelineLayoutInfo=new();
+        VkPipelineLayoutCreateInfo pipelineLayoutInfo=default;
             pipelineLayoutInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
             pipelineLayoutInfo.setLayoutCount = 0;            // Optionnel
             // fixed (VkDescriptorSetLayout* layout = &vk.descriptorSetLayout ){pipelineLayoutInfo.pSetLayouts = layout;}         // Optionnel
@@ -1702,7 +1706,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
         #region VERTEX BUFFER
 
-        VkPipelineVertexInputStateCreateInfo vertexInputInfo = new();
+        VkPipelineVertexInputStateCreateInfo vertexInputInfo =default;
         // if ( pipeline.VertexOutsideShader)
         // {
   
@@ -1747,7 +1751,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         #endregion
 
         #region INPUT ASSEMBLY
-        VkPipelineInputAssemblyStateCreateInfo inputAssembly= new();
+        VkPipelineInputAssemblyStateCreateInfo inputAssembly=default;
         inputAssembly.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
         inputAssembly.topology = VkPrimitiveTopology. VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         inputAssembly.primitiveRestartEnable = VK.VK_FALSE;
@@ -1757,7 +1761,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
         #region COLOR BLENDING
          //COLOR BLENDING
-        VkPipelineColorBlendAttachmentState colorBlendAttachment =new();//New<VkPipelineColorBlendAttachmentState>(); //default;//new ();// New<VkPipelineColorBlendAttachmentState>();
+        VkPipelineColorBlendAttachmentState colorBlendAttachment =default;//New<VkPipelineColorBlendAttachmentState>(); //default;//new ();// New<VkPipelineColorBlendAttachmentState>();
             colorBlendAttachment.colorWriteMask = (uint)(VkColorComponentFlagBits.VK_COLOR_COMPONENT_R_BIT | VkColorComponentFlagBits.VK_COLOR_COMPONENT_G_BIT | VkColorComponentFlagBits.VK_COLOR_COMPONENT_B_BIT | VkColorComponentFlagBits.VK_COLOR_COMPONENT_A_BIT);
             colorBlendAttachment.blendEnable = VK.VK_FALSE;
             // colorBlendAttachment.srcColorBlendFactor = VkBlendFactor.VK_BLEND_FACTOR_ZERO;
@@ -1767,7 +1771,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
             // colorBlendAttachment.dstAlphaBlendFactor =VkBlendFactor.VK_BLEND_FACTOR_ZERO;
             // colorBlendAttachment.dstColorBlendFactor =VkBlendFactor.VK_BLEND_FACTOR_ZERO;
         
-        VkPipelineColorBlendStateCreateInfo colorBlending=new();//New<VkPipelineColorBlendStateCreateInfo>();// default;//new ();//New<VkPipelineColorBlendStateCreateInfo>();
+        VkPipelineColorBlendStateCreateInfo colorBlending=default;//New<VkPipelineColorBlendStateCreateInfo>();// default;//new ();//New<VkPipelineColorBlendStateCreateInfo>();
             colorBlending.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
             colorBlending.logicOpEnable = VK.VK_FALSE;
             colorBlending.logicOp = VkLogicOp. VK_LOGIC_OP_COPY;
@@ -1791,14 +1795,14 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
             data.Viewport.minDepth = 0.0f;
             data.Viewport.maxDepth = 1.0f;
 
-        VkOffset2D offset = new();
-            offset.x = 0;
-            offset.y = 0;
-        // VkRect2D scissor = new();
+            VkOffset2D offset = default;
+                offset.x = 0;
+                offset.y = 0;
+
             data.Scissor.offset = offset;
             data.Scissor.extent = data.VkSurfaceArea;
 
-        VkPipelineViewportStateCreateInfo viewportState =new();
+        VkPipelineViewportStateCreateInfo viewportState =default;
             viewportState.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
             viewportState.viewportCount = 1;
             fixed( VkViewport* viewport = &data.Viewport){    viewportState.pViewports =viewport;    }
@@ -1809,7 +1813,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         #endregion
 
         #region  RASTERIZATION
-        VkPipelineRasterizationStateCreateInfo rasterizer =new();
+        VkPipelineRasterizationStateCreateInfo rasterizer =default;
             rasterizer.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
             rasterizer.rasterizerDiscardEnable = VK.VK_FALSE;
             rasterizer.polygonMode =VkPolygonMode. VK_POLYGON_MODE_FILL;
@@ -1827,7 +1831,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         #endregion
 
         #region MULTISAMPLING
-        VkPipelineMultisampleStateCreateInfo multisampling=new();
+        VkPipelineMultisampleStateCreateInfo multisampling=default;
             multisampling.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
             multisampling.sampleShadingEnable = VK.VK_FALSE;
             multisampling.rasterizationSamples =VkSampleCountFlagBits. VK_SAMPLE_COUNT_1_BIT;
@@ -1841,10 +1845,10 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         
         #region DEPTh & STENCIL
            //not used 
-        VkPipelineTessellationStateCreateInfo tessellationStateCreateInfo = new();
+        VkPipelineTessellationStateCreateInfo tessellationStateCreateInfo = default;
             tessellationStateCreateInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
 
-        VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo = new();
+        VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo = default;
             depthStencilStateCreateInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
         #endregion
         
@@ -1878,7 +1882,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
             dynamicStateCreateInfo.pDynamicStates = dynamicStates;
         #endregion
 
-        VkGraphicsPipelineCreateInfo pipelineInfo =new();
+        VkGraphicsPipelineCreateInfo pipelineInfo =default;
             pipelineInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
             pipelineInfo.flags = (uint)VkPipelineCreateFlagBits.VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT ;
 
@@ -1914,7 +1918,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         // vertentryPoint.Dispose();
     }
 
-    private static unsafe void RecordCommandBuffer(ref GraphicDeviceFunction func,ref GraphicDeviceData data, in VkCommandBuffer commandBuffer, uint imageIndex)
+    private static unsafe void RecordCommandBuffer(in GraphicDeviceFunction func,ref GraphicDeviceData data, in VkCommandBuffer commandBuffer, uint imageIndex)
     {
          //----------Début de l'enregistrement des commandes--------------------------------------------------       
         func.vkResetCommandBuffer(commandBuffer, /*VkCommandBufferResetFlagBits*/ 0);
@@ -2003,7 +2007,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
     private static int CurrentFrame =0;
 
     // [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private static unsafe  void DrawPipeline( ref GraphicDeviceFunction func, ref GraphicDeviceData data )
+    private static unsafe  void DrawPipeline(ref GraphicDeviceFunction func, ref GraphicDeviceData data,ref GraphicDeviceCapabilities infos )
     {
         uint imageIndex=0;
         VkFence CurrentinFlightFence = data.InFlightFences[/*data.*/CurrentFrame];
@@ -2021,7 +2025,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
         if ( result == VkResult.VK_ERROR_OUT_OF_DATE_KHR)
         {
-            ReCreateSwapChain(ref func,ref data);
+            ReCreateSwapChain( ref func,ref data,ref infos);
             // RecreatePipeline(ref data ,in pipeline);
             return ;
         }
@@ -2035,7 +2039,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         func.vkResetFences(data.VkDevice, 1, &CurrentinFlightFence);
 
         //----------Début de l'enregistrement des commandes--------------------------------------------------   
-        RecordCommandBuffer( ref func,ref data, in  commandBuffer, imageIndex);
+        RecordCommandBuffer(  func,ref data, in  commandBuffer, imageIndex);
         //----------Fin de l'enregistrement des commandes--------------------------------------------------    
 
 
@@ -2063,7 +2067,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
         if ( result == VkResult.VK_ERROR_OUT_OF_DATE_KHR || result == VkResult.VK_SUBOPTIMAL_KHR )
         {
-            ReCreateSwapChain(ref func,ref data);
+            ReCreateSwapChain(ref func,ref data,ref infos);
             //  RecreatePipeline(ref data ,in pipeline);
         }
         else if (result != VkResult.VK_SUCCESS )
