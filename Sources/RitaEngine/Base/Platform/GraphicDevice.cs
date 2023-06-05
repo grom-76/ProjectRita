@@ -18,15 +18,28 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
     private GraphicDeviceFunction _device=new();
     private GraphicDeviceLoaderFunction _loader= new();
     private GraphicInstanceFunction _instance = new();
-    private GraphicDeviceData _data=new() ; // inside => Instance Device Render Infos 
 
-    public GraphicRenderConfig Render =new();
-    public GraphicDeviceConfig Config = new();
+    private GraphicDeviceData _data; // inside => Instance Device Render Infos 
+    private GraphicRenderConfig _render ;
+    private GraphicDeviceConfig _config;
+    private GraphicDeviceCapabilities _infos;
+
     public GraphicDeviceCapabilities Infos=new();
 
     private nint _address = nint.Zero;
 
-    public GraphicDevice() {   _address= AddressOfPtrThis(); }
+
+    public GraphicDevice(in GraphicDeviceConfig Config,in GraphicRenderConfig render,in GraphicDeviceData data) 
+    {   
+        _address= AddressOfPtrThis(); 
+        _config = Config;
+        _render = render;
+        _data =  data;
+     
+    }
+
+    public  GraphicDeviceConfig Config =>  _config;
+    public GraphicRenderConfig Render  => _render;
 
     public unsafe void Init(Window win )
     {
@@ -59,7 +72,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         CreateSwapChain( ref _device , ref _data,ref Infos);
         CreateImageViews( ref _device , ref _data );
        
-        _data.MAX_FRAMES_IN_FLIGHT = Render.MAX_FRAMES_IN_FLIGHT;// only need this config
+        _data.MAX_FRAMES_IN_FLIGHT = _render.MAX_FRAMES_IN_FLIGHT;// only need this config
 
         CreateCommandPool(ref _device , ref _data);
 // DATA BARIERS SYNCHRO QUEUES        
@@ -98,7 +111,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
     public void Pause()=> Pause( ref _device , ref _data);
 
-    public void BuildRender() => BuildRender(ref _device, ref _data, ref Render);
+    public void BuildRender() => BuildRender(ref _device, ref _data, ref _render);
 
     public void Draw() => DrawPipeline(ref _device, ref _data,ref Infos);
    

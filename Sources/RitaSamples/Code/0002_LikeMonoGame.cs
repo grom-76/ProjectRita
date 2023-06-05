@@ -48,7 +48,7 @@ public static class Sample_0002
             GraphicDevice.Render.VertexEntryPoint ="main";
             GraphicDevice.Render.FragmentShaderFileNameSPV = path + "fragment_base.spv";
             GraphicDevice.Render.VertexShaderFileNameSPV = path + "vertex_base.spv";
-
+            GraphicDevice.BuildRender();
         }
 
         protected override void Release()
@@ -58,7 +58,7 @@ public static class Sample_0002
 
         protected override void UpdateDraw()
         {
-           
+           GraphicDevice.Draw();
         }
 
         protected override void UpdateInputs()
