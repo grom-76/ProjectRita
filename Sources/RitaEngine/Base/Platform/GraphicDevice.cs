@@ -9,6 +9,7 @@ using RitaEngine.Base.Platform.Structures;
 using RitaEngine.Base.Strings;
 using RitaEngine.Base.Math.Vertex;
 
+using VkDeviceSize = UInt64;
 /// <summary>
 /// 
 /// </summary>
@@ -946,15 +947,52 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 // // VERTEX BUFFER
     private unsafe static void CreateVertexBuffer(ref GraphicDeviceFunction func, ref GraphicDeviceData data ,ref GraphicRenderConfig pipeline) 
     {
-        if ( )
+        if (pipeline.IsStaging)
+        {
+            CreateVertexBufferWithStaging(ref func, ref data ,ref pipeline ) ;
+            return;
+        }
+
+    }
+
+    internal unsafe static void memcpy(void* a, void* b, ulong size)
+	{
+		var ap = (byte*)a;
+		var bp = (byte*)b;
+		for (ulong i = 0; i < size; ++i)
+			*ap++ = *bp++;
+	}
+
+    public unsafe static uint FindMemoryType(ref GraphicDeviceFunction func, ref GraphicDeviceData data , uint memoryTypeBits, VkMemoryPropertyFlagBits properties)
+    {
+        VkPhysicalDeviceMemoryProperties memoryProperties = new();
+            // memProperties.
+        func.vkGetPhysicalDeviceMemoryProperties(data.VkPhysicalDevice, &memoryProperties);
+
+
+        uint count = memoryProperties.memoryTypeCount;
+        for (uint i = 0; i < count; i++)
+        {
+            if ( (memoryTypeBits & 1) == 1 && (memoryProperties.memoryTypes[(int)i].propertyFlags & (uint)properties) == (uint)properties)
+            {
+                return i;
+            }
+            memoryTypeBits >>= 1;
+        }
+
+        return uint.MaxValue;
+    }
+
+    private unsafe static void CreateVertexBufferWithoutStaging(ref GraphicDeviceFunction func, ref GraphicDeviceData data ,ref GraphicRenderConfig pipeline ) 
+    {
+        
         VkBufferCreateInfo bufferInfo = default;
             bufferInfo.sType = VkStructureType. VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
             bufferInfo.size = (uint)(Marshal.SizeOf<Position2f_Color3f>() * pipeline.Vertices.Length);
             bufferInfo.usage = (uint)VkBufferUsageFlagBits. VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
             bufferInfo.sharingMode = VkSharingMode.VK_SHARING_MODE_EXCLUSIVE;
 
-        fixed(VkBuffer* buffer = &data.VertexBuffer)
-        {
+        fixed(VkBuffer* buffer = &data.VertexBuffer) {
             func.vkCreateBuffer( data.VkDevice, &bufferInfo, null, buffer).Check("failed to create vertex buffer!");
         }
         
@@ -987,128 +1025,106 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         func.vkUnmapMemory(data.VkDevice, data.VertexBufferMemory);
     }
 
-    internal unsafe static void memcpy(void* a, void* b, ulong size)
-	{
-		var ap = (byte*)a;
-		var bp = (byte*)b;
-		for (ulong i = 0; i < size; ++i)
-			*ap++ = *bp++;
-	}
-
-
-
-    public unsafe static uint FindMemoryType(ref GraphicDeviceFunction func, ref GraphicDeviceData data , uint memoryTypeBits, VkMemoryPropertyFlagBits properties)
+#region VERTEX BUFFER wITH STAGING
+    private unsafe static void CreateVertexBufferWithStaging(ref GraphicDeviceFunction func, ref GraphicDeviceData data ,ref GraphicRenderConfig pipeline ) 
     {
-        VkPhysicalDeviceMemoryProperties memoryProperties = new();
-            // memProperties.
-        func.vkGetPhysicalDeviceMemoryProperties(data.VkPhysicalDevice, &memoryProperties);
+        VkDeviceSize bufferSize = (uint)(Marshal.SizeOf<Position2f_Color3f>() * pipeline.Vertices.Length);
 
+        VkBuffer stagingBuffer = new();
+        VkDeviceMemory stagingBufferMemory = new();
+        
+        CreateStagingBuffer(ref func, ref data,bufferSize, 
+            VkBufferUsageFlagBits.VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
+            VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT 
+            | VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+            ref stagingBuffer, 
+            ref stagingBufferMemory);
+        
+        void* vertexdata;
 
-        uint count = memoryProperties.memoryTypeCount;
-        for (uint i = 0; i < count; i++)
-        {
-            if ( (memoryTypeBits & 1) == 1 && (memoryProperties.memoryTypes[(int)i].propertyFlags & (uint)properties) == (uint)properties)
-            {
-                return i;
-            }
-            memoryTypeBits >>= 1;
+        func.vkMapMemory(data.VkDevice, stagingBufferMemory, 0, bufferSize, 0, &vertexdata);
+        fixed (void* p = &pipeline.Vertices[0]){ 
+            memcpy(vertexdata, p,  bufferSize); 
         }
+        func.vkUnmapMemory(data.VkDevice, stagingBufferMemory);
 
-        return uint.MaxValue;
+        CreateStagingBuffer(ref func, ref data,bufferSize, 
+            VkBufferUsageFlagBits.VK_BUFFER_USAGE_TRANSFER_DST_BIT 
+            | VkBufferUsageFlagBits.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
+            VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
+            ref  data.VertexBuffer, 
+            ref data.VertexBufferMemory);
+
+        CopyStagingBuffer(ref func, ref data,stagingBuffer, data.VertexBuffer, bufferSize);
+
+        func.vkDestroyBuffer(data.VkDevice, stagingBuffer, null);
+        func.vkFreeMemory(data.VkDevice, stagingBufferMemory, null);
     }
-// // VERTEX BUFFER wITH STAGING
-//     private unsafe static void CreateVertexBufferWithStaging(ref GraphicDeviceStaticData vk, ref GraphicPipelineConfig gfx ) 
-//     {
-//         VkDeviceSize bufferSize = (uint)(Marshal.SizeOf<Vertex>() * gfx.vertices.Length);
 
-//         VkBuffer stagingBuffer = new();
-//         VkDeviceMemory stagingBufferMemory = new();
-//         CreateStagingBuffer(ref vk,bufferSize, 
-//             (uint)VkBufferUsageFlagBits.VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
-//             (uint)VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | (uint)VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-//             ref stagingBuffer, 
-//             ref stagingBufferMemory);
+    private unsafe static void CreateStagingBuffer(ref GraphicDeviceFunction func, ref GraphicDeviceData data ,VkDeviceSize size, VkBufferUsageFlagBits usage, 
+        VkMemoryPropertyFlagBits  properties,ref VkBuffer buffer,ref VkDeviceMemory bufferMemory) 
+    {
+        VkBufferCreateInfo bufferInfo =new();
+        bufferInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = size;
+        bufferInfo.usage = (uint)usage;
+        bufferInfo.sharingMode = VkSharingMode.VK_SHARING_MODE_EXCLUSIVE;
+
+        fixed(VkBuffer* buf =  &buffer){
+            func.vkCreateBuffer(data.VkDevice, &bufferInfo, null, buf).Check("failed to create vertex buffer!");
+        }
         
-//         void* data;
-//         vkMapMemory(vk._device, stagingBufferMemory, 0, bufferSize, 0, &data);
-//         fixed (void* p = &gfx.vertices[0]){ memcpy(data, p,  bufferSize); }  
-//         vkUnmapMemory(vk._device, stagingBufferMemory);
+        VkMemoryRequirements memRequirements = new();
+        func.vkGetBufferMemoryRequirements(data.VkDevice, buffer, &memRequirements);
 
-//         CreateStagingBuffer(ref vk,bufferSize, 
-//             (uint)VkBufferUsageFlagBits.VK_BUFFER_USAGE_TRANSFER_DST_BIT | (uint)VkBufferUsageFlagBits.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
-//             (uint)VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
-//             ref vk.vertexBuffer, 
-//             ref vk.vertexBufferMemory);
+        VkMemoryAllocateInfo allocInfo = new();
+            allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+            allocInfo.allocationSize = memRequirements.size;
+            allocInfo.memoryTypeIndex = FindMemoryType(ref func , ref data,memRequirements.memoryTypeBits, properties);
+            allocInfo.pNext = null;
 
-//         CopyStagingBuffer(ref vk,stagingBuffer, vk.vertexBuffer, bufferSize);
-
-//         vkDestroyBuffer(vk._device, stagingBuffer, null);
-//         vkFreeMemory(vk._device, stagingBufferMemory, null);
-//     }
-
-//     private unsafe static void CreateStagingBuffer(ref GraphicDeviceStaticData vk ,VkDeviceSize size, VkBufferUsageFlags usage, 
-//             VkMemoryPropertyFlags properties,ref VkBuffer buffer,ref VkDeviceMemory bufferMemory) 
-//     {
-//         VkBufferCreateInfo bufferInfo =new();
-//         bufferInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-//         bufferInfo.size = size;
-//         bufferInfo.usage = usage;
-//         bufferInfo.sharingMode = VkSharingMode.VK_SHARING_MODE_EXCLUSIVE;
-
-//         fixed(VkBuffer* buf =  &buffer){
-//             vkCreateBuffer(vk._device, &bufferInfo, null, buf).Check("failed to create vertex buffer!");
-//         }
+        fixed(VkDeviceMemory* memory =  &bufferMemory) {
+            func.vkAllocateMemory(data.VkDevice, &allocInfo, null, memory).Check("failed to allocate vertex buffer memory!");
+        }
         
-//         VkMemoryRequirements memRequirements = new();
-//         vkGetBufferMemoryRequirements(vk._device, buffer, &memRequirements);
+        func.vkBindBufferMemory(data.VkDevice, buffer, bufferMemory, 0);
+    }
 
-//         VkMemoryAllocateInfo allocInfo = new();
-//             allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-//             allocInfo.allocationSize = memRequirements.size;
-//             allocInfo.memoryTypeIndex = FindMemoryType(vk._physicalDevice,memRequirements.memoryTypeBits, properties);
-//             allocInfo.pNext = null;
+    private unsafe static void CopyStagingBuffer(ref GraphicDeviceFunction func, ref GraphicDeviceData data, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+    {
+        VkCommandBufferAllocateInfo allocInfo = new();
+            allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+            allocInfo.level = VkCommandBufferLevel.VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+            allocInfo.commandPool = data.VkCommandPool;
+            allocInfo.commandBufferCount = 1;
 
-//         fixed(VkDeviceMemory* memory =  &bufferMemory) {
-//             vkAllocateMemory(vk._device, &allocInfo, null, memory).Check("failed to allocate vertex buffer memory!");
-//         }
-        
-//         vkBindBufferMemory(vk._device, buffer, bufferMemory, 0);
-//     }
+        VkCommandBuffer commandBuffer;
+        func.vkAllocateCommandBuffers(data.VkDevice, &allocInfo, &commandBuffer);
 
-//     private unsafe static void CopyStagingBuffer(ref GraphicDeviceStaticData vk, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
-//     {
-//         VkCommandBufferAllocateInfo allocInfo = new();
-//             allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-//             allocInfo.level = VkCommandBufferLevel.VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-//             allocInfo.commandPool = vk._commandPool;
-//             allocInfo.commandBufferCount = 1;
+        VkCommandBufferBeginInfo beginInfo = new();
+            beginInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+            beginInfo.flags = (uint)VkCommandBufferUsageFlagBits.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-//         VkCommandBuffer commandBuffer;
-//         vkAllocateCommandBuffers(vk._device, &allocInfo, &commandBuffer);
+        func.vkBeginCommandBuffer(commandBuffer, &beginInfo);
 
-//         VkCommandBufferBeginInfo beginInfo = new();
-//             beginInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-//             beginInfo.flags = (uint)VkCommandBufferUsageFlagBits.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+            VkBufferCopy copyRegion = new();
+            copyRegion.size = size;
+            func.vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
-//         vkBeginCommandBuffer(commandBuffer, &beginInfo);
+        func.vkEndCommandBuffer(commandBuffer);
 
-//             VkBufferCopy copyRegion = new();
-//             copyRegion.size = size;
-//             vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+        VkSubmitInfo submitInfo = new();
+        submitInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &commandBuffer;
 
-//         vkEndCommandBuffer(commandBuffer);
+        func.vkQueueSubmit(data.VkGraphicQueue, 1, &submitInfo, VkFence.Null);
+        func.vkQueueWaitIdle(data.VkGraphicQueue);
 
-//         VkSubmitInfo submitInfo = new();
-//         submitInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_SUBMIT_INFO;
-//         submitInfo.commandBufferCount = 1;
-//         submitInfo.pCommandBuffers = &commandBuffer;
+        func.vkFreeCommandBuffers(data.VkDevice, data.VkCommandPool, 1, &commandBuffer);
+    }
 
-//         vkQueueSubmit(vk._graphicQueue, 1, &submitInfo, VkFence.Null);
-//         vkQueueWaitIdle(vk._graphicQueue);
-
-//         vkFreeCommandBuffers(vk._device, vk._commandPool, 1, &commandBuffer);
-//     }
-
+#endregion
 
 //     private unsafe static void CreateIndexBufferWithStaging(ref GraphicDeviceStaticData vk, ref GraphicPipelineConfig gfx ) 
 //     {
@@ -1139,24 +1155,10 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 //         vkFreeMemory(vk._device, stagingBufferMemory, null);
 //     }
 
-//     /// <summary>
-//     /// A tester ?
-//     /// </summary>
-//     /// <param name="device"></param>
-//     /// <param name="memory"></param>
-//     /// <param name="size"></param>
-//     /// <param name="src"></param>
-//     private unsafe static void CopyDataToGPU(VkDevice device, VkDeviceMemory memory, uint size, void* src )
-//     {
-//         void* data;
-//         vkMapMemory(device, memory, 0, size, 0, &data);
-//          memcpy(data, src,  size); 
-//         vkUnmapMemory(device, memory);
-
-//     }
     #endregion
 
      #region  Descirptor Set
+
      //     private unsafe static void CreateDescriptorSetLayout(ref GraphicDeviceStaticData vk,ref  GraphicPipelineConfig gfx) 
 //     {
 //         VkDescriptorSetLayoutBinding uboLayoutBinding = new();
