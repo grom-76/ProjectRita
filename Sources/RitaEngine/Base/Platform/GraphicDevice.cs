@@ -7,6 +7,7 @@ using RitaEngine.Base.Platform.Config;
 using RitaEngine.Base.Platform.API.Vulkan;
 using RitaEngine.Base.Platform.Structures;
 using RitaEngine.Base.Strings;
+using RitaEngine.Base.Math.Vertex;
 
 /// <summary>
 /// 
@@ -137,6 +138,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         data.RenderAreaOffset.y =0;       
         data.ClearColor = new(ColorHelper.ToRGBA( (uint)pipeline.BackColorARGB),00000.0f,0);
 
+        CreateVertexBuffer(ref func, ref data ,ref pipeline) ;
         CreatePipeline(ref func, ref data,ref pipeline );
     }
     
@@ -452,6 +454,8 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         Guard.ThrowWhenConditionIsTrue( data.VkPhysicalDevice.IsNull , "Physical device is null ");
         // //FOR INFO .... bool in GraphicDeviceSettings.WithInfo       if ( !settings.Instance.GetDeviceInfo ) return;
         Log.Info($"Create Physical device {data.VkPhysicalDevice}");
+
+        // GetWSIInformations( ref func,ref data, ref Infos);
     }
     
     private static unsafe void CreateLogicalDevice(ref GraphicInstanceFunction func,ref GraphicDeviceData data ,ref GraphicDeviceCapabilities Infos)
@@ -495,26 +499,29 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         Infos.DeviceExtensions[propertyCount] = VK.VK_KHR_SWAPCHAIN_EXTENSION_NAME ;
         
 
-        // fixed (VkPhysicalDeviceProperties* phd =   &Infos.PhysicalDeviceProperties){
-        //     func.vkGetPhysicalDeviceProperties(data.VkPhysicalDevice ,phd );
-        // }
-        // Infos.Limits = Infos.PhysicalDeviceProperties.limits;
+        fixed (VkPhysicalDeviceProperties* phd =   &Infos.PhysicalDeviceProperties){
+            func.vkGetPhysicalDeviceProperties(data.VkPhysicalDevice ,phd );
+        }
+        Infos.Limits = Infos.PhysicalDeviceProperties.limits;
         
-        // fixed ( VkPhysicalDeviceFeatures* features = &Infos.Features)
-        // {
-        //     func.vkGetPhysicalDeviceFeatures(data.VkPhysicalDevice,features );
-        // }
+
+        using var deviceExtensions = new StrArrayUnsafe(ref Infos.DeviceExtensions);
+        VkDeviceCreateInfo createInfo = default;
+        
+        fixed ( VkPhysicalDeviceFeatures* features = &Infos.Features)
+        {
+            func.vkGetPhysicalDeviceFeatures(data.VkPhysicalDevice,features );
+       
             // DEVICE
-            using var deviceExtensions = new StrArrayUnsafe(ref Infos.DeviceExtensions);
-            VkDeviceCreateInfo createInfo = default;
-                createInfo.sType =  VkStructureType.VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-                createInfo.queueCreateInfoCount = (uint)queueCount;
-                createInfo.pQueueCreateInfos = queueCreateInfos;
-                createInfo.pEnabledFeatures = null;
-                createInfo.enabledExtensionCount = (uint)deviceExtensions.Count;
-                createInfo.ppEnabledExtensionNames = deviceExtensions;
-                createInfo.pNext = null ;
-            
+           
+            createInfo.sType =  VkStructureType.VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+            createInfo.queueCreateInfoCount = (uint)queueCount;
+            createInfo.pQueueCreateInfos = queueCreateInfos;
+            createInfo.pEnabledFeatures = features;
+            createInfo.enabledExtensionCount = (uint)deviceExtensions.Count;
+            createInfo.ppEnabledExtensionNames = deviceExtensions;
+            createInfo.pNext = null ;
+         }    
             using var layerNames = new RitaEngine.Base.Strings.StrArrayUnsafe(ref Infos.ValidationLayers);
             if ( Infos.EnableDebug)
             {
@@ -937,92 +944,77 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
     #endregion
     #region Vertex
 // // VERTEX BUFFER
-//     private unsafe static void CreateVertexBuffer(ref GraphicDeviceStaticData vk, ref GraphicPipelineConfig gfx) 
-//     {
-//         Vulkan.VkBufferCreateInfo bufferInfo = new();
-//             bufferInfo.sType =Vulkan.VkStructureType. VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-//             bufferInfo.size = (uint)(Marshal.SizeOf<Vertex>() * gfx.vertices.Length);
-//             bufferInfo.usage = (uint)Vulkan.VkBufferUsageFlagBits. VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-//             bufferInfo.sharingMode = Vulkan.VkSharingMode.VK_SHARING_MODE_EXCLUSIVE;
+    private unsafe static void CreateVertexBuffer(ref GraphicDeviceFunction func, ref GraphicDeviceData data ,ref GraphicRenderConfig pipeline) 
+    {
+        VkBufferCreateInfo bufferInfo = default;
+            bufferInfo.sType = VkStructureType. VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+            bufferInfo.size = (uint)(Marshal.SizeOf<Position2f_Color3f>() * pipeline.Vertices.Length);
+            bufferInfo.usage = (uint)VkBufferUsageFlagBits. VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+            bufferInfo.sharingMode = VkSharingMode.VK_SHARING_MODE_EXCLUSIVE;
 
-//         fixed(VkBuffer* buffer =  &vk.vertexBuffer){
-//             Vulkan.vkCreateBuffer(vk._device, &bufferInfo, null, buffer).Check("failed to create vertex buffer!");
-//         }
+        fixed(VkBuffer* buffer = &data.VertexBuffer)
+        {
+            func.vkCreateBuffer( data.VkDevice, &bufferInfo, null, buffer).Check("failed to create vertex buffer!");
+        }
         
-//         Vulkan.VkMemoryRequirements memRequirements = new();
-//         Vulkan.vkGetBufferMemoryRequirements(vk._device, vk.vertexBuffer, &memRequirements);
+        VkMemoryRequirements memRequirements = new();
+        func.vkGetBufferMemoryRequirements(data.VkDevice, data.VertexBuffer, &memRequirements);
 
 
-//         uint memoryTypeIndexForCoherentVisibleBit = FindMemoryType(vk._physicalDevice,memRequirements.memoryTypeBits,
-//             (uint)(Vulkan.VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | Vulkan.VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
-//         Vulkan.VkMemoryAllocateInfo allocInfo = new();
-//             allocInfo.sType = Vulkan.VkStructureType.VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-//             allocInfo.allocationSize = memRequirements.size;
-//             allocInfo.memoryTypeIndex = memoryTypeIndexForCoherentVisibleBit;
-//             allocInfo.pNext = null;
-
-//         fixed(VkDeviceMemory* memory =  &vk.vertexBufferMemory) {
-//             Vulkan.vkAllocateMemory(vk._device, &allocInfo, null, memory).Check("failed to allocate vertex buffer memory!");
-//         }
+        uint memoryTypeIndexForCoherentVisibleBit = FindMemoryType(  ref func , ref data , memRequirements.memoryTypeBits ,
+            (VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
         
-//         Vulkan.vkBindBufferMemory(vk._device, vk.vertexBuffer, vk.vertexBufferMemory, 0);
+        VkMemoryAllocateInfo allocInfo = default;
+            allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+            allocInfo.allocationSize = memRequirements.size;
+            allocInfo.memoryTypeIndex = memoryTypeIndexForCoherentVisibleBit;
+            allocInfo.pNext = null;
 
-//         void* data;
-//         Vulkan.vkMapMemory(vk._device, vk.vertexBufferMemory, 0, bufferInfo.size, 0, &data);
-//         fixed (void* p = &gfx.vertices[0]){ memcpy(data, p,  bufferInfo.size); }  
-//         Vulkan.vkUnmapMemory(vk._device, vk.vertexBufferMemory);
-//     }
-
-//     internal unsafe static void memcpy(void* a, void* b, ulong size)
-// 	{
-// 		var ap = (byte*)a;
-// 		var bp = (byte*)b;
-// 		for (ulong i = 0; i < size; ++i)
-// 			*ap++ = *bp++;
-// 	}
-
-//     private unsafe static uint32_t FindMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties) {
-//         Vulkan.VkPhysicalDeviceMemoryProperties memProperties = new();
-//             // memProperties.
-//         Vulkan.vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
-
-//         // for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) { if ( //(typeFilter & (1 << (int)0)) && 
-//         if ((memProperties.memoryTypes_0.propertyFlags & properties) == properties) return 0;
-//         if ((memProperties.memoryTypes_1.propertyFlags & properties) == properties) return 1;
-//         if ((memProperties.memoryTypes_2.propertyFlags & properties) == properties) return 2;
-//         if ((memProperties.memoryTypes_3.propertyFlags & properties) == properties) return 3;
-//         if ((memProperties.memoryTypes_4.propertyFlags & properties) == properties) return 4;
-//         if ((memProperties.memoryTypes_5.propertyFlags & properties) == properties) return 5;
-//         if ((memProperties.memoryTypes_6.propertyFlags & properties) == properties) return 6;
-//         if ((memProperties.memoryTypes_7.propertyFlags & properties) == properties) return 7;
-//         if ((memProperties.memoryTypes_8.propertyFlags & properties) == properties) return 8;
-//         if ((memProperties.memoryTypes_9.propertyFlags & properties) == properties) return 9;
-//         if ((memProperties.memoryTypes_10.propertyFlags & properties) == properties) return 10;
-//         if ((memProperties.memoryTypes_11.propertyFlags & properties) == properties) return 11;
-//         if ((memProperties.memoryTypes_12.propertyFlags & properties) == properties) return 12;
-//         if ((memProperties.memoryTypes_13.propertyFlags & properties) == properties) return 13;
-//         if ((memProperties.memoryTypes_14.propertyFlags & properties) == properties) return 14;
-//         if ((memProperties.memoryTypes_15.propertyFlags & properties) == properties) return 15;
-//         if ((memProperties.memoryTypes_16.propertyFlags & properties) == properties) return 16;
-//         if ((memProperties.memoryTypes_17.propertyFlags & properties) == properties) return 17;
-//         if ((memProperties.memoryTypes_18.propertyFlags & properties) == properties) return 18;
-//         if ((memProperties.memoryTypes_19.propertyFlags & properties) == properties) return 19;
-//         if ((memProperties.memoryTypes_20.propertyFlags & properties) == properties) return 20;
-//         if ((memProperties.memoryTypes_21.propertyFlags & properties) == properties) return 21;
-//         if ((memProperties.memoryTypes_22.propertyFlags & properties) == properties) return 22;
-//         if ((memProperties.memoryTypes_23.propertyFlags & properties) == properties) return 23;
-//         if ((memProperties.memoryTypes_24.propertyFlags & properties) == properties) return 24;
-//         if ((memProperties.memoryTypes_25.propertyFlags & properties) == properties) return 25;
-//         if ((memProperties.memoryTypes_26.propertyFlags & properties) == properties) return 26;
-//         if ((memProperties.memoryTypes_27.propertyFlags & properties) == properties) return 27;
-//         if ((memProperties.memoryTypes_28.propertyFlags & properties) == properties) return 28;
-//         if ((memProperties.memoryTypes_29.propertyFlags & properties) == properties) return 29;
-//         if ((memProperties.memoryTypes_30.propertyFlags & properties) == properties) return 30;
-//         if ((memProperties.memoryTypes_31.propertyFlags & properties) == properties) return 31;
+        fixed(VkDeviceMemory* memory =  &data.VertexBufferMemory) {
+            func.vkAllocateMemory(data.VkDevice, &allocInfo, null, memory).Check("failed to allocate vertex buffer memory!");
+        }
         
-//         // }
-//         throw new Exception("failed to find suitable memory type!");
-//     }
+        func.vkBindBufferMemory(data.VkDevice,  data.VertexBuffer,data.VertexBufferMemory, 0);
+
+        void* vertexdata;
+
+        func.vkMapMemory(data.VkDevice,data.VertexBufferMemory, 0, bufferInfo.size, 0, &vertexdata);
+        
+        fixed (void* p = &pipeline.Vertices[0]){ 
+            memcpy(vertexdata, p,  bufferInfo.size); 
+        }  
+        func.vkUnmapMemory(data.VkDevice, data.VertexBufferMemory);
+    }
+
+    internal unsafe static void memcpy(void* a, void* b, ulong size)
+	{
+		var ap = (byte*)a;
+		var bp = (byte*)b;
+		for (ulong i = 0; i < size; ++i)
+			*ap++ = *bp++;
+	}
+
+
+
+    public unsafe static uint FindMemoryType(ref GraphicDeviceFunction func, ref GraphicDeviceData data , uint memoryTypeBits, VkMemoryPropertyFlagBits properties)
+    {
+        VkPhysicalDeviceMemoryProperties memoryProperties = new();
+            // memProperties.
+        func.vkGetPhysicalDeviceMemoryProperties(data.VkPhysicalDevice, &memoryProperties);
+
+
+        uint count = memoryProperties.memoryTypeCount;
+        for (uint i = 0; i < count; i++)
+        {
+            if ( (memoryTypeBits & 1) == 1 && (memoryProperties.memoryTypes[(int)i].propertyFlags & (uint)properties) == (uint)properties)
+            {
+                return i;
+            }
+            memoryTypeBits >>= 1;
+        }
+
+        return uint.MaxValue;
+    }
 // // VERTEX BUFFER wITH STAGING
 //     private unsafe static void CreateVertexBufferWithStaging(ref GraphicDeviceStaticData vk, ref GraphicPipelineConfig gfx ) 
 //     {
@@ -1031,89 +1023,89 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 //         VkBuffer stagingBuffer = new();
 //         VkDeviceMemory stagingBufferMemory = new();
 //         CreateStagingBuffer(ref vk,bufferSize, 
-//             (uint)Vulkan.VkBufferUsageFlagBits.VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
-//             (uint)Vulkan.VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | (uint)Vulkan.VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+//             (uint)VkBufferUsageFlagBits.VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
+//             (uint)VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | (uint)VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
 //             ref stagingBuffer, 
 //             ref stagingBufferMemory);
         
 //         void* data;
-//         Vulkan.vkMapMemory(vk._device, stagingBufferMemory, 0, bufferSize, 0, &data);
+//         vkMapMemory(vk._device, stagingBufferMemory, 0, bufferSize, 0, &data);
 //         fixed (void* p = &gfx.vertices[0]){ memcpy(data, p,  bufferSize); }  
-//         Vulkan.vkUnmapMemory(vk._device, stagingBufferMemory);
+//         vkUnmapMemory(vk._device, stagingBufferMemory);
 
 //         CreateStagingBuffer(ref vk,bufferSize, 
-//             (uint)Vulkan.VkBufferUsageFlagBits.VK_BUFFER_USAGE_TRANSFER_DST_BIT | (uint)Vulkan.VkBufferUsageFlagBits.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
-//             (uint)Vulkan.VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
+//             (uint)VkBufferUsageFlagBits.VK_BUFFER_USAGE_TRANSFER_DST_BIT | (uint)VkBufferUsageFlagBits.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
+//             (uint)VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
 //             ref vk.vertexBuffer, 
 //             ref vk.vertexBufferMemory);
 
 //         CopyStagingBuffer(ref vk,stagingBuffer, vk.vertexBuffer, bufferSize);
 
-//         Vulkan.vkDestroyBuffer(vk._device, stagingBuffer, null);
-//         Vulkan.vkFreeMemory(vk._device, stagingBufferMemory, null);
+//         vkDestroyBuffer(vk._device, stagingBuffer, null);
+//         vkFreeMemory(vk._device, stagingBufferMemory, null);
 //     }
 
 //     private unsafe static void CreateStagingBuffer(ref GraphicDeviceStaticData vk ,VkDeviceSize size, VkBufferUsageFlags usage, 
 //             VkMemoryPropertyFlags properties,ref VkBuffer buffer,ref VkDeviceMemory bufferMemory) 
 //     {
-//         Vulkan.VkBufferCreateInfo bufferInfo =new();
-//         bufferInfo.sType = Vulkan.VkStructureType.VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+//         VkBufferCreateInfo bufferInfo =new();
+//         bufferInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 //         bufferInfo.size = size;
 //         bufferInfo.usage = usage;
-//         bufferInfo.sharingMode = Vulkan.VkSharingMode.VK_SHARING_MODE_EXCLUSIVE;
+//         bufferInfo.sharingMode = VkSharingMode.VK_SHARING_MODE_EXCLUSIVE;
 
 //         fixed(VkBuffer* buf =  &buffer){
-//             Vulkan.vkCreateBuffer(vk._device, &bufferInfo, null, buf).Check("failed to create vertex buffer!");
+//             vkCreateBuffer(vk._device, &bufferInfo, null, buf).Check("failed to create vertex buffer!");
 //         }
         
-//         Vulkan.VkMemoryRequirements memRequirements = new();
-//         Vulkan.vkGetBufferMemoryRequirements(vk._device, buffer, &memRequirements);
+//         VkMemoryRequirements memRequirements = new();
+//         vkGetBufferMemoryRequirements(vk._device, buffer, &memRequirements);
 
-//         Vulkan.VkMemoryAllocateInfo allocInfo = new();
-//             allocInfo.sType = Vulkan.VkStructureType.VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+//         VkMemoryAllocateInfo allocInfo = new();
+//             allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 //             allocInfo.allocationSize = memRequirements.size;
 //             allocInfo.memoryTypeIndex = FindMemoryType(vk._physicalDevice,memRequirements.memoryTypeBits, properties);
 //             allocInfo.pNext = null;
 
 //         fixed(VkDeviceMemory* memory =  &bufferMemory) {
-//             Vulkan.vkAllocateMemory(vk._device, &allocInfo, null, memory).Check("failed to allocate vertex buffer memory!");
+//             vkAllocateMemory(vk._device, &allocInfo, null, memory).Check("failed to allocate vertex buffer memory!");
 //         }
         
-//         Vulkan.vkBindBufferMemory(vk._device, buffer, bufferMemory, 0);
+//         vkBindBufferMemory(vk._device, buffer, bufferMemory, 0);
 //     }
 
 //     private unsafe static void CopyStagingBuffer(ref GraphicDeviceStaticData vk, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
 //     {
-//         Vulkan.VkCommandBufferAllocateInfo allocInfo = new();
-//             allocInfo.sType = Vulkan.VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-//             allocInfo.level = Vulkan.VkCommandBufferLevel.VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+//         VkCommandBufferAllocateInfo allocInfo = new();
+//             allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+//             allocInfo.level = VkCommandBufferLevel.VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 //             allocInfo.commandPool = vk._commandPool;
 //             allocInfo.commandBufferCount = 1;
 
 //         VkCommandBuffer commandBuffer;
-//         Vulkan.vkAllocateCommandBuffers(vk._device, &allocInfo, &commandBuffer);
+//         vkAllocateCommandBuffers(vk._device, &allocInfo, &commandBuffer);
 
-//         Vulkan.VkCommandBufferBeginInfo beginInfo = new();
-//             beginInfo.sType = Vulkan.VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-//             beginInfo.flags = (uint)Vulkan.VkCommandBufferUsageFlagBits.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+//         VkCommandBufferBeginInfo beginInfo = new();
+//             beginInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+//             beginInfo.flags = (uint)VkCommandBufferUsageFlagBits.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-//         Vulkan.vkBeginCommandBuffer(commandBuffer, &beginInfo);
+//         vkBeginCommandBuffer(commandBuffer, &beginInfo);
 
-//             Vulkan.VkBufferCopy copyRegion = new();
+//             VkBufferCopy copyRegion = new();
 //             copyRegion.size = size;
-//             Vulkan.vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+//             vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
-//         Vulkan.vkEndCommandBuffer(commandBuffer);
+//         vkEndCommandBuffer(commandBuffer);
 
-//         Vulkan.VkSubmitInfo submitInfo = new();
-//         submitInfo.sType = Vulkan.VkStructureType.VK_STRUCTURE_TYPE_SUBMIT_INFO;
+//         VkSubmitInfo submitInfo = new();
+//         submitInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_SUBMIT_INFO;
 //         submitInfo.commandBufferCount = 1;
 //         submitInfo.pCommandBuffers = &commandBuffer;
 
-//         Vulkan.vkQueueSubmit(vk._graphicQueue, 1, &submitInfo, VkFence.Null);
-//         Vulkan.vkQueueWaitIdle(vk._graphicQueue);
+//         vkQueueSubmit(vk._graphicQueue, 1, &submitInfo, VkFence.Null);
+//         vkQueueWaitIdle(vk._graphicQueue);
 
-//         Vulkan.vkFreeCommandBuffers(vk._device, vk._commandPool, 1, &commandBuffer);
+//         vkFreeCommandBuffers(vk._device, vk._commandPool, 1, &commandBuffer);
 //     }
 
 
@@ -1124,26 +1116,26 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 //         VkBuffer stagingBuffer = new();
 //         VkDeviceMemory stagingBufferMemory = new();
 //         CreateStagingBuffer(ref vk,bufferSize, 
-//             (uint)Vulkan.VkBufferUsageFlagBits.VK_BUFFER_USAGE_TRANSFER_SRC_BIT , 
-//             (uint)Vulkan.VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | (uint)Vulkan.VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+//             (uint)VkBufferUsageFlagBits.VK_BUFFER_USAGE_TRANSFER_SRC_BIT , 
+//             (uint)VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | (uint)VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
 //             ref stagingBuffer, 
 //             ref stagingBufferMemory);
         
 //         void* data;
-//         Vulkan.vkMapMemory(vk._device, stagingBufferMemory, 0, bufferSize, 0, &data);
+//         vkMapMemory(vk._device, stagingBufferMemory, 0, bufferSize, 0, &data);
 //         fixed (void* p = &gfx.indices[0]){ memcpy(data, p,  bufferSize); }  
-//         Vulkan.vkUnmapMemory(vk._device, stagingBufferMemory);
+//         vkUnmapMemory(vk._device, stagingBufferMemory);
 
 //         CreateStagingBuffer(ref vk,bufferSize, 
-//             (uint)Vulkan.VkBufferUsageFlagBits.VK_BUFFER_USAGE_TRANSFER_DST_BIT | (uint)Vulkan.VkBufferUsageFlagBits.VK_BUFFER_USAGE_INDEX_BUFFER_BIT, 
-//             (uint)Vulkan.VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
+//             (uint)VkBufferUsageFlagBits.VK_BUFFER_USAGE_TRANSFER_DST_BIT | (uint)VkBufferUsageFlagBits.VK_BUFFER_USAGE_INDEX_BUFFER_BIT, 
+//             (uint)VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
 //             ref vk.indexBuffer, 
 //             ref vk.indexBufferMemory);
 
 //         CopyStagingBuffer(ref vk,stagingBuffer, vk.indexBuffer, bufferSize);
 
-//         Vulkan.vkDestroyBuffer(vk._device, stagingBuffer, null);
-//         Vulkan.vkFreeMemory(vk._device, stagingBufferMemory, null);
+//         vkDestroyBuffer(vk._device, stagingBuffer, null);
+//         vkFreeMemory(vk._device, stagingBufferMemory, null);
 //     }
 
 //     /// <summary>
@@ -1156,9 +1148,9 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 //     private unsafe static void CopyDataToGPU(VkDevice device, VkDeviceMemory memory, uint size, void* src )
 //     {
 //         void* data;
-//         Vulkan.vkMapMemory(device, memory, 0, size, 0, &data);
+//         vkMapMemory(device, memory, 0, size, 0, &data);
 //          memcpy(data, src,  size); 
-//         Vulkan.vkUnmapMemory(device, memory);
+//         vkUnmapMemory(device, memory);
 
 //     }
     #endregion
@@ -1166,20 +1158,20 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
      #region  Descirptor Set
      //     private unsafe static void CreateDescriptorSetLayout(ref GraphicDeviceStaticData vk,ref  GraphicPipelineConfig gfx) 
 //     {
-//         Vulkan.VkDescriptorSetLayoutBinding uboLayoutBinding = new();
+//         VkDescriptorSetLayoutBinding uboLayoutBinding = new();
 //             uboLayoutBinding.binding = 0;
 //             uboLayoutBinding.descriptorCount = 1;
-//             uboLayoutBinding.descriptorType = Vulkan.VkDescriptorType. VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+//             uboLayoutBinding.descriptorType = VkDescriptorType. VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 //             uboLayoutBinding.pImmutableSamplers = null;
-//             uboLayoutBinding.stageFlags =(uint) Vulkan.VkShaderStageFlagBits.VK_SHADER_STAGE_VERTEX_BIT;
+//             uboLayoutBinding.stageFlags =(uint) VkShaderStageFlagBits.VK_SHADER_STAGE_VERTEX_BIT;
 
-//         Vulkan.VkDescriptorSetLayoutCreateInfo layoutInfo =new();
-//         layoutInfo.sType = Vulkan.VkStructureType. VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+//         VkDescriptorSetLayoutCreateInfo layoutInfo =new();
+//         layoutInfo.sType = VkStructureType. VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 //         layoutInfo.bindingCount = 1;
 //         layoutInfo.pBindings = &uboLayoutBinding;
 
 //         fixed( VkDescriptorSetLayout* layout = &vk.descriptorSetLayout ){
-//             Vulkan.vkCreateDescriptorSetLayout(vk._device, &layoutInfo, null, layout).Check("failed to create descriptor set layout!");
+//             vkCreateDescriptorSetLayout(vk._device, &layoutInfo, null, layout).Check("failed to create descriptor set layout!");
 //         }
 //     }
 //     private unsafe static void CreateUniformBuffers(ref GraphicDeviceStaticData vk) {
@@ -1192,8 +1184,8 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 //         {
 //             // CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
 //             CreateStagingBuffer(ref vk,bufferSize, 
-//                 (uint)Vulkan.VkBufferUsageFlagBits.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT , 
-//                 (uint)Vulkan.VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | (uint)Vulkan.VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT , 
+//                 (uint)VkBufferUsageFlagBits.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT , 
+//                 (uint)VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | (uint)VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT , 
 //                 ref vk.uniformBuffers[i], 
 //                 ref vk.uniformBuffersMemory[i]);
 //         }
@@ -1201,18 +1193,18 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
 //     private static unsafe void CreateDescriptorPool(ref GraphicDeviceStaticData vk, ref GraphicPipelineConfig gfx)
 //     {
-//         Vulkan.VkDescriptorPoolSize poolSize = new();
-//             poolSize.type =Vulkan.VkDescriptorType. VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+//         VkDescriptorPoolSize poolSize = new();
+//             poolSize.type =VkDescriptorType. VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 //             poolSize.descriptorCount = (uint32_t)(vk.MAX_FRAMES_IN_FLIGHT);
 
-//         Vulkan.VkDescriptorPoolCreateInfo poolInfo= new();
-//             poolInfo.sType =Vulkan.VkStructureType. VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+//         VkDescriptorPoolCreateInfo poolInfo= new();
+//             poolInfo.sType =VkStructureType. VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 //             poolInfo.poolSizeCount = 1;
 //             poolInfo.pPoolSizes = &poolSize;
 //             poolInfo.maxSets = (uint32_t)(vk.MAX_FRAMES_IN_FLIGHT);
 
 //         fixed(VkDescriptorPool* pool =  &vk.descriptorPool){
-//             Vulkan.vkCreateDescriptorPool(vk._device, &poolInfo, null,pool ).Check("failed to create descriptor pool!");
+//             vkCreateDescriptorPool(vk._device, &poolInfo, null,pool ).Check("failed to create descriptor pool!");
 //         }
 //     }
 
@@ -1222,33 +1214,33 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 //         // std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
 //         // VkDescriptorSetLayout[] layouts  =  
 
-//         Vulkan.VkDescriptorSetAllocateInfo allocInfo = new();
-//             allocInfo.sType = Vulkan.VkStructureType.VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+//         VkDescriptorSetAllocateInfo allocInfo = new();
+//             allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 //             allocInfo.descriptorPool = vk.descriptorPool;
 //             allocInfo.descriptorSetCount = (uint)(vk.MAX_FRAMES_IN_FLIGHT);
 //             allocInfo.pSetLayouts = layouts.data();
 
 //         vk.descriptorSets = new VkDescriptorSet[ vk.MAX_FRAMES_IN_FLIGHT];
 
-//         Vulkan.vkAllocateDescriptorSets(vk._device, &allocInfo, vk.descriptorSets).Check("failed to allocate descriptor sets!");
+//         vkAllocateDescriptorSets(vk._device, &allocInfo, vk.descriptorSets).Check("failed to allocate descriptor sets!");
         
 
 //         for (int i = 0; i <  vk.MAX_FRAMES_IN_FLIGHT; i++) {
-//             Vulkan.VkDescriptorBufferInfo bufferInfo = new();
+//             VkDescriptorBufferInfo bufferInfo = new();
 //             bufferInfo.buffer = vk.uniformBuffers[i];
 //             bufferInfo.offset = 0;
 //             bufferInfo.range = (uint)Marshal.SizeOf<UniformBufferObject>();
 
-//             Vulkan.VkWriteDescriptorSet descriptorWrite = new();
-//             descriptorWrite.sType = Vulkan.VkStructureType.VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+//             VkWriteDescriptorSet descriptorWrite = new();
+//             descriptorWrite.sType = VkStructureType.VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 //             descriptorWrite.dstSet = vk.descriptorSets[i];
 //             descriptorWrite.dstBinding = 0;
 //             descriptorWrite.dstArrayElement = 0;
-//             descriptorWrite.descriptorType = Vulkan.VkDescriptorType. VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+//             descriptorWrite.descriptorType = VkDescriptorType. VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 //             descriptorWrite.descriptorCount = 1;
 //             descriptorWrite.pBufferInfo = &bufferInfo;
 
-//             Vulkan.vkUpdateDescriptorSets(vk._device, 1, &descriptorWrite, 0, null);
+//             vkUpdateDescriptorSets(vk._device, 1, &descriptorWrite, 0, null);
 //         }
 //     }
 
@@ -1270,40 +1262,40 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 // //         VkBuffer stagingBuffer = VkBuffer.Null;
 // //         VkDeviceMemory stagingBufferMemory = VkDeviceMemory.Null;
 // //         CreateBuffer(ref vk,imageSize, 
-// //             (uint)Vulkan.VkBufferUsageFlagBits.VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
-// //             (uint)Vulkan.VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | (uint)Vulkan.VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+// //             (uint)VkBufferUsageFlagBits.VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
+// //             (uint)VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | (uint)VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
 // //             ref stagingBuffer, 
 // //             ref stagingBufferMemory);
 
         
 // //         void* data;
-// //         Vulkan.vkMapMemory(vk._device, stagingBufferMemory, 0, imageSize, 0, &data);
+// //         vkMapMemory(vk._device, stagingBufferMemory, 0, imageSize, 0, &data);
 // //         // fixed (void* p = &pixels){ memcpy(data, p,  imageSize ); }  
-// //         Vulkan.vkUnmapMemory(vk._device, stagingBufferMemory);
+// //         vkUnmapMemory(vk._device, stagingBufferMemory);
 
 // //         // // stbi_image_free(pixels);
 
 // //         CreateImage(texWidth, texHeight, 
-// //         Vulkan.VkFormat.VK_FORMAT_R8G8B8A8_SRGB, 
-// //         Vulkan.VkImageTiling.VK_IMAGE_TILING_OPTIMAL, 
-// //         (uint)Vulkan.VkImageUsageFlagBits.VK_IMAGE_USAGE_TRANSFER_DST_BIT | (uint)Vulkan.VkImageUsageFlagBits.VK_IMAGE_USAGE_SAMPLED_BIT, 
-// //         (uint)Vulkan.VkMemoryPropertyFlagBits. VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
+// //         VkFormat.VK_FORMAT_R8G8B8A8_SRGB, 
+// //         VkImageTiling.VK_IMAGE_TILING_OPTIMAL, 
+// //         (uint)VkImageUsageFlagBits.VK_IMAGE_USAGE_TRANSFER_DST_BIT | (uint)VkImageUsageFlagBits.VK_IMAGE_USAGE_SAMPLED_BIT, 
+// //         (uint)VkMemoryPropertyFlagBits. VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
 // //         ref vk.textureImage,ref vk.textureImageMemory);
 
 // //         // transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 // //         //     copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
 // //         // transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-// //         Vulkan.vkDestroyBuffer(vk._device, stagingBuffer, null);
-// //         Vulkan.vkFreeMemory(vk._device, stagingBufferMemory, null);
+// //         vkDestroyBuffer(vk._device, stagingBuffer, null);
+// //         vkFreeMemory(vk._device, stagingBufferMemory, null);
 // //     }
 
-// //     private static void CreateImage(uint32_t width, uint32_t height, Vulkan.VkFormat format, Vulkan.VkImageTiling tiling,
+// //     private static void CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
 // //          VkImageUsageFlags usage, VkMemoryPropertyFlags properties,ref VkImage image,ref VkDeviceMemory imageMemory) 
 // //     {
-// //         Vulkan.VkImageCreateInfo imageInfo = new();
-// //             imageInfo.sType =Vulkan.VkStructureType.VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-// //             imageInfo.imageType =Vulkan.VkImageType. VK_IMAGE_TYPE_2D;
+// //         VkImageCreateInfo imageInfo = new();
+// //             imageInfo.sType =VkStructureType.VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+// //             imageInfo.imageType =VkImageType. VK_IMAGE_TYPE_2D;
 // //             imageInfo.extent.width = width;
 // //             imageInfo.extent.height = height;
 // //             imageInfo.extent.depth = 1;
@@ -1311,12 +1303,12 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 // //             imageInfo.arrayLayers = 1;
 // //             imageInfo.format = format;
 // //             imageInfo.tiling = tiling;
-// //             imageInfo.initialLayout =Vulkan.VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED;
+// //             imageInfo.initialLayout =VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED;
 // //             imageInfo.usage = usage;
-// //             imageInfo.samples =Vulkan.VkSampleCountFlagBits.VK_SAMPLE_COUNT_1_BIT;
-// //             imageInfo.sharingMode = Vulkan.VkSharingMode. VK_SHARING_MODE_EXCLUSIVE;
+// //             imageInfo.samples =VkSampleCountFlagBits.VK_SAMPLE_COUNT_1_BIT;
+// //             imageInfo.sharingMode = VkSharingMode. VK_SHARING_MODE_EXCLUSIVE;
 
-// //         // Vulkan.vkCreateImage(vk._device, &imageInfo, null, image).Check("failed to create image!");
+// //         // vkCreateImage(vk._device, &imageInfo, null, image).Check("failed to create image!");
     
 
 // //         // VkMemoryRequirements memRequirements;
@@ -1334,18 +1326,18 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 // //         // vkBindImageMemory(device, image, imageMemory, 0);
 // //     }
 
-// //     private static void TransitionImageLayout(VkImage image, Vulkan.VkFormat format, Vulkan.VkImageLayout oldLayout, Vulkan.VkImageLayout newLayout) 
+// //     private static void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) 
 // //     {
 // //         // VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
 
-// //         // Vulkan.VkImageMemoryBarrier barrier = new();
-// //         //     barrier.sType =Vulkan.VkStructureType. VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+// //         // VkImageMemoryBarrier barrier = new();
+// //         //     barrier.sType =VkStructureType. VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 // //         //     barrier.oldLayout = oldLayout;
 // //         //     barrier.newLayout = newLayout;
-// //         //     barrier.srcQueueFamilyIndex = Vulkan.VK_QUEUE_FAMILY_IGNORED;
-// //         //     barrier.dstQueueFamilyIndex = Vulkan.VK_QUEUE_FAMILY_IGNORED;
+// //         //     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+// //         //     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 // //         //     barrier.image = image;
-// //         //     barrier.subresourceRange.aspectMask =(uint) Vulkan.VkImageAspectFlagBits.VK_IMAGE_ASPECT_COLOR_BIT;
+// //         //     barrier.subresourceRange.aspectMask =(uint) VkImageAspectFlagBits.VK_IMAGE_ASPECT_COLOR_BIT;
 // //         //     barrier.subresourceRange.baseMipLevel = 0;
 // //         //     barrier.subresourceRange.levelCount = 1;
 // //         //     barrier.subresourceRange.baseArrayLayer = 0;
@@ -1370,7 +1362,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 // //         //     Guard.ThrowIf(true,"unsupported layout transition!");
 // //         // }
 
-// //         // Vulkan.vkCmdPipelineBarrier(
+// //         // vkCmdPipelineBarrier(
 // //         //     commandBuffer,
 // //         //     sourceStage, destinationStage,
 // //         //     0,
@@ -1409,38 +1401,38 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 // //     private unsafe static VkCommandBuffer BeginSingleTimeCommands(ref Properties vk)
 // //     {
         
-// //         Vulkan.VkCommandBufferAllocateInfo allocInfo = new();
-// //             allocInfo.sType = Vulkan.VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-// //             allocInfo.level = Vulkan.VkCommandBufferLevel.VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+// //         VkCommandBufferAllocateInfo allocInfo = new();
+// //             allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+// //             allocInfo.level = VkCommandBufferLevel.VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 // //             allocInfo.commandPool = vk._commandPool;
 // //             allocInfo.commandBufferCount = 1;
 
 // //         VkCommandBuffer commandBuffer = VkCommandBuffer.Null;
-// //         Vulkan.vkAllocateCommandBuffers(vk._device, &allocInfo, &commandBuffer);
+// //         vkAllocateCommandBuffers(vk._device, &allocInfo, &commandBuffer);
 
-// //         Vulkan.VkCommandBufferBeginInfo beginInfo = new();
-// //             beginInfo.sType = Vulkan.VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-// //             beginInfo.flags =(uint) Vulkan.VkCommandBufferUsageFlagBits.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+// //         VkCommandBufferBeginInfo beginInfo = new();
+// //             beginInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+// //             beginInfo.flags =(uint) VkCommandBufferUsageFlagBits.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-// //         Vulkan.vkBeginCommandBuffer(commandBuffer, &beginInfo);
+// //         vkBeginCommandBuffer(commandBuffer, &beginInfo);
 
 // //         return commandBuffer;
 // //     }
 
 // //     private unsafe static void EndSingleTimeCommands(ref Properties vk , ref VkCommandBuffer commandBuffer) 
 // //     {
-// //         Vulkan.vkEndCommandBuffer(commandBuffer);
+// //         vkEndCommandBuffer(commandBuffer);
 
 // //         fixed( VkCommandBuffer* cb = &commandBuffer){
-// //             Vulkan.VkSubmitInfo submitInfo = new();
-// //             submitInfo.sType = Vulkan.VkStructureType.VK_STRUCTURE_TYPE_SUBMIT_INFO;
+// //             VkSubmitInfo submitInfo = new();
+// //             submitInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_SUBMIT_INFO;
 // //             submitInfo.commandBufferCount = 1;
 // //             submitInfo.pCommandBuffers = cb;
 
-// //             Vulkan.vkQueueSubmit(vk._graphicQueue, 1, &submitInfo, VkFence.Null);
-// //             Vulkan.vkQueueWaitIdle(vk._graphicQueue);
+// //             vkQueueSubmit(vk._graphicQueue, 1, &submitInfo, VkFence.Null);
+// //             vkQueueWaitIdle(vk._graphicQueue);
 
-// //             Vulkan.vkFreeCommandBuffers(vk._device, vk._commandPool, 1, cb);
+// //             vkFreeCommandBuffers(vk._device, vk._commandPool, 1, cb);
 // //         }
 // //     }
 
@@ -1451,7 +1443,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 // // generateMipmaps(textureImage, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, mipLevels);
 //     }
 
-//     private void generateMipmaps(VkImage image, Vulkan.VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels) 
+//     private void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels) 
 //      {
 //         // Check if image format supports linear blitting
 //         // VkFormatProperties formatProperties;
@@ -1541,7 +1533,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
 //     public  void CreateTextureImageView()
 //      {
-//         // textureImageView = HELPER_CreateImageView(textureImage,  Rita.Engine.Graphic.Native.Vulkan.VkFormat. VK_FORMAT_R8G8B8A8_SRGB);
+//         // textureImageView = HELPER_CreateImageView(textureImage,  Rita.Engine.Graphic.Native.VkFormat. VK_FORMAT_R8G8B8A8_SRGB);
 //     }
 
 //     public void CreateTextureSampler()
@@ -1777,45 +1769,46 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         #region VERTEX BUFFER
 
         VkPipelineVertexInputStateCreateInfo vertexInputInfo =default;
-        // if ( pipeline.VertexOutsideShader)
-        // {
+        vertexInputInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+        if ( pipeline.VertexOutsideShader)
+        {
   
-        // VkVertexInputBindingDescription bindingDescription =new();// GetBindingDescription( ref bindingDescription);
-        //     bindingDescription.binding = 0;
-        //     bindingDescription.stride =(uint) Marshal.SizeOf<Vertex>();
-        //     bindingDescription.inputRate = VkVertexInputRate.VK_VERTEX_INPUT_RATE_VERTEX;
+        VkVertexInputBindingDescription bindingDescription =new();// GetBindingDescription( ref bindingDescription);
+            bindingDescription.binding = 0;
+            bindingDescription.stride =(uint) Marshal.SizeOf<Position2f_Color3f>();
+            bindingDescription.inputRate = VkVertexInputRate.VK_VERTEX_INPUT_RATE_VERTEX;
 
-        // VkVertexInputAttributeDescription* attributeDescriptions = stackalloc VkVertexInputAttributeDescription[2] ; // GetAttributeDescriptions(  attributeDescriptions);
-        //     attributeDescriptions[0].binding = 0;
-        //     attributeDescriptions[0].location = 0;
-        //     attributeDescriptions[0].format = VkFormat.VK_FORMAT_R32G32_SFLOAT;
-        //     attributeDescriptions[0].offset = 0; //offsetof(Vertex, pos);
+        VkVertexInputAttributeDescription* attributeDescriptions = stackalloc VkVertexInputAttributeDescription[2] ; // GetAttributeDescriptions(  attributeDescriptions);
+            attributeDescriptions[0].binding = 0;
+            attributeDescriptions[0].location = 0;
+            attributeDescriptions[0].format = VkFormat.VK_FORMAT_R32G32_SFLOAT;
+            attributeDescriptions[0].offset = (uint)Marshal.OffsetOf( typeof(Position2f_Color3f), "Position" ) ;; //offsetof(Vertex, pos);
 
-        //     attributeDescriptions[1].binding = 0;
-        //     attributeDescriptions[1].location = 1;
-        //     attributeDescriptions[1].format = VkFormat.VK_FORMAT_R32G32B32_SFLOAT;
-        //     attributeDescriptions[1].offset =  (uint)Marshal.OffsetOf( typeof(Vertex), "Color" ) ;//2;//offsetof(Vertex, color);
+            attributeDescriptions[1].binding = 0;
+            attributeDescriptions[1].location = 1;
+            attributeDescriptions[1].format = VkFormat.VK_FORMAT_R32G32B32_SFLOAT;
+            attributeDescriptions[1].offset =   (uint)Marshal.OffsetOf( typeof(Position2f_Color3f), "Color" ) ;//2;//offsetof(Vertex, color);
                
-        //     vertexInputInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        //     vertexInputInfo.vertexBindingDescriptionCount = 1;
-        //     vertexInputInfo.vertexAttributeDescriptionCount = 2;
-        //     vertexInputInfo.pNext = null;
-        //     vertexInputInfo.flags =0;
-        //     vertexInputInfo.pVertexAttributeDescriptions=attributeDescriptions;
-        //     vertexInputInfo.pVertexBindingDescriptions=&bindingDescription;
+            
+            vertexInputInfo.vertexBindingDescriptionCount = 1;
+            vertexInputInfo.vertexAttributeDescriptionCount = 2;
+            vertexInputInfo.pNext = null;
+            vertexInputInfo.flags =0;
+            vertexInputInfo.pVertexAttributeDescriptions=attributeDescriptions;
+            vertexInputInfo.pVertexBindingDescriptions=&bindingDescription;
 
-        //     data.VertexOutsideShader = true;
-        // }
-        // else //ELSE vertex inside shader
-        // {   
-            vertexInputInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+          
+        }
+        else //ELSE vertex inside shader
+        {   
+
             vertexInputInfo.vertexBindingDescriptionCount = 0;
             vertexInputInfo.vertexAttributeDescriptionCount = 0;
-            // vertexInputInfo.pNext = null;
-            // vertexInputInfo.flags =0;
-            // vertexInputInfo.pVertexAttributeDescriptions=null;
-            // vertexInputInfo.pVertexBindingDescriptions=null;
-        // }
+            vertexInputInfo.pNext = null;
+            vertexInputInfo.flags =0;
+            vertexInputInfo.pVertexAttributeDescriptions=null;
+            vertexInputInfo.pVertexBindingDescriptions=null;
+        }
 
        
         #endregion

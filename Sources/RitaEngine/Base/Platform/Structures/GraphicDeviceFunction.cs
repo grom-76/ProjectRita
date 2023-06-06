@@ -132,6 +132,8 @@ public unsafe /*readonly*/  delegate* unmanaged< VkCommandBuffer,VkRenderPassBeg
 public unsafe /*readonly*/  delegate* unmanaged< VkCommandBuffer,VkSubpassContents,void > vkCmdNextSubpass = null;
 public unsafe /*readonly*/  delegate* unmanaged< VkCommandBuffer,void > vkCmdEndRenderPass = null;
 public unsafe /*readonly*/  delegate* unmanaged< VkCommandBuffer,UInt32,VkCommandBuffer*,void > vkCmdExecuteCommands = null;
+
+public unsafe /*readonly*/  delegate* unmanaged< VkPhysicalDevice,VkPhysicalDeviceMemoryProperties*,void > vkGetPhysicalDeviceMemoryProperties = null;
 #endregion
 #region VK_VERSION_1_1
 
@@ -700,6 +702,7 @@ public unsafe /*readonly*/  delegate* unmanaged< VkCommandBuffer,VkBuffer,UInt64
         }
         if (VK.VK_VERSION_1_0)
 		{	
+			vkGetPhysicalDeviceMemoryProperties = (delegate* unmanaged<VkPhysicalDevice,VkPhysicalDeviceMemoryProperties*,void>) load(device,nameof(vkGetPhysicalDeviceMemoryProperties)); 
 			vkGetDeviceQueue = (delegate* unmanaged<VkDevice,UInt32,UInt32,VkQueue*,void>) load(device,nameof(vkGetDeviceQueue)); 
 			vkDeviceWaitIdle = (delegate* unmanaged<VkDevice,VkResult>) load(device,nameof(vkDeviceWaitIdle)); 
 			vkAllocateMemory = (delegate* unmanaged<VkDevice,VkMemoryAllocateInfo*,VkAllocationCallbacks*,VkDeviceMemory*,VkResult>) load(device,nameof(vkAllocateMemory)); 
@@ -1250,6 +1253,7 @@ public unsafe /*readonly*/  delegate* unmanaged< VkCommandBuffer,VkBuffer,UInt64
     public static bool operator !=(GraphicDeviceFunction  left, GraphicDeviceFunction  right) => !left.Equals(right);
     public unsafe void Release() 
 	{  
+		vkGetPhysicalDeviceMemoryProperties = null;
 		vkGetDeviceQueue = null;
 		vkQueueSubmit = null;
 		vkQueueWaitIdle = null;

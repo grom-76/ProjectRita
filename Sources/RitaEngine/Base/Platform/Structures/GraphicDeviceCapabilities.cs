@@ -6,7 +6,7 @@ using RitaEngine.Base.Platform.API.Vulkan;
 [ SkipLocalsInit]
 public struct GraphicDeviceCapabilities : IEquatable<GraphicDeviceCapabilities>
 {
-    // public VkPhysicalDeviceProperties PhysicalDeviceProperties = new();
+    public VkPhysicalDeviceProperties PhysicalDeviceProperties = new();
      #region VKDeivce
     public VkSurfaceCapabilitiesKHR Capabilities;
     public VkSurfaceFormatKHR[] Formats= null!;
@@ -43,8 +43,8 @@ public struct GraphicDeviceCapabilities : IEquatable<GraphicDeviceCapabilities>
          _address = AddressOfPtrThis( ) ;
         Log.Info($"Create Graphic Device Capabilities => size : {sizeEmpty}, {size } {_address:X} ");
        
-        // PhysicalDeviceProperties.sparseProperties = new();
-        // PhysicalDeviceProperties.limits = new();
+        PhysicalDeviceProperties.sparseProperties = new();
+        PhysicalDeviceProperties.limits = new();
     }
     public void Release()
     {

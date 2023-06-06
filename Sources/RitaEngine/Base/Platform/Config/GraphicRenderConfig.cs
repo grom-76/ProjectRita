@@ -2,6 +2,7 @@ namespace RitaEngine.Base.Platform.Config; //https://github.com/Syncaidius/Molte
 
 using System.Collections.Generic;
 using RitaEngine.Base.Math.Color;
+using RitaEngine.Base.Math.Vertex;
 using RitaEngine.Base.Platform.API.Vulkan;
 
 /// <summary>
@@ -18,6 +19,12 @@ public sealed class GraphicRenderConfig
     public string FragmentShaderFileNameSPV ="";
     public string FragmentEntryPoint ="";
     public string VertexEntryPoint="";
+
+    public bool VertexOutsideShader = false;
+    public uint AttributeDescription = 2;
+
+    public Position2f_Color3f[] Vertices = new Position2f_Color3f[] { new( 0.5f,-0.5f,1.0f,0.0f,0.0f),new(0.5f,0.5f,0.0f,1.0f,0.0f),new(-0.5f,0.5f,0.0f,0.0f,1.0f) }  ;
+
     //Pipeline
 // VK_SAMPLE_COUNT_1_BIT
     //Shader

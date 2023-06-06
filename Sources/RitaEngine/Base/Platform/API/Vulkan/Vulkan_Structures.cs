@@ -6,6 +6,7 @@ using System;
 using System.Security;
 
 using ConstChar = System.Byte;
+using System.Diagnostics.CodeAnalysis;
 
 #region Unions
 #region VK_VERSION_1_0
@@ -473,12 +474,114 @@ public unsafe  struct VkPhysicalDeviceLimits {
 	public  UInt64  nonCoherentAtomSize;
 }
 
+// [StructLayout(LayoutKind.Sequential)]
+// public unsafe  struct VkPhysicalDeviceMemoryProperties {
+// 	public  UInt32  memoryTypeCount;
+// 	public VkMemoryType**  memoryTypes;//[(int)VK_MAX_MEMORY_TYPES];
+// 	public  UInt32  memoryHeapCount;
+// 	public VkMemoryHeap**  memoryHeaps;//[(int)VK_MAX_MEMORY_HEAPS];
+// }
+
+/// <summary>
+/// Courtesy of : https://github.com/amerkoleci/Vortice.Vulkan/blob/main/src/Vortice.Vulkan/Generated/Structures.cs
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
-public unsafe  struct VkPhysicalDeviceMemoryProperties {
-	public  UInt32  memoryTypeCount;
-	public VkMemoryType**  memoryTypes;//[(int)VK_MAX_MEMORY_TYPES];
-	public  UInt32  memoryHeapCount;
-	public VkMemoryHeap**  memoryHeaps;//[(int)VK_MAX_MEMORY_HEAPS];
+public partial struct VkPhysicalDeviceMemoryProperties
+{
+	public uint memoryTypeCount;
+	public memoryTypes__FixedBuffer memoryTypes;
+
+	public unsafe struct memoryTypes__FixedBuffer
+	{
+		public VkMemoryType e0;
+		public VkMemoryType e1;
+		public VkMemoryType e2;
+		public VkMemoryType e3;
+		public VkMemoryType e4;
+		public VkMemoryType e5;
+		public VkMemoryType e6;
+		public VkMemoryType e7;
+		public VkMemoryType e8;
+		public VkMemoryType e9;
+		public VkMemoryType e10;
+		public VkMemoryType e11;
+		public VkMemoryType e12;
+		public VkMemoryType e13;
+		public VkMemoryType e14;
+		public VkMemoryType e15;
+		public VkMemoryType e16;
+		public VkMemoryType e17;
+		public VkMemoryType e18;
+		public VkMemoryType e19;
+		public VkMemoryType e20;
+		public VkMemoryType e21;
+		public VkMemoryType e22;
+		public VkMemoryType e23;
+		public VkMemoryType e24;
+		public VkMemoryType e25;
+		public VkMemoryType e26;
+		public VkMemoryType e27;
+		public VkMemoryType e28;
+		public VkMemoryType e29;
+		public VkMemoryType e30;
+		public VkMemoryType e31;
+
+		[UnscopedRef]
+		public ref VkMemoryType this[int index]
+		{
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			get
+			{
+				return ref AsSpan()[index];
+			}
+		}
+
+		[UnscopedRef]
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public Span<VkMemoryType> AsSpan()
+		{
+			return MemoryMarshal.CreateSpan(ref e0, 32);
+		}
+	}
+	public uint memoryHeapCount;
+	public memoryHeaps__FixedBuffer memoryHeaps;
+
+	public unsafe struct memoryHeaps__FixedBuffer
+	{
+		public VkMemoryHeap e0;
+		public VkMemoryHeap e1;
+		public VkMemoryHeap e2;
+		public VkMemoryHeap e3;
+		public VkMemoryHeap e4;
+		public VkMemoryHeap e5;
+		public VkMemoryHeap e6;
+		public VkMemoryHeap e7;
+		public VkMemoryHeap e8;
+		public VkMemoryHeap e9;
+		public VkMemoryHeap e10;
+		public VkMemoryHeap e11;
+		public VkMemoryHeap e12;
+		public VkMemoryHeap e13;
+		public VkMemoryHeap e14;
+		public VkMemoryHeap e15;
+
+		[UnscopedRef]
+		public ref VkMemoryHeap this[int index]
+		{
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			get
+			{
+				return ref AsSpan()[index];
+			}
+		}
+
+		[UnscopedRef]
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public Span<VkMemoryHeap> AsSpan()
+		{
+			return MemoryMarshal.CreateSpan(ref e0, 16);
+		}
+	}
 }
 
 [StructLayout(LayoutKind.Sequential)]

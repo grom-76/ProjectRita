@@ -42,6 +42,9 @@ public struct GraphicDeviceData : IEquatable<GraphicDeviceData>
     public uint VkPresentFamilyIndice=0;
     public int MAX_FRAMES_IN_FLIGHT =2;
     public bool VertexOutsideShader = false;
+// vertex code 19
+    public VkBuffer VertexBuffer = VkBuffer.Null;
+    public VkDeviceMemory VertexBufferMemory = VkDeviceMemory.Null;
 
     public GraphicDeviceData()
     {
