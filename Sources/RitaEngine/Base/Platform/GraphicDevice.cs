@@ -1201,61 +1201,65 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         }   
     }
 
-
-//     private static unsafe void CreateDescriptorPool(ref GraphicDeviceStaticData vk, ref GraphicPipelineConfig gfx)
-//     {
-//         VkDescriptorPoolSize poolSize = new();
-//             poolSize.type =VkDescriptorType. VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-//             poolSize.descriptorCount = (uint32_t)(vk.MAX_FRAMES_IN_FLIGHT);
-
-//         VkDescriptorPoolCreateInfo poolInfo= new();
-//             poolInfo.sType =VkStructureType. VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-//             poolInfo.poolSizeCount = 1;
-//             poolInfo.pPoolSizes = &poolSize;
-//             poolInfo.maxSets = (uint32_t)(vk.MAX_FRAMES_IN_FLIGHT);
-
-//         fixed(VkDescriptorPool* pool =  &vk.descriptorPool){
-//             vkCreateDescriptorPool(vk._device, &poolInfo, null,pool ).Check("failed to create descriptor pool!");
-//         }
-//     }
-
-//     private static unsafe void CreateDescriptorSets(ref GraphicDeviceStaticData vk, ref GraphicPipelineConfig gfx) 
-//     {
-
-//         // std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
-//         // VkDescriptorSetLayout[] layouts  =  
-
-//         VkDescriptorSetAllocateInfo allocInfo = new();
-//             allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-//             allocInfo.descriptorPool = vk.descriptorPool;
-//             allocInfo.descriptorSetCount = (uint)(vk.MAX_FRAMES_IN_FLIGHT);
-//             allocInfo.pSetLayouts = layouts.data();
-
-//         vk.descriptorSets = new VkDescriptorSet[ vk.MAX_FRAMES_IN_FLIGHT];
-
-//         vkAllocateDescriptorSets(vk._device, &allocInfo, vk.descriptorSets).Check("failed to allocate descriptor sets!");
-        
-
-//         for (int i = 0; i <  vk.MAX_FRAMES_IN_FLIGHT; i++) {
-//             VkDescriptorBufferInfo bufferInfo = new();
-//             bufferInfo.buffer = vk.uniformBuffers[i];
-//             bufferInfo.offset = 0;
-//             bufferInfo.range = (uint)Marshal.SizeOf<UniformBufferObject>();
-
-//             VkWriteDescriptorSet descriptorWrite = new();
-//             descriptorWrite.sType = VkStructureType.VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-//             descriptorWrite.dstSet = vk.descriptorSets[i];
-//             descriptorWrite.dstBinding = 0;
-//             descriptorWrite.dstArrayElement = 0;
-//             descriptorWrite.descriptorType = VkDescriptorType. VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-//             descriptorWrite.descriptorCount = 1;
-//             descriptorWrite.pBufferInfo = &bufferInfo;
-
-//             vkUpdateDescriptorSets(vk._device, 1, &descriptorWrite, 0, null);
-//         }
-//     }
-
     #endregion
+    
+#region Desciptor pool descriptor set
+    private static unsafe void CreateDescriptorPool(ref GraphicDeviceFunction func, ref GraphicDeviceData data)
+    {
+        VkDescriptorPoolSize poolSize = new();
+            poolSize.type =VkDescriptorType. VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            poolSize.descriptorCount = (uint)(data.MAX_FRAMES_IN_FLIGHT);
+
+        VkDescriptorPoolCreateInfo poolInfo= new();
+            poolInfo.sType =VkStructureType. VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+            poolInfo.poolSizeCount = 1;
+            poolInfo.pPoolSizes = &poolSize;
+            poolInfo.maxSets = (uint)(data.MAX_FRAMES_IN_FLIGHT);
+
+        fixed(VkDescriptorPool* pool =  &data.DescriptorPool){
+            func.vkCreateDescriptorPool(data.VkDevice, &poolInfo, null,pool ).Check("failed to create descriptor pool!");
+        }
+    }
+
+    private static unsafe void CreateDescriptorSets(ref GraphicDeviceFunction func, ref GraphicDeviceData data) 
+    {
+        // std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
+        // VkDescriptorSetLayout[] layouts  =  
+
+        VkDescriptorSetAllocateInfo allocInfo = new();
+            allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+            allocInfo.descriptorPool = data.DescriptorPool;
+            allocInfo.descriptorSetCount = (uint)(data.MAX_FRAMES_IN_FLIGHT);
+            fixed(VkDescriptorSetLayout* ly = &data.Layouts[0] ){
+                allocInfo.pSetLayouts = ly;
+            }
+            
+
+        // data.DescriptorSets = new VkDescriptorSet[ data.MAX_FRAMES_IN_FLIGHT];
+
+        fixed(VkDescriptorSet* descriptor =&data.DescriptorSets[0]  ){
+            func.vkAllocateDescriptorSets(data.VkDevice, &allocInfo, descriptor).Check("failed to allocate descriptor sets!");
+        }
+        
+        for (int i = 0; i <  data.MAX_FRAMES_IN_FLIGHT; i++) {
+            VkDescriptorBufferInfo bufferInfo = new();
+            bufferInfo.buffer = data.uniformBuffers[i];
+            bufferInfo.offset = 0;
+            bufferInfo.range = (uint)Marshal.SizeOf<Uniform_MVP>();
+
+            VkWriteDescriptorSet descriptorWrite = new();
+            descriptorWrite.sType = VkStructureType.VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrite.dstSet = data.DescriptorSets[i];
+            descriptorWrite.dstBinding = 0;
+            descriptorWrite.dstArrayElement = 0;
+            descriptorWrite.descriptorType = VkDescriptorType. VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptorWrite.descriptorCount = 1;
+            descriptorWrite.pBufferInfo = &bufferInfo;
+
+            func.vkUpdateDescriptorSets(data.VkDevice, 1, &descriptorWrite, 0, null);
+        }
+    }
+#endregion
 
     #region Texture
 
@@ -1754,6 +1758,18 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
     }
 
     #endregion
+
+    private unsafe static void updateUniformBuffer(ref GraphicDeviceFunction func,ref GraphicDeviceData data, ref GraphicRenderConfig render)
+    {
+        
+        // fixed(void* ptr = &render.ubo)
+        // {
+        //     var p = MemoryHelper.AsPointer<Uniform_MVP>( ref render.ubo);
+        //     memcpy(data.uniformBuffersMapped[CurrentFrame].ToPointer(), p, (ulong)Marshal.SizeOf(render.ubo )  );
+        // }
+        
+    }
+
 
     private static unsafe void CreatePipeline(ref GraphicDeviceFunction func,ref GraphicDeviceData data , ref GraphicRenderConfig pipeline )
     {

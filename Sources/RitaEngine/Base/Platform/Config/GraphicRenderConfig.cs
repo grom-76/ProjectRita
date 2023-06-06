@@ -26,6 +26,8 @@ public sealed class GraphicRenderConfig
     public Position2f_Color3f[] Vertices = new Position2f_Color3f[] { new( 0.5f,-0.5f,1.0f,0.0f,0.0f),new(0.5f,0.5f,0.0f,1.0f,0.0f),new(-0.5f,0.5f,0.0f,0.0f,1.0f) }  ;
 
     public short[] Indices = new short[] { 0, 1, 2, 2, 3, 0};
+
+    public Uniform_MVP ubo = new();
     public int VerticeSize =0;
     public bool IsStaging = true;
 

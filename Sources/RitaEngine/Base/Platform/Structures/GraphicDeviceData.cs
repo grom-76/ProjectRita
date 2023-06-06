@@ -29,7 +29,9 @@ public struct GraphicDeviceData : IEquatable<GraphicDeviceData>
     public VkPipelineLayout VkpipelineLayout = VkPipelineLayout.Null;
     public VkPipeline VkGraphicsPipeline = VkPipeline.Null;
     public VkDescriptorSetLayout DescriptorSetLayout = VkDescriptorSetLayout.Null;
-
+    public VkDescriptorSetLayout[] Layouts = new VkDescriptorSetLayout[2];
+    public VkDescriptorSet[] DescriptorSets = new VkDescriptorSet[2]; 
+    public VkDescriptorPool DescriptorPool = VkDescriptorPool.Null;
     public VkExtent2D VkSurfaceArea = new();
     public VkClearValue ClearColor = new();
     public VkOffset2D  RenderAreaOffset = new();
