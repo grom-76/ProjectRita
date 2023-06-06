@@ -28,6 +28,7 @@ public struct GraphicDeviceData : IEquatable<GraphicDeviceData>
     public VkCommandPool VkCommandPool = VkCommandPool.Null;// not used for draw but importante??? only need to create command buffer 
     public VkPipelineLayout VkpipelineLayout = VkPipelineLayout.Null;
     public VkPipeline VkGraphicsPipeline = VkPipeline.Null;
+    public VkDescriptorSetLayout DescriptorSetLayout = VkDescriptorSetLayout.Null;
 
     public VkExtent2D VkSurfaceArea = new();
     public VkClearValue ClearColor = new();
@@ -47,6 +48,11 @@ public struct GraphicDeviceData : IEquatable<GraphicDeviceData>
     public VkBuffer IndicesBuffer = VkBuffer.Null;
     public VkDeviceMemory VertexBufferMemory = VkDeviceMemory.Null;
     public VkDeviceMemory IndicesBufferMemory = VkDeviceMemory.Null;
+
+    public VkBuffer[] uniformBuffers = new VkBuffer[2];
+    public VkDeviceMemory[] uniformBuffersMemory= new VkDeviceMemory[2];
+    public nint[] uniformBuffersMapped = new nint[2];
+
 
     public GraphicDeviceData()
     {

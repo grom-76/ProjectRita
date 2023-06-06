@@ -1161,40 +1161,46 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
      #region  Descirptor Set
 
-     //     private unsafe static void CreateDescriptorSetLayout(ref GraphicDeviceStaticData vk,ref  GraphicPipelineConfig gfx) 
-//     {
-//         VkDescriptorSetLayoutBinding uboLayoutBinding = new();
-//             uboLayoutBinding.binding = 0;
-//             uboLayoutBinding.descriptorCount = 1;
-//             uboLayoutBinding.descriptorType = VkDescriptorType. VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-//             uboLayoutBinding.pImmutableSamplers = null;
-//             uboLayoutBinding.stageFlags =(uint) VkShaderStageFlagBits.VK_SHADER_STAGE_VERTEX_BIT;
+    private unsafe static void CreateDescriptorSetLayout(ref GraphicDeviceFunction func, ref GraphicDeviceData data ,ref GraphicRenderConfig pipeline  ) 
+    {
+        VkDescriptorSetLayoutBinding uboLayoutBinding = default;
+            uboLayoutBinding.binding = 0;
+            uboLayoutBinding.descriptorCount = 1;
+            uboLayoutBinding.descriptorType = VkDescriptorType. VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            uboLayoutBinding.pImmutableSamplers = null;
+            uboLayoutBinding.stageFlags =(uint) VkShaderStageFlagBits.VK_SHADER_STAGE_VERTEX_BIT;
 
-//         VkDescriptorSetLayoutCreateInfo layoutInfo =new();
-//         layoutInfo.sType = VkStructureType. VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-//         layoutInfo.bindingCount = 1;
-//         layoutInfo.pBindings = &uboLayoutBinding;
+        VkDescriptorSetLayoutCreateInfo layoutInfo =new();
+        layoutInfo.sType = VkStructureType. VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        layoutInfo.bindingCount = 1;
+        layoutInfo.pBindings = &uboLayoutBinding;
 
-//         fixed( VkDescriptorSetLayout* layout = &vk.descriptorSetLayout ){
-//             vkCreateDescriptorSetLayout(vk._device, &layoutInfo, null, layout).Check("failed to create descriptor set layout!");
-//         }
-//     }
-//     private unsafe static void CreateUniformBuffers(ref GraphicDeviceStaticData vk) {
-//         VkDeviceSize bufferSize = (uint)Marshal.SizeOf<UniformBufferObject>();
+        fixed( VkDescriptorSetLayout* layout = &data.DescriptorSetLayout ){
+            func.vkCreateDescriptorSetLayout(data.VkDevice, &layoutInfo, null, layout).Check("failed to create descriptor set layout!");
+        }
+    }
 
-//         vk.uniformBuffers = new VkBuffer[vk.MAX_FRAMES_IN_FLIGHT];
-//         vk.uniformBuffersMemory = new VkDeviceMemory[vk.MAX_FRAMES_IN_FLIGHT];
+    private unsafe static void CreateUniformBuffers(ref GraphicDeviceFunction func, ref GraphicDeviceData data ,ref GraphicRenderConfig pipeline  ) 
+    {
+        VkDeviceSize bufferSize = (uint)(Marshal.SizeOf<Uniform_MVP>() );
 
-//         for (int i = 0; i < vk.MAX_FRAMES_IN_FLIGHT; i++) 
-//         {
-//             // CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
-//             CreateStagingBuffer(ref vk,bufferSize, 
-//                 (uint)VkBufferUsageFlagBits.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT , 
-//                 (uint)VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | (uint)VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT , 
-//                 ref vk.uniformBuffers[i], 
-//                 ref vk.uniformBuffersMemory[i]);
-//         }
-//     }
+        for (int i = 0; i < pipeline.MAX_FRAMES_IN_FLIGHT; i++) 
+        {
+            
+            CreateStagingBuffer(ref func, ref data, bufferSize, 
+            VkBufferUsageFlagBits.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
+            VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
+            VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,ref data.uniformBuffers[i],ref data.uniformBuffersMemory[i]);
+            
+            //TODO if void ** is oK ?
+            fixed(void* p = &data.uniformBuffersMapped[i])
+            {
+                func.vkMapMemory(data.VkDevice,data.uniformBuffersMemory[i], 0, bufferSize, 0, &p).Check("Map Memeory Unifommr pb");
+            }
+            
+        }   
+    }
+
 
 //     private static unsafe void CreateDescriptorPool(ref GraphicDeviceStaticData vk, ref GraphicPipelineConfig gfx)
 //     {
@@ -1723,13 +1729,25 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
          //UNFORM MVP 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo=default;
             pipelineLayoutInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-            pipelineLayoutInfo.setLayoutCount = 0;            // Optionnel
-            // fixed (VkDescriptorSetLayout* layout = &vk.descriptorSetLayout ){pipelineLayoutInfo.pSetLayouts = layout;}         // Optionnel
-            pipelineLayoutInfo.pushConstantRangeCount = 0;    // Optionnel
             pipelineLayoutInfo.pPushConstantRanges = null; // Optionnel
             pipelineLayoutInfo.flags =0;
             pipelineLayoutInfo.pNext =null;
-
+        if ( data.DescriptorSetLayout.IsNull)
+        {
+            pipelineLayoutInfo.setLayoutCount = 0;            // Optionnel
+            // fixed (VkDescriptorSetLayout* layout = &vk.descriptorSetLayout ){pipelineLayoutInfo.pSetLayouts = layout;}         // Optionnel
+            pipelineLayoutInfo.pushConstantRangeCount = 0;    // Optionnel
+            
+        }
+        else
+        {
+            pipelineLayoutInfo.setLayoutCount = 1;            // Optionnel
+            fixed (VkDescriptorSetLayout* layout = &data.DescriptorSetLayout )
+            {pipelineLayoutInfo.pSetLayouts = layout;}         // Optionnel
+            pipelineLayoutInfo.pushConstantRangeCount = 0;    // Optionnel
+            
+        }
+            
         fixed( VkPipelineLayout* layout = &data.VkpipelineLayout ){
             func.vkCreatePipelineLayout(data.VkDevice, &pipelineLayoutInfo, null, layout).Check ("failed to create pipeline layout!");
         }
