@@ -1126,34 +1126,36 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
 #endregion
 
-//     private unsafe static void CreateIndexBufferWithStaging(ref GraphicDeviceStaticData vk, ref GraphicPipelineConfig gfx ) 
-//     {
-//         VkDeviceSize bufferSize = (uint)(Marshal.SizeOf<short>() * gfx.indices.Length);
+    private unsafe static void CreateIndexBufferWithStaging(ref GraphicDeviceFunction func, ref GraphicDeviceData data ,ref GraphicRenderConfig pipeline  ) 
+    {
+        VkDeviceSize bufferSize = (uint)(Marshal.SizeOf<short>() * pipeline.Indices.Length);
 
-//         VkBuffer stagingBuffer = new();
-//         VkDeviceMemory stagingBufferMemory = new();
-//         CreateStagingBuffer(ref vk,bufferSize, 
-//             (uint)VkBufferUsageFlagBits.VK_BUFFER_USAGE_TRANSFER_SRC_BIT , 
-//             (uint)VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | (uint)VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-//             ref stagingBuffer, 
-//             ref stagingBufferMemory);
+        VkBuffer stagingBuffer = new();
+        VkDeviceMemory stagingBufferMemory = new();
+        CreateStagingBuffer(ref func , ref data , bufferSize, 
+            VkBufferUsageFlagBits.VK_BUFFER_USAGE_TRANSFER_SRC_BIT , 
+            VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT 
+            | VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+            ref stagingBuffer, 
+            ref stagingBufferMemory);
         
-//         void* data;
-//         vkMapMemory(vk._device, stagingBufferMemory, 0, bufferSize, 0, &data);
-//         fixed (void* p = &gfx.indices[0]){ memcpy(data, p,  bufferSize); }  
-//         vkUnmapMemory(vk._device, stagingBufferMemory);
+        void* indicesdata;
+        func.vkMapMemory(data.VkDevice, stagingBufferMemory, 0, bufferSize, 0, &indicesdata);
+        fixed (void* p = &pipeline.Indices[0]){ memcpy(indicesdata, p,  bufferSize); }  
+        func.vkUnmapMemory(data.VkDevice, stagingBufferMemory);
 
-//         CreateStagingBuffer(ref vk,bufferSize, 
-//             (uint)VkBufferUsageFlagBits.VK_BUFFER_USAGE_TRANSFER_DST_BIT | (uint)VkBufferUsageFlagBits.VK_BUFFER_USAGE_INDEX_BUFFER_BIT, 
-//             (uint)VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
-//             ref vk.indexBuffer, 
-//             ref vk.indexBufferMemory);
+        CreateStagingBuffer(ref func , ref data , bufferSize, 
+            VkBufferUsageFlagBits.VK_BUFFER_USAGE_TRANSFER_DST_BIT 
+            | VkBufferUsageFlagBits.VK_BUFFER_USAGE_INDEX_BUFFER_BIT, 
+            VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
+            ref data.IndicesBuffer, 
+            ref data.IndicesBufferMemory);
 
-//         CopyStagingBuffer(ref vk,stagingBuffer, vk.indexBuffer, bufferSize);
+        CopyStagingBuffer(ref func , ref data ,stagingBuffer, data.IndicesBuffer, bufferSize);
 
-//         vkDestroyBuffer(vk._device, stagingBuffer, null);
-//         vkFreeMemory(vk._device, stagingBufferMemory, null);
-//     }
+        func.vkDestroyBuffer(data.VkDevice, stagingBuffer, null);
+        func.vkFreeMemory(data.VkDevice, stagingBufferMemory, null);
+    }
 
     #endregion
 

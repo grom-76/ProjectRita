@@ -44,7 +44,9 @@ public struct GraphicDeviceData : IEquatable<GraphicDeviceData>
     public bool VertexOutsideShader = false;
 // vertex code 19
     public VkBuffer VertexBuffer = VkBuffer.Null;
+    public VkBuffer IndicesBuffer = VkBuffer.Null;
     public VkDeviceMemory VertexBufferMemory = VkDeviceMemory.Null;
+    public VkDeviceMemory IndicesBufferMemory = VkDeviceMemory.Null;
 
     public GraphicDeviceData()
     {
