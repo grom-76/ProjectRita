@@ -25,6 +25,10 @@ public sealed class GraphicRenderConfig
 
     public Position2f_Color3f[] Vertices = new Position2f_Color3f[] { new( 0.5f,-0.5f,1.0f,0.0f,0.0f),new(0.5f,0.5f,0.0f,1.0f,0.0f),new(-0.5f,0.5f,0.0f,0.0f,1.0f) }  ;
 
+    public int VerticeSize =0;
+
+    public GraphicRenderConfig() {}
+
     //Pipeline
 // VK_SAMPLE_COUNT_1_BIT
     //Shader

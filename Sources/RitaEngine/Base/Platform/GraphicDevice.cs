@@ -946,6 +946,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 // // VERTEX BUFFER
     private unsafe static void CreateVertexBuffer(ref GraphicDeviceFunction func, ref GraphicDeviceData data ,ref GraphicRenderConfig pipeline) 
     {
+        if ( )
         VkBufferCreateInfo bufferInfo = default;
             bufferInfo.sType = VkStructureType. VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
             bufferInfo.size = (uint)(Marshal.SizeOf<Position2f_Color3f>() * pipeline.Vertices.Length);
