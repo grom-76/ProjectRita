@@ -14,7 +14,7 @@ using RitaEngine.Base.Strings;
 [SkipLocalsInit, StructLayout(LayoutKind.Sequential ,Pack =  BaseHelper.FORCE_ALIGNEMENT)]
 public struct GraphicDevice : IEquatable<GraphicDevice>
 {
-    
+
     private GraphicDeviceFunction _device=new();
     private GraphicDeviceLoaderFunction _loader= new();
     private GraphicInstanceFunction _instance = new();
@@ -24,57 +24,58 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
     private GraphicDeviceConfig _config;
     private GraphicDeviceCapabilities _infos;
 
-    public GraphicDeviceCapabilities Infos=new();
+    
 
     private nint _address = nint.Zero;
 
 
-    public GraphicDevice(in GraphicDeviceConfig Config,in GraphicRenderConfig render,in GraphicDeviceData data) 
+    public GraphicDevice(in GraphicDeviceConfig Config,in GraphicRenderConfig render,in GraphicDeviceData data,GraphicDeviceCapabilities infos) 
     {   
         _address= AddressOfPtrThis(); 
         _config = Config;
         _render = render;
         _data =  data;
-     
+        _infos = infos;
     }
 
     public  GraphicDeviceConfig Config =>  _config;
     public GraphicRenderConfig Render  => _render;
+    public GraphicDeviceCapabilities Infos=> _infos;
 
     public unsafe void Init(Window win )
     {
        _loader.Init( Config.VulkanDllName);
 
-        Infos.GameName  = win.GetWindowName();
-        Infos.Handle = win.GetWindowHandle();
-        Infos.HInstance = win.GetWindowHInstance();
-        Infos.Width = win.GetWindowWidth();
-        Infos.Height = win.GetWindowheight();
-        Infos.EnableDebug = Config.EnableDebugMode;
+        _infos.GameName  = win.GetWindowName();
+        _infos.Handle = win.GetWindowHandle();
+        _infos.HInstance = win.GetWindowHInstance();
+        _infos.Width = win.GetWindowWidth();
+        _infos.Height = win.GetWindowheight();
+        _infos.EnableDebug = Config.EnableDebugMode;
 // INstance App
-        CreateInstance(ref _loader,ref _data,ref Infos, out VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo);
+        CreateInstance(ref _loader,ref _data,ref _infos, out VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo);
 
         _instance.Init( GraphicDeviceLoaderFunction.vkGetInstanceProcAddr , _data.VkInstance);
                 
-        SetupDebugMessenger(ref _instance, ref _data,ref Infos,ref debugCreateInfo);
-//DEVICE        
+        SetupDebugMessenger(ref _instance, ref _data,ref _infos,ref debugCreateInfo);
+// WSI       
         
-        CreateSurface(ref _instance,ref _data,ref Infos);
-        
-        SelectPhysicalDevice(ref _instance ,ref _data, ref Infos);
-        CreateLogicalDevice(ref _instance ,ref _data, ref Infos  );
+        CreateSurface(ref _instance,ref _data,ref _infos);
+//DEVICE          
+        SelectPhysicalDevice(ref _instance ,ref _data, ref _infos);
+        CreateLogicalDevice(ref _instance ,ref _data, ref _infos  );
 
         _device.Init( GraphicDeviceLoaderFunction.vkGetDeviceProcAddr ,_data.VkDevice);
 
 //SWAP CHAIN
         
 
-        CreateSwapChain( ref _device , ref _data,ref Infos);
+        CreateSwapChain( ref _device , ref _data,ref _infos);
         CreateImageViews( ref _device , ref _data );
        
         _data.MAX_FRAMES_IN_FLIGHT = _render.MAX_FRAMES_IN_FLIGHT;// only need this config
 
-        CreateCommandPool(ref _device , ref _data);
+        // CreateCommandPool(ref _device , ref _data);
 // DATA BARIERS SYNCHRO QUEUES        
         CreateSyncObjects(ref _device , ref _data);
 
@@ -113,7 +114,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
     public void BuildRender() => BuildRender(ref _device, ref _data, ref _render);
 
-    public void Draw() => DrawPipeline(ref _device, ref _data,ref Infos);
+    public void Draw() => DrawPipeline(ref _device, ref _data,ref _infos);
    
     #region private PRUPOSE
 
@@ -359,6 +360,61 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         }
     }
 
+
+    private static unsafe void GetWSIInformations( ref GraphicInstanceFunction func,ref GraphicDeviceData data, ref GraphicDeviceCapabilities infos)
+    {
+         //Display enumeration
+        uint physicalDeviceDisplayPropertiesCount =0;
+       
+        func.vkGetPhysicalDeviceDisplayPropertiesKHR(data.VkPhysicalDevice, &physicalDeviceDisplayPropertiesCount, null );
+        Guard.IsEmpty(physicalDeviceDisplayPropertiesCount);
+
+        VkDisplayPropertiesKHR*  displayPropertiesKHR = stackalloc VkDisplayPropertiesKHR[(int)physicalDeviceDisplayPropertiesCount];
+        func.vkGetPhysicalDeviceDisplayPropertiesKHR(data.VkPhysicalDevice, &physicalDeviceDisplayPropertiesCount, displayPropertiesKHR );
+        // if( IsFeatures2Capabilities)
+        // {
+        //     func.vkGetPhysicalDeviceDisplayProperties2KHR
+        // }
+
+        // Display PLanes
+        uint physicalDeviceDisplayPlanePropertiesCount =0;
+       
+        func.vkGetPhysicalDeviceDisplayPlanePropertiesKHR(data.VkPhysicalDevice, &physicalDeviceDisplayPlanePropertiesCount, null );
+        Guard.IsEmpty(physicalDeviceDisplayPlanePropertiesCount);
+
+        VkDisplayPlanePropertiesKHR*  physicalDeviceDisplayPlanes = stackalloc VkDisplayPlanePropertiesKHR[(int)physicalDeviceDisplayPlanePropertiesCount];
+        func.vkGetPhysicalDeviceDisplayPlanePropertiesKHR(data.VkPhysicalDevice, &physicalDeviceDisplayPlanePropertiesCount,physicalDeviceDisplayPlanes );
+        // if( IsFeatures2Capabilities)
+        // {
+        //     func.vkGetPhysicalDeviceDisplayPlaneProperties2KHR
+        //      VkDisplayPlaneProperties2KHR*
+        // }
+        
+        // func.vkGetDisplayPlaneCapabilitiesKHR( data.VkPhysicalDevice , )
+
+        //DISPLAY MODE
+        // VkDisplayModeParametersKHR displayModeParameter = new();
+        // VkDisplayModeCreateInfoKHR displayModeCreateInfo = default;
+        // displayModeCreateInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_DISPLAY_MODE_CREATE_INFO_KHR;
+        // displayModeCreateInfo.flags =0;
+        // displayModeCreateInfo.pNext = null;
+        // displayModeCreateInfo.parameters = displayModeParameter;
+        // VkDisplayKHR displayKHR = VkDisplayKHR.Null;
+        // func.vkCreateDisplayModeKHR(data.VkPhysicalDevice,displayModeCreateInfo, displayKHR, null )
+
+        // uint displayModeProperties =0;
+       
+        // func.vkGetPhysicalDeviceDisplayPlanePropertiesKHR(data.VkPhysicalDevice, &displayModeProperties, null );
+        // Guard.IsEmpty(displayModeProperties);
+
+        // VkDisplayModePropertiesKHR*  displayModes = stackalloc VkDisplayModePropertiesKHR[(int)displayModeProperties];
+        // func.vkGetDisplayModePropertiesKHR(data.VkPhysicalDevice, &displayModeProperties, displayModes );
+      
+
+        
+
+    }
+
     #endregion
     
     #region DEvice
@@ -515,6 +571,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
                 graphicsFamily = i;
             }
             uint presentSupport =0;
+            //Querying for WSI Support
             func.vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
             if (presentSupport==VK.VK_TRUE)
             {
@@ -528,7 +585,9 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
             }
             i++;
         }
-
+        #if WIN64
+        // vkGetPhysicalDeviceWin32PresentationSupportKHR
+        #endif
         return (graphicsFamily, presentFamily);
         
     }

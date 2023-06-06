@@ -23,6 +23,12 @@ public static class Guard
             throw new Exception( string.Format($"{nameof(entity) } IS NULL"));
     }
 
+      public static void IsEmpty(uint count ) 
+    {
+        if ( count == 0) 
+            throw new Exception( string.Format($"{nameof(count) } IS EMPTY OR == 0"));
+    }
+
     public unsafe static void VoidIsNull(void* entity ) 
     {
         if ( entity ==(void*)0) 

@@ -43,7 +43,7 @@ public static class Sample_0002
         {
             snd.Init( AudioDevice ,  path+  "demo.wav" );
 
-            GraphicDevice.Render.BackColorARGB = RitaEngine.Base.Math.Color.Palette.Lavender ;
+            GraphicDevice.Render.BackColorARGB = RitaEngine.Base.Math.Color.Palette.BlanchedAlmond;
             GraphicDevice.Render.FragmentEntryPoint ="main";
             GraphicDevice.Render.VertexEntryPoint ="main";
             GraphicDevice.Render.FragmentShaderFileNameSPV = path + "fragment_base.spv";

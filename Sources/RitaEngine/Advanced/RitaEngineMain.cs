@@ -16,8 +16,8 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
         graphicDeviceConfig = new();
         graphicRenderConfig = new();
         graphicDeviceData = new();
-
-        graphic = new( graphicDeviceConfig , graphicRenderConfig , graphicDeviceData );
+        graphicDeviceCapabilities = new();
+        graphic = new( graphicDeviceConfig , graphicRenderConfig , graphicDeviceData , graphicDeviceCapabilities);
     }
     
     /// <summary>  Just Run  with try catch  </summary>
@@ -137,6 +137,7 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
     RitaEngine.Base.Platform.Config.GraphicDeviceConfig graphicDeviceConfig;
     RitaEngine.Base.Platform.Config.GraphicRenderConfig graphicRenderConfig;
     RitaEngine.Base.Platform.Structures.GraphicDeviceData graphicDeviceData;
+    RitaEngine.Base.Platform.Structures.GraphicDeviceCapabilities graphicDeviceCapabilities;
     
     private bool _disposed = false ;
 
@@ -147,6 +148,7 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
     public ref readonly RitaEngine.Base.Platform.Inputs Input => ref input;
     public ref readonly RitaEngine.Base.Platform.AudioDevice AudioDevice => ref  audio;
     public ref RitaEngine.Base.Platform.GraphicDevice GraphicDevice => ref graphic;
+
 
 
     #region [ Abstract to override ]
