@@ -606,7 +606,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
             func.vkGetPhysicalDeviceProperties(data.VkPhysicalDevice ,phd );
         }
         Infos.Limits = Infos.PhysicalDeviceProperties.limits;
-        
+        data.MaxSamplerAnisotropy = Infos.Limits.maxSamplerAnisotropy;
 
         using var deviceExtensions = new StrArrayUnsafe(ref Infos.DeviceExtensions);
         VkDeviceCreateInfo createInfo = default;
@@ -1645,7 +1645,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         samplerInfo.addressModeV = VkSamplerAddressMode.VK_SAMPLER_ADDRESS_MODE_REPEAT;
         samplerInfo.addressModeW = VkSamplerAddressMode.VK_SAMPLER_ADDRESS_MODE_REPEAT;
         samplerInfo.anisotropyEnable = VK.VK_TRUE;
-        samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+        samplerInfo.maxAnisotropy = data.MaxSamplerAnisotropy;
         samplerInfo.borderColor = VkBorderColor . VK_BORDER_COLOR_INT_OPAQUE_BLACK;
         samplerInfo.unnormalizedCoordinates = VK.VK_FALSE;
         samplerInfo.compareEnable = VK.VK_FALSE;
@@ -1654,9 +1654,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
         fixed(VkSampler* sampler  = &data.TextureSampler){
             func.vkCreateSampler(data.VkDevice, &samplerInfo, null, sampler).Check("failed to create texture sampler!");
-        }
-        
-        
+        }        
     }
 
     private unsafe static void CreateTextureImageView(ref GraphicDeviceFunction func, ref GraphicDeviceData data)
