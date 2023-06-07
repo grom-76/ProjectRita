@@ -140,7 +140,13 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         CreateCommandPool(ref func,ref data);
 
         CreateTextureImage(ref func , ref data);
+
+        CreateTextureImageView(ref func , ref data);
+        CreateTextureSampler(ref func , ref data);
+
         CreateVertexBuffer( ref func , ref data ,ref pipeline);
+
+        data.IndicesSize =(uint) pipeline.Indices.Length;
         CreateIndexBuffer( ref func , ref data , ref pipeline);
         CreateUniformBuffers(ref func , ref data , ref pipeline);
 
@@ -155,7 +161,9 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         CreatePipelineLayout( ref func , ref data);
         CreatePipeline(ref func, ref data,ref pipeline );
     }
-    
+
+   
+
     private unsafe static void DisposeBuildRender(ref GraphicDeviceFunction func,ref GraphicDeviceData data  )
     {
         Pause(ref func,ref data);
@@ -163,11 +171,14 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         DisposePipeline(ref func,ref data);
         DisposeRenderPass(ref func,ref data);
         DisposeUniformBuffers(ref func , ref data);
+        DisposeTextureSampler(ref func , ref data);
         DisposeTextureImage(ref func , ref data);
         DisposeDescriptorPool(ref func , ref data);
         DisposeBuffers(ref func , ref data);
         DisposeCommandPool(ref func,ref data);
     }
+
+ 
 
     private unsafe static void ReCreateSwapChain(ref GraphicDeviceFunction func,ref GraphicDeviceData data,ref GraphicDeviceCapabilities infos)
     {
@@ -1415,7 +1426,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
     {
         VkCommandBuffer commandBuffer = BeginSingleTimeCommands(ref func , ref data);
 
-        VkImageMemoryBarrier barrier = new();
+        VkImageMemoryBarrier barrier = default;
             barrier.sType =VkStructureType. VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
             barrier.oldLayout = oldLayout;
             barrier.newLayout = newLayout;
@@ -1518,6 +1529,63 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
         func.vkFreeCommandBuffers(data.VkDevice, data.VkCommandPool, 1, &commandBuffer);
        
+    }
+
+    #endregion
+
+    #region SAMPLER
+    private unsafe static void CreateTextureSampler(ref GraphicDeviceFunction func, ref GraphicDeviceData data)
+    {
+        // VkPhysicalDeviceProperties properties = default;
+        
+        // func.vkGetPhysicalDeviceProperties(data.VkPhysicalDevice, &properties);
+
+        VkSamplerCreateInfo samplerInfo = default;
+        samplerInfo.sType =  VkStructureType.VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        samplerInfo.magFilter = VkFilter.VK_FILTER_LINEAR;
+        samplerInfo.minFilter = VkFilter.VK_FILTER_LINEAR;
+        samplerInfo.addressModeU = VkSamplerAddressMode.VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeV = VkSamplerAddressMode.VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeW = VkSamplerAddressMode.VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.anisotropyEnable = VK.VK_TRUE;
+        samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+        samplerInfo.borderColor = VkBorderColor . VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+        samplerInfo.unnormalizedCoordinates = VK.VK_FALSE;
+        samplerInfo.compareEnable = VK.VK_FALSE;
+        samplerInfo.compareOp = VkCompareOp.VK_COMPARE_OP_ALWAYS;
+        samplerInfo.mipmapMode = VkSamplerMipmapMode .VK_SAMPLER_MIPMAP_MODE_LINEAR;
+
+        fixed(VkSampler* sampler  = &data.TextureSampler){
+            func.vkCreateSampler(data.VkDevice, &samplerInfo, null, sampler).Check("failed to create texture sampler!");
+        }
+        
+        
+    }
+
+    private unsafe static void CreateTextureImageView(ref GraphicDeviceFunction func, ref GraphicDeviceData data)
+    {
+         VkImageViewCreateInfo viewInfo = default;
+        viewInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        viewInfo.image = data.TextureImage;
+        viewInfo.viewType = VkImageViewType. VK_IMAGE_VIEW_TYPE_2D;
+        viewInfo.format = VkFormat. VK_FORMAT_R8G8B8A8_SRGB;
+        viewInfo.subresourceRange.aspectMask =  (uint)VkImageAspectFlagBits. VK_IMAGE_ASPECT_COLOR_BIT;
+        viewInfo.subresourceRange.baseMipLevel = 0;
+        viewInfo.subresourceRange.levelCount = 1;
+        viewInfo.subresourceRange.baseArrayLayer = 0;
+        viewInfo.subresourceRange.layerCount = 1;
+
+        fixed (VkImageView* imageView = &data.TextureImageView ){
+            func.vkCreateImageView(data.VkDevice, &viewInfo, null, imageView).Check("failed to create image view!");
+        }
+       
+    }
+
+  
+
+    private unsafe static void DisposeTextureSampler(ref GraphicDeviceFunction func, ref GraphicDeviceData data)
+    {
+        throw new NotImplementedException();
     }
 
     #endregion
@@ -2101,28 +2169,28 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         
         func.vkBeginCommandBuffer(commandBuffer, &beginInfo).Check("Failed to Begin command buffer");}
         
-        if( data.VkPresentFamilyIndice != data.VkGraphicFamilyIndice ) {
-            VkImageSubresourceRange image_subresource_range = default;
-                image_subresource_range.aspectMask=(uint)VkImageAspectFlagBits.VK_IMAGE_ASPECT_COLOR_BIT;
-                image_subresource_range.baseMipLevel=0;
-                image_subresource_range.levelCount=1;
-                image_subresource_range.baseArrayLayer=0;
-                image_subresource_range.layerCount=     1;
+        // if( data.VkPresentFamilyIndice != data.VkGraphicFamilyIndice ) {
+        //     VkImageSubresourceRange image_subresource_range = default;
+        //         image_subresource_range.aspectMask=(uint)VkImageAspectFlagBits.VK_IMAGE_ASPECT_COLOR_BIT;
+        //         image_subresource_range.baseMipLevel=0;
+        //         image_subresource_range.levelCount=1;
+        //         image_subresource_range.baseArrayLayer=0;
+        //         image_subresource_range.layerCount=     1;
 
-            VkImageMemoryBarrier barrier_from_present_to_draw = default ;
-                barrier_from_present_to_draw.sType = VkStructureType.VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;     // VkStructureType                sType
-                barrier_from_present_to_draw.pNext = null;                                    // const void                    *pNext
-                barrier_from_present_to_draw.srcAccessMask = (uint)VkAccessFlagBits.VK_ACCESS_MEMORY_READ_BIT;                  // VkAccessFlags                  srcAccessMask
-                barrier_from_present_to_draw.dstAccessMask = (uint)VkAccessFlagBits.VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;       // VkAccessFlags                  dstAccessMask
-                barrier_from_present_to_draw.oldLayout=VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED;                  // VkImageLayout                  oldLayout
-                barrier_from_present_to_draw.newLayout=VkImageLayout.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;            // VkImageLayout                  newLayout
-                barrier_from_present_to_draw.srcQueueFamilyIndex=data.VkPresentFamilyIndice;              // uint32_t                       srcQueueFamilyIndex
-                barrier_from_present_to_draw.dstQueueFamilyIndex=data.VkGraphicFamilyIndice;             // uint32_t                       dstQueueFamilyIndex
-                barrier_from_present_to_draw.image= data.VkImages[CurrentFrame];                // VkImage                        image
-                barrier_from_present_to_draw.subresourceRange=image_subresource_range;                     // VkImageSubresourceRange        subresourceRange
+        //     VkImageMemoryBarrier barrier_from_present_to_draw = default ;
+        //         barrier_from_present_to_draw.sType = VkStructureType.VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;     // VkStructureType                sType
+        //         barrier_from_present_to_draw.pNext = null;                                    // const void                    *pNext
+        //         barrier_from_present_to_draw.srcAccessMask = (uint)VkAccessFlagBits.VK_ACCESS_MEMORY_READ_BIT;                  // VkAccessFlags                  srcAccessMask
+        //         barrier_from_present_to_draw.dstAccessMask = (uint)VkAccessFlagBits.VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;       // VkAccessFlags                  dstAccessMask
+        //         barrier_from_present_to_draw.oldLayout=VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED;                  // VkImageLayout                  oldLayout
+        //         barrier_from_present_to_draw.newLayout=VkImageLayout.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;            // VkImageLayout                  newLayout
+        //         barrier_from_present_to_draw.srcQueueFamilyIndex=data.VkPresentFamilyIndice;              // uint32_t                       srcQueueFamilyIndex
+        //         barrier_from_present_to_draw.dstQueueFamilyIndex=data.VkGraphicFamilyIndice;             // uint32_t                       dstQueueFamilyIndex
+        //         barrier_from_present_to_draw.image= data.VkImages[CurrentFrame];                // VkImage                        image
+        //         barrier_from_present_to_draw.subresourceRange=image_subresource_range;                     // VkImageSubresourceRange        subresourceRange
         
-            func.vkCmdPipelineBarrier( commandBuffer, (uint)VkPipelineStageFlagBits.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, (uint)VkPipelineStageFlagBits.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, null, 0, null, 1, &barrier_from_present_to_draw );
-        }
+        //     func.vkCmdPipelineBarrier( commandBuffer, (uint)VkPipelineStageFlagBits.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, (uint)VkPipelineStageFlagBits.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, null, 0, null, 1, &barrier_from_present_to_draw );
+        // }
 
        { //BEGIN RENDER PASS
          VkRenderPassBeginInfo renderPassInfo = default;
@@ -2143,33 +2211,51 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         fixed( VkRect2D* scissor = &data.Scissor){ func.vkCmdSetScissor(commandBuffer, 0, 1, scissor); }
         //--------------------------------------------------------------------------------------
        
+        // if ( data.IndicesBuffer != VkBuffer.Null )
+        // {
+            VkBuffer* vertexBuffers = stackalloc VkBuffer[] { data.VertexBuffer};
+            VkDeviceSize* offsets = stackalloc VkDeviceSize[]{0};
+            func.vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+            func.vkCmdBindIndexBuffer(commandBuffer, data.IndicesBuffer, 0, VkIndexType.VK_INDEX_TYPE_UINT16);
+
+            fixed(VkDescriptorSet* desc =  &data.DescriptorSets[CurrentFrame] ){
+                func.vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint.VK_PIPELINE_BIND_POINT_GRAPHICS, data.VkpipelineLayout, 0, 1, desc, 0, null);
+            }
+            
+
+            func.vkCmdDrawIndexed(commandBuffer, data.IndicesSize, 1, 0, 0, 0);
+        // }
+        // else
+        // {
+        //     func.vkCmdDraw(commandBuffer, 3,(uint)(data.VertexOutsideShader?3:1), 0, 0);       
+        // }
         
-        func.vkCmdDraw(commandBuffer, 3,(uint)(data.VertexOutsideShader?3:1), 0, 0);       
 
         func.vkCmdEndRenderPass(commandBuffer);
        
-        if( data.VkPresentFamilyIndice != data.VkGraphicFamilyIndice ) {
-            VkImageSubresourceRange image_subresource_range = default;
-                image_subresource_range.aspectMask=(uint)VkImageAspectFlagBits.VK_IMAGE_ASPECT_COLOR_BIT;
-                image_subresource_range.baseMipLevel=0;
-                image_subresource_range.levelCount=1;
-                image_subresource_range.baseArrayLayer=0;
-                image_subresource_range.layerCount=     1;
+        // if( data.VkPresentFamilyIndice != data.VkGraphicFamilyIndice ) {
+        //     VkImageSubresourceRange image_subresource_range = default;
+        //         image_subresource_range.aspectMask=(uint)VkImageAspectFlagBits.VK_IMAGE_ASPECT_COLOR_BIT;
+        //         image_subresource_range.baseMipLevel=0;
+        //         image_subresource_range.levelCount=1;
+        //         image_subresource_range.baseArrayLayer=0;
+        //         image_subresource_range.layerCount=     1;
 
-            VkImageMemoryBarrier barrier_from_draw_to_present = default ;
-                barrier_from_draw_to_present.sType = VkStructureType.VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;     // VkStructureType                sType
-                barrier_from_draw_to_present.pNext = null;                                    // const void                    *pNext
-                barrier_from_draw_to_present.srcAccessMask = (uint)VkAccessFlagBits.VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;                  // VkAccessFlags                  srcAccessMask
-                barrier_from_draw_to_present.dstAccessMask = (uint)VkAccessFlagBits.VK_ACCESS_MEMORY_READ_BIT;       // VkAccessFlags                  dstAccessMask
-                barrier_from_draw_to_present.oldLayout=VkImageLayout.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;                  // VkImageLayout                  oldLayout
-                barrier_from_draw_to_present.newLayout=VkImageLayout.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;            // VkImageLayout                  newLayout
-                barrier_from_draw_to_present.srcQueueFamilyIndex=data.VkGraphicFamilyIndice;              // uint32_t                       srcQueueFamilyIndex
-                barrier_from_draw_to_present.dstQueueFamilyIndex=data.VkPresentFamilyIndice;             // uint32_t                       dstQueueFamilyIndex
-                barrier_from_draw_to_present.image= data.VkImages[CurrentFrame];                // VkImage                        image
-                barrier_from_draw_to_present.subresourceRange=image_subresource_range;                     // VkImageSubresourceRange        subresourceRange
+        //     VkImageMemoryBarrier barrier_from_draw_to_present = default ;
+        //         barrier_from_draw_to_present.sType = VkStructureType.VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;     // VkStructureType                sType
+        //         barrier_from_draw_to_present.pNext = null;                                    // const void                    *pNext
+        //         barrier_from_draw_to_present.srcAccessMask = (uint)VkAccessFlagBits.VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;                  // VkAccessFlags                  srcAccessMask
+        //         barrier_from_draw_to_present.dstAccessMask = (uint)VkAccessFlagBits.VK_ACCESS_MEMORY_READ_BIT;       // VkAccessFlags                  dstAccessMask
+        //         barrier_from_draw_to_present.oldLayout=VkImageLayout.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;                  // VkImageLayout                  oldLayout
+        //         barrier_from_draw_to_present.newLayout=VkImageLayout.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;            // VkImageLayout                  newLayout
+        //         barrier_from_draw_to_present.srcQueueFamilyIndex=data.VkGraphicFamilyIndice;              // uint32_t                       srcQueueFamilyIndex
+        //         barrier_from_draw_to_present.dstQueueFamilyIndex=data.VkPresentFamilyIndice;             // uint32_t                       dstQueueFamilyIndex
+        //         barrier_from_draw_to_present.image= data.VkImages[CurrentFrame];                // VkImage                        image
+        //         barrier_from_draw_to_present.subresourceRange=image_subresource_range;                     // VkImageSubresourceRange        subresourceRange
         
-            func.vkCmdPipelineBarrier( commandBuffer, (uint)VkPipelineStageFlagBits.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, (uint)VkPipelineStageFlagBits.VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, null, 0, null, 1, &barrier_from_draw_to_present );
-        }
+        //     func.vkCmdPipelineBarrier( commandBuffer, (uint)VkPipelineStageFlagBits.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, (uint)VkPipelineStageFlagBits.VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, null, 0, null, 1, &barrier_from_draw_to_present );
+        // }
         
         func.vkEndCommandBuffer(commandBuffer).Check("Failed to End command buffer ");
     }

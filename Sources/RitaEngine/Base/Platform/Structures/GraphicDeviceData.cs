@@ -48,6 +48,8 @@ public struct GraphicDeviceData : IEquatable<GraphicDeviceData>
 // vertex code 19
     public VkBuffer VertexBuffer = VkBuffer.Null;
     public VkBuffer IndicesBuffer = VkBuffer.Null;
+    public uint IndicesSize = 0;
+
     public VkDeviceMemory VertexBufferMemory = VkDeviceMemory.Null;
     public VkDeviceMemory IndicesBufferMemory = VkDeviceMemory.Null;
 
@@ -57,6 +59,10 @@ public struct GraphicDeviceData : IEquatable<GraphicDeviceData>
 
     public VkImage TextureImage = VkImage.Null;
     public VkDeviceMemory TextureImageMemory = VkDeviceMemory.Null;
+
+    public VkImageView TextureImageView = VkImageView.Null; //25 sampler
+    public VkSampler TextureSampler =     VkSampler.Null; // 25 sampler
+
     public string TextureName ="";
     public GraphicDeviceData()
     {
