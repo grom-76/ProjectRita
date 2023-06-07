@@ -1288,21 +1288,43 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         }
         
         for (int i = 0; i <  data.MAX_FRAMES_IN_FLIGHT; i++) {
-            VkDescriptorBufferInfo bufferInfo = new();
+            VkDescriptorBufferInfo bufferInfo = default;
             bufferInfo.buffer = data.uniformBuffers[i];
             bufferInfo.offset = 0;
             bufferInfo.range = (uint)Marshal.SizeOf<Uniform_MVP>();
 
-            VkWriteDescriptorSet descriptorWrite = new();
-            descriptorWrite.sType = VkStructureType.VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrite.dstSet = data.DescriptorSets[i];
-            descriptorWrite.dstBinding = 0;
-            descriptorWrite.dstArrayElement = 0;
-            descriptorWrite.descriptorType = VkDescriptorType. VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorWrite.descriptorCount = 1;
-            descriptorWrite.pBufferInfo = &bufferInfo;
+            // VkWriteDescriptorSet descriptorWrite = default;
+            // descriptorWrite.sType = VkStructureType.VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            // descriptorWrite.dstSet = data.DescriptorSets[i];
+            // descriptorWrite.dstBinding = 0;
+            // descriptorWrite.dstArrayElement = 0;
+            // descriptorWrite.descriptorType = VkDescriptorType. VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            // descriptorWrite.descriptorCount = 1;
+            // descriptorWrite.pBufferInfo = &bufferInfo;
+            VkDescriptorImageInfo imageInfo =default;
+            imageInfo.imageLayout = VkImageLayout.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            imageInfo.imageView = data.TextureImageView;
+            imageInfo.sampler = data.TextureSampler;
 
-            func.vkUpdateDescriptorSets(data.VkDevice, 1, &descriptorWrite, 0, null);
+            VkWriteDescriptorSet* descriptorWrites = stackalloc VkWriteDescriptorSet[2];
+
+            descriptorWrites[0].sType = VkStructureType. VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[0].dstSet = data.DescriptorSets[i];
+            descriptorWrites[0].dstBinding = 0;
+            descriptorWrites[0].dstArrayElement = 0;
+            descriptorWrites[0].descriptorType = VkDescriptorType.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptorWrites[0].descriptorCount = 1;
+            descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+            descriptorWrites[1].sType = VkStructureType.VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[1].dstSet = data.DescriptorSets[i];
+            descriptorWrites[1].dstBinding = 1;
+            descriptorWrites[1].dstArrayElement = 0;
+            descriptorWrites[1].descriptorType =VkDescriptorType.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            descriptorWrites[1].descriptorCount = 1;
+            descriptorWrites[1].pImageInfo = &imageInfo;
+
+            func.vkUpdateDescriptorSets(data.VkDevice, 2, descriptorWrites, 0, null);
         }
     }
 
@@ -1585,7 +1607,14 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
     private unsafe static void DisposeTextureSampler(ref GraphicDeviceFunction func, ref GraphicDeviceData data)
     {
-        throw new NotImplementedException();
+        if( !data.TextureSampler.IsNull)
+        {
+            func.vkDestroySampler(data.VkDevice,data.TextureSampler, null);
+        }
+        if( !data.TextureImageView.IsNull)
+        {
+            func.vkDestroyImageView(data.VkDevice, data.TextureImageView, null);
+        }
     }
 
     #endregion
@@ -1688,32 +1717,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 //         // textureImageView = HELPER_CreateImageView(textureImage,  Rita.Engine.Graphic.Native.VkFormat. VK_FORMAT_R8G8B8A8_SRGB);
 //     }
 
-//     public void CreateTextureSampler()
-//     {
-//         // VkPhysicalDeviceProperties properties{};
-//         // vkGetPhysicalDeviceProperties(physicalDevice, &properties);
 
-//         // VkSamplerCreateInfo samplerInfo{};
-//         // samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-//         // samplerInfo.magFilter = VK_FILTER_LINEAR;
-//         // samplerInfo.minFilter = VK_FILTER_LINEAR;
-//         // samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-//         // samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-//         // samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-//         // samplerInfo.anisotropyEnable = VK_TRUE;
-//         // samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
-//         // samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-//         // samplerInfo.unnormalizedCoordinates = VK_FALSE;
-//         // samplerInfo.compareEnable = VK_FALSE;
-//         // samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-//         // samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-
-//         // if (vkCreateSampler(device, &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS) {
-//         //     throw std::runtime_error("failed to create texture sampler!");
-//         // }
-
-
-//     }
     
     #endregion
 
