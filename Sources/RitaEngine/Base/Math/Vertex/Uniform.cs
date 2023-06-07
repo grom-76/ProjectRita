@@ -1,18 +1,5 @@
 namespace RitaEngine.Base.Math.Vertex;
 
-    // public struct TextureUV{}
-    //      public struct Color3{}   
-       
-
-    //      public struct Scalar{} // 1D 
-    //      public struct Position3D{}
-    //         public struct Position2D{}
-    //           public struct Color4{}
-
-    //            public struct Normal{}
-
-    //             public struct Layout{} // 1D 
-
 public struct Uniform_MVP 
 {
     public Matrix Model;
@@ -22,7 +9,6 @@ public struct Uniform_MVP
     public Uniform_MVP(Matrix model , Matrix view , Matrix projection)
         => (Model, View,Projection )=(model,view,projection);
 };
-
 
 public struct Position2f_Color3f
 {
@@ -49,5 +35,39 @@ public struct Position2f_Color3f
     }
 
     public float[] ToArray => new float[]{ Position.X,Position.Y, Color.R,Color.G,Color.B};
+    
+}
+
+public struct Position3f_Color3f_UV2f
+{
+    public Vector3 Position;
+    public Vector3 Color;
+    public Vector2 UV;
+
+    public static readonly int Stride = Unsafe.SizeOf<Position3f_Color3f_UV2f>();
+    public static readonly nint OffsetPosition =  Marshal.OffsetOf<Position3f_Color3f_UV2f>( nameof(Position));
+    public static readonly nint OffsetColor =  Marshal.OffsetOf<Position3f_Color3f_UV2f>( nameof(Color));
+    public static readonly nint OffsetUV =  Marshal.OffsetOf<Position3f_Color3f_UV2f>( nameof(UV));
+    public uint FormatPosition = (uint)RitaEngine.Base.Platform.API.Vulkan.VkFormat.VK_FORMAT_R32G32B32_SFLOAT;
+    public uint FormatColor =(uint)RitaEngine.Base.Platform.API.Vulkan.VkFormat.VK_FORMAT_R32G32B32_SFLOAT;
+    public uint FormatUV =(uint)RitaEngine.Base.Platform.API.Vulkan.VkFormat.VK_FORMAT_R32G32_SFLOAT;
+
+
+    public Position3f_Color3f_UV2f( float x , float y , float r , float g , float b , float u , float v)
+    {
+        Position = new( x,y);
+        Color = new( r,g,b);
+        UV = new( u,v);
+
+    }
+
+    public Position3f_Color3f_UV2f( Vector3 position , Vector3 color , Vector2 uv)
+    {
+        Position = new( position.X,position.X);
+        Color = new( color.X,color.Y, color.Z);
+        UV = new(uv.X,uv.Y );
+    }
+
+    public float[] ToArray => new float[]{ Position.X,Position.Y, Position.Z, Color.R,Color.G,Color.B ,UV.X ,UV.Y };
     
 }

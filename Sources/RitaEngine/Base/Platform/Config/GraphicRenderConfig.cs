@@ -23,12 +23,19 @@ public sealed class GraphicRenderConfig
     public bool VertexOutsideShader = false;
     public uint AttributeDescription = 2;
 
-    public Position2f_Color3f[] Vertices = new Position2f_Color3f[] { new( 0.5f,-0.5f,1.0f,0.0f,0.0f),new(0.5f,0.5f,0.0f,1.0f,0.0f),new(-0.5f,0.5f,0.0f,0.0f,1.0f) }  ;
+    public Position2f_Color3f[] traingle = new Position2f_Color3f[] { new( 0.5f,-0.5f,1.0f,0.0f,0.0f),new(0.5f,0.5f,0.0f,1.0f,0.0f),new(-0.5f,0.5f,0.0f,0.0f,1.0f) }  ;
 
+    public Position3f_Color3f_UV2f[] Vertices = new Position3f_Color3f_UV2f[] 
+    {
+        new(-0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f),
+        new(0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f),
+        new(0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f),
+        new(-0.5f, 0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f)
+    };
     public short[] Indices = new short[] { 0, 1, 2, 2, 3, 0};
 
     public Uniform_MVP ubo = new();
-    public int VerticeSize =0;
+    public int VerticeSize =0;// = Vertices.Length * Vertices.Size ;
     public bool IsStaging = true;
     public string TextureName ="";
 

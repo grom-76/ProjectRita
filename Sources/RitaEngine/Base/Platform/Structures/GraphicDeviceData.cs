@@ -63,6 +63,10 @@ public struct GraphicDeviceData : IEquatable<GraphicDeviceData>
     public VkImageView TextureImageView = VkImageView.Null; //25 sampler
     public VkSampler TextureSampler =     VkSampler.Null; // 25 sampler
 
+    public VkImage DepthImage = VkImage.Null; //27 depth buffering
+    public VkDeviceMemory DepthImageMemory = VkDeviceMemory.Null;
+    public VkImageView DepthImageView = VkImageView.Null;
+
     public string TextureName ="";
     public GraphicDeviceData()
     {

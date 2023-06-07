@@ -116,6 +116,8 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
     public void BuildRender() => BuildRender(ref _device, ref _data, ref _render);
 
+    public void Update() => UpdateUniformBuffer( _device, ref _data , _render);
+
     public void Draw() => DrawPipeline(ref _device, ref _data,ref _infos);
    
     #region private PRUPOSE
@@ -139,6 +141,8 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
         CreateCommandPool(ref func,ref data);
 
+        CreateDepthResources( ref func, ref data);
+
         CreateTextureImage(ref func , ref data);
 
         CreateTextureImageView(ref func , ref data);
@@ -161,9 +165,6 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         CreatePipelineLayout( ref func , ref data);
         CreatePipeline(ref func, ref data,ref pipeline );
     }
-
-   
-
     private unsafe static void DisposeBuildRender(ref GraphicDeviceFunction func,ref GraphicDeviceData data  )
     {
         Pause(ref func,ref data);
@@ -178,7 +179,77 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         DisposeCommandPool(ref func,ref data);
     }
 
- 
+
+#region DEpth Buffering 
+    private unsafe static void CreateDepthResources(ref GraphicDeviceFunction func, ref GraphicDeviceData data)
+    {
+        VkFormat depthFormat = FindDepthFormat();
+
+        //CreateImage(swapChainExtent.width, swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, 
+        // VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
+        // CreateImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+        CreateImage(ref func , ref data, ref data.DepthImage , ref data.DepthImageMemory, (uint)data.Viewport.width, (uint)data.Viewport.height, 
+            depthFormat, 
+            VkImageTiling.VK_IMAGE_TILING_OPTIMAL, 
+            VkImageUsageFlagBits.VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VkImageUsageFlagBits.VK_IMAGE_USAGE_SAMPLED_BIT, 
+            VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT   );
+        
+        VkImageViewCreateInfo viewInfo = default;
+        viewInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        viewInfo.image = data.DepthImage;
+        viewInfo.viewType = VkImageViewType. VK_IMAGE_VIEW_TYPE_2D;
+        viewInfo.format = VkFormat. VK_FORMAT_R8G8B8A8_SRGB;
+        viewInfo.subresourceRange.aspectMask =  (uint)VkImageAspectFlagBits.VK_IMAGE_ASPECT_DEPTH_BIT;
+        viewInfo.subresourceRange.baseMipLevel = 0;
+        viewInfo.subresourceRange.levelCount = 1;
+        viewInfo.subresourceRange.baseArrayLayer = 0;
+        viewInfo.subresourceRange.layerCount = 1;
+
+        fixed (VkImageView* imageView = &data.DepthImageView ){
+            func.vkCreateImageView(data.VkDevice, &viewInfo, null, imageView).Check("failed to create image view!");
+        }
+       
+
+    }
+     private static unsafe  VkFormat FindSupportedFormat(VkFormat[] candidates, VkImageTiling tiling, VkFormatFeatureFlagBits features) 
+     {
+        // for (VkFormat format : candidates) 
+        // {
+        //     VkFormatProperties props;
+        //     vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
+
+        //     if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
+        //         return format;
+        //     } else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
+        //         return format;
+        //     }
+        // }
+        foreach ( VkFormat format in candidates)
+        {
+            // TODO FindSupportFormat
+        }
+        return VkFormat.VK_FORMAT_A8B8G8R8_SRGB_PACK32;
+        //  throw std::runtime_error("failed to find supported format!");
+    }
+
+    private static unsafe VkFormat FindDepthFormat() 
+    {
+        return FindSupportedFormat(
+            new VkFormat[] {VkFormat.VK_FORMAT_D32_SFLOAT, VkFormat.VK_FORMAT_D32_SFLOAT_S8_UINT, VkFormat.VK_FORMAT_D24_UNORM_S8_UINT},
+            VkImageTiling.VK_IMAGE_TILING_OPTIMAL,
+             VkFormatFeatureFlagBits.VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
+        );
+    }
+
+
+    private unsafe static void DisposeDepthResources(ref GraphicDeviceFunction func, ref GraphicDeviceData data)
+    {
+        func.vkDestroyImageView(data.VkDevice,data.DepthImageView, null);
+        func.vkDestroyImage(data.VkDevice, data.DepthImage, null);
+        func.vkFreeMemory(data.VkDevice, data.DepthImageMemory, null);
+    }
+
+ #endregion
 
     private unsafe static void ReCreateSwapChain(ref GraphicDeviceFunction func,ref GraphicDeviceData data,ref GraphicDeviceCapabilities infos)
     {
@@ -192,14 +263,18 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         // data.VkSurfaceArea.height = height;
         //need uint width, uint height
         Pause(ref func,ref data);
-
+        DisposeDepthResources( ref func , ref data);
         DisposeSwapChain(ref func,ref data);
+
         DisposeFrameBuffer(ref func,ref data);
        
         CreateSwapChain(ref func,ref data, ref infos);
         CreateImageViews(ref func, ref data);
+        CreateDepthResources( ref func, ref data);
         CreateFramebuffers(ref func,ref data);
     }
+
+   
 
     private static string VersionToString( uint version ) => $"{VK.VK_VERSION_MAJOR(version)}.{VK.VK_VERSION_MINOR(version)}.{VK.VK_VERSION_PATCH(version)} ";
 
@@ -833,7 +908,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         }
 
         if ( !data.VkDevice.IsNull && !data.VkSwapChain.IsNull ){
-            Log.Info($"Release SwapChain [{data.VkPhysicalDevice}]");
+           
             func.vkDestroySwapchainKHR(data.VkDevice, data.VkSwapChain, null);
         }
     }
@@ -1381,7 +1456,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         file = null!;
         result.Data = null!;
 
-        CreateImage(ref func , ref data,texWidth, texHeight, 
+        CreateImage(ref func , ref data, ref data.TextureImage, ref data.TextureImageMemory, texWidth, texHeight, 
         VkFormat.VK_FORMAT_R8G8B8A8_SRGB, 
         VkImageTiling.VK_IMAGE_TILING_OPTIMAL, 
         VkImageUsageFlagBits.VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits.VK_IMAGE_USAGE_SAMPLED_BIT, 
@@ -1407,7 +1482,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         }
         
     }
-    private unsafe static void CreateImage(ref GraphicDeviceFunction func,ref GraphicDeviceData data, uint width, uint height, VkFormat format, VkImageTiling tiling,
+    private unsafe static void CreateImage(ref GraphicDeviceFunction func,ref GraphicDeviceData data, ref VkImage image,ref VkDeviceMemory imageMemory,  uint width, uint height, VkFormat format, VkImageTiling tiling,
          VkImageUsageFlagBits usage, VkMemoryPropertyFlagBits properties) 
     {
         VkImageCreateInfo imageInfo = new();
@@ -1425,23 +1500,23 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
             imageInfo.samples =VkSampleCountFlagBits.VK_SAMPLE_COUNT_1_BIT;
             imageInfo.sharingMode = VkSharingMode. VK_SHARING_MODE_EXCLUSIVE;
 
-        fixed( VkImage* img = &data.TextureImage) {
+        fixed( VkImage* img = &image) {
             func.vkCreateImage(data.VkDevice, &imageInfo, null,img).Check("failed to create image!");
         }
         
         VkMemoryRequirements memRequirements;
-        func.vkGetImageMemoryRequirements(data.VkDevice, data.TextureImage, &memRequirements);
+        func.vkGetImageMemoryRequirements(data.VkDevice, image, &memRequirements);
 
         VkMemoryAllocateInfo allocInfo = default;
         allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
         allocInfo.memoryTypeIndex = FindMemoryType(ref func , ref data, memRequirements.memoryTypeBits, properties);
 
-        fixed (VkDeviceMemory* imageMemory = &data.TextureImageMemory  ){
-            func.vkAllocateMemory(data.VkDevice, &allocInfo, null, imageMemory).Check("failed to allocate image memory!");
+        fixed (VkDeviceMemory* imgMem = &imageMemory  ){
+            func.vkAllocateMemory(data.VkDevice, &allocInfo, null, imgMem).Check("failed to allocate image memory!");
         }
 
-        func.vkBindImageMemory( data.VkDevice, data.TextureImage, data.TextureImageMemory, 0).Check("Bind Image Memory");
+        func.vkBindImageMemory( data.VkDevice, image,imageMemory, 0).Check("Bind Image Memory");
     }
 
     private unsafe static void TransitionImageLayout(ref GraphicDeviceFunction func,ref GraphicDeviceData data, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) 
@@ -1711,13 +1786,6 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
 //         // endSingleTimeCommands(commandBuffer);
 //     }
-
-//     public  void CreateTextureImageView()
-//      {
-//         // textureImageView = HELPER_CreateImageView(textureImage,  Rita.Engine.Graphic.Native.VkFormat. VK_FORMAT_R8G8B8A8_SRGB);
-//     }
-
-
     
     #endregion
 
@@ -1798,15 +1866,35 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
             colorAttachment.flags =0;
             colorAttachment.finalLayout = VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED;
 
+        //ONLY IF DEPTH RESOURCE
+          VkAttachmentDescription depthAttachment =default;// New<VkAttachmentDescription>(); //new(){
+            depthAttachment.format = FindDepthFormat();
+            depthAttachment.samples = VkSampleCountFlagBits.VK_SAMPLE_COUNT_1_BIT;
+            depthAttachment.loadOp = VkAttachmentLoadOp.VK_ATTACHMENT_LOAD_OP_CLEAR;
+            depthAttachment.storeOp = VkAttachmentStoreOp. VK_ATTACHMENT_STORE_OP_STORE;
+            depthAttachment.stencilLoadOp = VkAttachmentLoadOp.VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+            depthAttachment.stencilStoreOp =VkAttachmentStoreOp. VK_ATTACHMENT_STORE_OP_DONT_CARE;
+            depthAttachment.initialLayout = VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED;
+            depthAttachment.finalLayout = VkImageLayout.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+            depthAttachment.flags =0;
+            depthAttachment.finalLayout = VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED;
+
         // POST PROCESSING       
          VkAttachmentReference colorAttachmentRef = default;// New<VkAttachmentReference>();//new() {
-            colorAttachmentRef.attachment = 0;
+            colorAttachmentRef.attachment = 1;// TODO voir pourquoi 0 dans tutorial
             colorAttachmentRef.layout =VkImageLayout. VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            
+         
+         VkAttachmentReference depthAttachmentRef = default;// New<VkAttachmentReference>();//new() {
+            depthAttachmentRef.attachment =1;
+            depthAttachmentRef.layout =VkImageLayout.VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
+        
         VkSubpassDescription subpass = default ;//New<VkSubpassDescription>(); //new(){
             subpass.pipelineBindPoint = VkPipelineBindPoint. VK_PIPELINE_BIND_POINT_GRAPHICS;
             subpass.colorAttachmentCount = 1;
             subpass.pColorAttachments = &colorAttachmentRef;
+            subpass.pDepthStencilAttachment =&depthAttachmentRef;
             // subpass.flags =0;
             // subpass.inputAttachmentCount=0;
             // subpass.pDepthStencilAttachment = null;
@@ -1817,17 +1905,19 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         VkSubpassDependency dependency =default; //  New <VkSubpassDependency>();
             dependency.srcSubpass = VK.VK_SUBPASS_EXTERNAL;
             dependency.dstSubpass = 0;
-            dependency.srcStageMask = (uint)VkPipelineStageFlagBits. VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            dependency.srcStageMask = (uint)VkPipelineStageFlagBits. VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | (uint)VkPipelineStageFlagBits.VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
             dependency.srcAccessMask = 0;
-            dependency.dstStageMask =(uint) VkPipelineStageFlagBits.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            dependency.dstAccessMask =(uint)VkAccessFlagBits. VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            dependency.dstStageMask =(uint) VkPipelineStageFlagBits.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT| (uint)VkPipelineStageFlagBits.VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+            dependency.dstAccessMask =(uint)VkAccessFlagBits. VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT| (uint)VkAccessFlagBits.VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
             dependency.dependencyFlags =0;
 
         //RENDER PASS 
+        VkAttachmentDescription* attachments = stackalloc VkAttachmentDescription[] { colorAttachment, depthAttachment };
+
         VkRenderPassCreateInfo renderPassInfo = default;// New<VkRenderPassCreateInfo>();//new()
             renderPassInfo.sType = VkStructureType. VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-            renderPassInfo.attachmentCount = 1;
-            renderPassInfo.pAttachments = &colorAttachment;
+            renderPassInfo.attachmentCount = 2;
+            renderPassInfo.pAttachments = attachments;
             renderPassInfo.subpassCount = 1;
             renderPassInfo.pSubpasses = &subpass;
             renderPassInfo.dependencyCount = 1;
@@ -1948,45 +2038,49 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
         VkPipelineVertexInputStateCreateInfo vertexInputInfo =default;
         vertexInputInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        if ( pipeline.VertexOutsideShader)
-        {
+        // if ( pipeline.VertexOutsideShader)
+        // {
   
         VkVertexInputBindingDescription bindingDescription =new();// GetBindingDescription( ref bindingDescription);
             bindingDescription.binding = 0;
-            bindingDescription.stride =(uint) Marshal.SizeOf<Position2f_Color3f>();
+            bindingDescription.stride =(uint) Marshal.SizeOf<Position3f_Color3f_UV2f>();
             bindingDescription.inputRate = VkVertexInputRate.VK_VERTEX_INPUT_RATE_VERTEX;
 
-        VkVertexInputAttributeDescription* attributeDescriptions = stackalloc VkVertexInputAttributeDescription[2] ; // GetAttributeDescriptions(  attributeDescriptions);
+        VkVertexInputAttributeDescription* attributeDescriptions = stackalloc VkVertexInputAttributeDescription[3] ; // GetAttributeDescriptions(  attributeDescriptions);
             attributeDescriptions[0].binding = 0;
             attributeDescriptions[0].location = 0;
-            attributeDescriptions[0].format = VkFormat.VK_FORMAT_R32G32_SFLOAT;
-            attributeDescriptions[0].offset = (uint)Marshal.OffsetOf( typeof(Position2f_Color3f), "Position" ) ;; //offsetof(Vertex, pos);
+            attributeDescriptions[0].format = VkFormat.VK_FORMAT_R32G32B32_SFLOAT;
+            attributeDescriptions[0].offset = (uint)Position3f_Color3f_UV2f.OffsetPosition;// (uint)Marshal.OffsetOf( typeof(Position2f_Color3f), "Position" ) ;; //offsetof(Vertex, pos);
 
             attributeDescriptions[1].binding = 0;
             attributeDescriptions[1].location = 1;
             attributeDescriptions[1].format = VkFormat.VK_FORMAT_R32G32B32_SFLOAT;
-            attributeDescriptions[1].offset =   (uint)Marshal.OffsetOf( typeof(Position2f_Color3f), "Color" ) ;//2;//offsetof(Vertex, color);
-               
+            attributeDescriptions[1].offset =   (uint)Position3f_Color3f_UV2f.OffsetColor;//(uint)Marshal.OffsetOf( typeof(Position2f_Color3f), "Color" ) ;//2;//offsetof(Vertex, color);
+            
+            attributeDescriptions[1].binding = 0;
+            attributeDescriptions[1].location = 2;
+            attributeDescriptions[1].format = VkFormat.VK_FORMAT_R32G32_SFLOAT;
+            attributeDescriptions[1].offset =   (uint)Position3f_Color3f_UV2f.OffsetUV; //(uint)Marshal.OffsetOf( typeof(Position2f_Color3f), "Color" ) ;//2;//offsetof(Vertex, color);
             
             vertexInputInfo.vertexBindingDescriptionCount = 1;
-            vertexInputInfo.vertexAttributeDescriptionCount = 2;
+            vertexInputInfo.vertexAttributeDescriptionCount = 3;
             vertexInputInfo.pNext = null;
             vertexInputInfo.flags =0;
             vertexInputInfo.pVertexAttributeDescriptions=attributeDescriptions;
             vertexInputInfo.pVertexBindingDescriptions=&bindingDescription;
 
           
-        }
-        else //ELSE vertex inside shader
-        {   
+        // }
+        // else //ELSE vertex inside shader
+        // {   
 
-            vertexInputInfo.vertexBindingDescriptionCount = 0;
-            vertexInputInfo.vertexAttributeDescriptionCount = 0;
-            vertexInputInfo.pNext = null;
-            vertexInputInfo.flags =0;
-            vertexInputInfo.pVertexAttributeDescriptions=null;
-            vertexInputInfo.pVertexBindingDescriptions=null;
-        }
+        //     vertexInputInfo.vertexBindingDescriptionCount = 0;
+        //     vertexInputInfo.vertexAttributeDescriptionCount = 0;
+        //     vertexInputInfo.pNext = null;
+        //     vertexInputInfo.flags =0;
+        //     vertexInputInfo.pVertexAttributeDescriptions=null;
+        //     vertexInputInfo.pVertexBindingDescriptions=null;
+        // }
 
        
         #endregion
@@ -2091,6 +2185,11 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
         VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo = default;
             depthStencilStateCreateInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+            depthStencilStateCreateInfo.depthTestEnable =  VK.VK_TRUE;
+            depthStencilStateCreateInfo.depthWriteEnable = VK.VK_TRUE;
+            depthStencilStateCreateInfo.depthCompareOp = VkCompareOp.VK_COMPARE_OP_LESS;
+            depthStencilStateCreateInfo.depthBoundsTestEnable = VK.VK_FALSE;
+            depthStencilStateCreateInfo.stencilTestEnable = VK.VK_FALSE;
         #endregion
         
         #region DYNAMIC STATES
