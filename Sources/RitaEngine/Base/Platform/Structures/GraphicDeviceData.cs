@@ -67,6 +67,7 @@ public struct GraphicDeviceData : IEquatable<GraphicDeviceData>
     public VkDeviceMemory DepthImageMemory = VkDeviceMemory.Null;
     public VkImageView DepthImageView = VkImageView.Null;
 
+    public float MaxSamplerAnisotropy;
     public string TextureName ="";
     public GraphicDeviceData()
     {
