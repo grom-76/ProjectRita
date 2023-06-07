@@ -10,6 +10,8 @@ using RitaEngine.Base.Strings;
 using RitaEngine.Base.Math.Vertex;
 
 using VkDeviceSize = UInt64;
+using RitaEngine.Base.Resources.Images;
+
 /// <summary>
 /// 
 /// </summary>
@@ -137,6 +139,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
         CreateCommandPool(ref func,ref data);
 
+        CreateTextureImage(ref func , ref data);
         CreateVertexBuffer( ref func , ref data ,ref pipeline);
         CreateIndexBuffer( ref func , ref data , ref pipeline);
         CreateUniformBuffers(ref func , ref data , ref pipeline);
@@ -146,7 +149,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
         CreateCommandBuffer(ref func,ref data,ref pipeline);
         
-       
+        data.TextureName =  pipeline.TextureName;
 
         CreateVertexBuffer(ref func, ref data ,ref pipeline) ;
         CreatePipelineLayout( ref func , ref data);
@@ -160,6 +163,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         DisposePipeline(ref func,ref data);
         DisposeRenderPass(ref func,ref data);
         DisposeUniformBuffers(ref func , ref data);
+        DisposeTextureImage(ref func , ref data);
         DisposeDescriptorPool(ref func , ref data);
         DisposeBuffers(ref func , ref data);
         DisposeCommandPool(ref func,ref data);
@@ -952,7 +956,6 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
             func.vkDestroyCommandPool(data.VkDevice, data.VkCommandPool , null);
         }
     }
-
    
     #endregion
 
@@ -1310,192 +1313,212 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
     #region Texture
 
 // // // TEXTURE
-// //     private unsafe static void CreateTextureImage(ref Properties vk,ref  Settings gfx)
-// //     {
-// //         uint texWidth=512, texHeight=512;
-// //         // texChannels=4;
+    private unsafe static void CreateTextureImage(ref GraphicDeviceFunction func,ref GraphicDeviceData data )
+    {
+        uint texWidth=512, texHeight=512;
+        uint texChannels=4;
 
-// //         // stbi_uc* pixels = stbi_load("textures/texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-// //         VkDeviceSize imageSize = (ulong)(texWidth * texHeight * 4);
+        // stbi_uc* pixels = stbi_load("textures/texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+        var file = File.ReadAllBytes( data.TextureName);
+        ImageResult result = ImageResult.FromMemory(file );
+        texWidth = (uint)result.Width;
+        texHeight = (uint)result.Height;
+        texChannels = (uint)result.Comp;
 
-// //         // if (!pixels) {         throw std::runtime_error("failed to load texture image!");        }
+        VkDeviceSize imageSize = (ulong)(texWidth * texHeight * 4);
 
-// //         VkBuffer stagingBuffer = VkBuffer.Null;
-// //         VkDeviceMemory stagingBufferMemory = VkDeviceMemory.Null;
-// //         CreateBuffer(ref vk,imageSize, 
-// //             (uint)VkBufferUsageFlagBits.VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
-// //             (uint)VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | (uint)VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-// //             ref stagingBuffer, 
-// //             ref stagingBufferMemory);
+        // if (!pixels) {         throw std::runtime_error("failed to load texture image!");        }
+
+        VkBuffer stagingBuffer = VkBuffer.Null;
+        VkDeviceMemory stagingBufferMemory = VkDeviceMemory.Null;
+        CreateStagingBuffer(ref func , ref data , imageSize, 
+            VkBufferUsageFlagBits.VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
+            VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
+            VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+            ref stagingBuffer, 
+            ref stagingBufferMemory);
 
         
-// //         void* data;
-// //         vkMapMemory(vk._device, stagingBufferMemory, 0, imageSize, 0, &data);
-// //         // fixed (void* p = &pixels){ memcpy(data, p,  imageSize ); }  
-// //         vkUnmapMemory(vk._device, stagingBufferMemory);
+        void* ptr;
+        func.vkMapMemory(data.VkDevice, stagingBufferMemory, 0, imageSize, 0, &ptr);
+        fixed (void* p = &result.Data[0] ){ memcpy(ptr, p,  imageSize ); }  
+        func.vkUnmapMemory(data.VkDevice, stagingBufferMemory);
 
-// //         // // stbi_image_free(pixels);
+        // // stbi_image_free(pixels);
+        file = null!;
+        result.Data = null!;
 
-// //         CreateImage(texWidth, texHeight, 
-// //         VkFormat.VK_FORMAT_R8G8B8A8_SRGB, 
-// //         VkImageTiling.VK_IMAGE_TILING_OPTIMAL, 
-// //         (uint)VkImageUsageFlagBits.VK_IMAGE_USAGE_TRANSFER_DST_BIT | (uint)VkImageUsageFlagBits.VK_IMAGE_USAGE_SAMPLED_BIT, 
-// //         (uint)VkMemoryPropertyFlagBits. VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
-// //         ref vk.textureImage,ref vk.textureImageMemory);
+        CreateImage(ref func , ref data,texWidth, texHeight, 
+        VkFormat.VK_FORMAT_R8G8B8A8_SRGB, 
+        VkImageTiling.VK_IMAGE_TILING_OPTIMAL, 
+        VkImageUsageFlagBits.VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits.VK_IMAGE_USAGE_SAMPLED_BIT, 
+        VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT   );
 
-// //         // transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-// //         //     copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
-// //         // transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        TransitionImageLayout(ref func , ref data,  VkFormat.VK_FORMAT_R8G8B8A8_SRGB, VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED, VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+            CopyBufferToImage(ref  func,ref  data,stagingBuffer, (texWidth), (texHeight));
+        TransitionImageLayout(ref func , ref data, VkFormat.VK_FORMAT_R8G8B8A8_SRGB, VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VkImageLayout.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-// //         vkDestroyBuffer(vk._device, stagingBuffer, null);
-// //         vkFreeMemory(vk._device, stagingBufferMemory, null);
-// //     }
+        func.vkDestroyBuffer(data.VkDevice, stagingBuffer, null);
+        func.vkFreeMemory(data.VkDevice, stagingBufferMemory, null);
+    }
 
-// //     private static void CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
-// //          VkImageUsageFlags usage, VkMemoryPropertyFlags properties,ref VkImage image,ref VkDeviceMemory imageMemory) 
-// //     {
-// //         VkImageCreateInfo imageInfo = new();
-// //             imageInfo.sType =VkStructureType.VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-// //             imageInfo.imageType =VkImageType. VK_IMAGE_TYPE_2D;
-// //             imageInfo.extent.width = width;
-// //             imageInfo.extent.height = height;
-// //             imageInfo.extent.depth = 1;
-// //             imageInfo.mipLevels = 1;
-// //             imageInfo.arrayLayers = 1;
-// //             imageInfo.format = format;
-// //             imageInfo.tiling = tiling;
-// //             imageInfo.initialLayout =VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED;
-// //             imageInfo.usage = usage;
-// //             imageInfo.samples =VkSampleCountFlagBits.VK_SAMPLE_COUNT_1_BIT;
-// //             imageInfo.sharingMode = VkSharingMode. VK_SHARING_MODE_EXCLUSIVE;
-
-// //         // vkCreateImage(vk._device, &imageInfo, null, image).Check("failed to create image!");
-    
-
-// //         // VkMemoryRequirements memRequirements;
-// //         // vkGetImageMemoryRequirements(device, image, &memRequirements);
-
-// //         // VkMemoryAllocateInfo allocInfo{};
-// //         // allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-// //         // allocInfo.allocationSize = memRequirements.size;
-// //         // allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
-
-// //         // if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
-// //         //     throw std::runtime_error("failed to allocate image memory!");
-// //         // }
-
-// //         // vkBindImageMemory(device, image, imageMemory, 0);
-// //     }
-
-// //     private static void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) 
-// //     {
-// //         // VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
-
-// //         // VkImageMemoryBarrier barrier = new();
-// //         //     barrier.sType =VkStructureType. VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-// //         //     barrier.oldLayout = oldLayout;
-// //         //     barrier.newLayout = newLayout;
-// //         //     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-// //         //     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-// //         //     barrier.image = image;
-// //         //     barrier.subresourceRange.aspectMask =(uint) VkImageAspectFlagBits.VK_IMAGE_ASPECT_COLOR_BIT;
-// //         //     barrier.subresourceRange.baseMipLevel = 0;
-// //         //     barrier.subresourceRange.levelCount = 1;
-// //         //     barrier.subresourceRange.baseArrayLayer = 0;
-// //         //     barrier.subresourceRange.layerCount = 1;
-
-// //         // VkPipelineStageFlags sourceStage;
-// //         // VkPipelineStageFlags destinationStage;
-
-// //         // if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-// //         //     barrier.srcAccessMask = 0;
-// //         //     barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-// //         //     sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-// //         //     destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-// //         // } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-// //         //     barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-// //         //     barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-// //         //     sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-// //         //     destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-// //         // } else {
-// //         //     Guard.ThrowIf(true,"unsupported layout transition!");
-// //         // }
-
-// //         // vkCmdPipelineBarrier(
-// //         //     commandBuffer,
-// //         //     sourceStage, destinationStage,
-// //         //     0,
-// //         //     0, null,
-// //         //     0, null,
-// //         //     1, &barrier
-// //         // );
-
-// //         // endSingleTimeCommands(commandBuffer);
-// //     }
-
-// //     private static void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) 
-// //     {
-// //         // VkCommandBuffer commandBuffer = beginSingleTimeCommands();
-
-// //         // VkBufferImageCopy region{};
-// //         // region.bufferOffset = 0;
-// //         // region.bufferRowLength = 0;
-// //         // region.bufferImageHeight = 0;
-// //         // region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-// //         // region.imageSubresource.mipLevel = 0;
-// //         // region.imageSubresource.baseArrayLayer = 0;
-// //         // region.imageSubresource.layerCount = 1;
-// //         // region.imageOffset = {0, 0, 0};
-// //         // region.imageExtent = {
-// //         //     width,
-// //         //     height,
-// //         //     1
-// //         // };
-
-// //         // vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-
-// //         // endSingleTimeCommands(commandBuffer);
-// //     }
-
-// //     private unsafe static VkCommandBuffer BeginSingleTimeCommands(ref Properties vk)
-// //     {
+    private unsafe static void DisposeTextureImage(ref GraphicDeviceFunction func, ref GraphicDeviceData data)
+    {
+        if( !data.TextureImage.IsNull)
+        {
+            func.vkDestroyImage(data.VkDevice, data.TextureImage, null);
+        }
+        if( !data.TextureImageMemory.IsNull)
+        {
+            func.vkFreeMemory(data.VkDevice, data.TextureImageMemory, null);
+        }
         
-// //         VkCommandBufferAllocateInfo allocInfo = new();
-// //             allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-// //             allocInfo.level = VkCommandBufferLevel.VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-// //             allocInfo.commandPool = vk._commandPool;
-// //             allocInfo.commandBufferCount = 1;
+    }
+    private unsafe static void CreateImage(ref GraphicDeviceFunction func,ref GraphicDeviceData data, uint width, uint height, VkFormat format, VkImageTiling tiling,
+         VkImageUsageFlagBits usage, VkMemoryPropertyFlagBits properties) 
+    {
+        VkImageCreateInfo imageInfo = new();
+            imageInfo.sType =VkStructureType.VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+            imageInfo.imageType =VkImageType. VK_IMAGE_TYPE_2D;
+            imageInfo.extent.width = width;
+            imageInfo.extent.height = height;
+            imageInfo.extent.depth = 1;
+            imageInfo.mipLevels = 1;
+            imageInfo.arrayLayers = 1;
+            imageInfo.format = format;
+            imageInfo.tiling = tiling;
+            imageInfo.initialLayout =VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED;
+            imageInfo.usage = (uint)usage;
+            imageInfo.samples =VkSampleCountFlagBits.VK_SAMPLE_COUNT_1_BIT;
+            imageInfo.sharingMode = VkSharingMode. VK_SHARING_MODE_EXCLUSIVE;
 
-// //         VkCommandBuffer commandBuffer = VkCommandBuffer.Null;
-// //         vkAllocateCommandBuffers(vk._device, &allocInfo, &commandBuffer);
+        fixed( VkImage* img = &data.TextureImage) {
+            func.vkCreateImage(data.VkDevice, &imageInfo, null,img).Check("failed to create image!");
+        }
+        
+        VkMemoryRequirements memRequirements;
+        func.vkGetImageMemoryRequirements(data.VkDevice, data.TextureImage, &memRequirements);
 
-// //         VkCommandBufferBeginInfo beginInfo = new();
-// //             beginInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-// //             beginInfo.flags =(uint) VkCommandBufferUsageFlagBits.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        VkMemoryAllocateInfo allocInfo = default;
+        allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = FindMemoryType(ref func , ref data, memRequirements.memoryTypeBits, properties);
 
-// //         vkBeginCommandBuffer(commandBuffer, &beginInfo);
+        fixed (VkDeviceMemory* imageMemory = &data.TextureImageMemory  ){
+            func.vkAllocateMemory(data.VkDevice, &allocInfo, null, imageMemory).Check("failed to allocate image memory!");
+        }
 
-// //         return commandBuffer;
-// //     }
+        func.vkBindImageMemory( data.VkDevice, data.TextureImage, data.TextureImageMemory, 0).Check("Bind Image Memory");
+    }
 
-// //     private unsafe static void EndSingleTimeCommands(ref Properties vk , ref VkCommandBuffer commandBuffer) 
-// //     {
-// //         vkEndCommandBuffer(commandBuffer);
+    private unsafe static void TransitionImageLayout(ref GraphicDeviceFunction func,ref GraphicDeviceData data, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) 
+    {
+        VkCommandBuffer commandBuffer = BeginSingleTimeCommands(ref func , ref data);
 
-// //         fixed( VkCommandBuffer* cb = &commandBuffer){
-// //             VkSubmitInfo submitInfo = new();
-// //             submitInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_SUBMIT_INFO;
-// //             submitInfo.commandBufferCount = 1;
-// //             submitInfo.pCommandBuffers = cb;
+        VkImageMemoryBarrier barrier = new();
+            barrier.sType =VkStructureType. VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            barrier.oldLayout = oldLayout;
+            barrier.newLayout = newLayout;
+            barrier.srcQueueFamilyIndex = VK.VK_QUEUE_FAMILY_IGNORED;
+            barrier.dstQueueFamilyIndex = VK.VK_QUEUE_FAMILY_IGNORED;
+            barrier.image = data.TextureImage;
+            barrier.subresourceRange.aspectMask =(uint) VkImageAspectFlagBits.VK_IMAGE_ASPECT_COLOR_BIT;
+            barrier.subresourceRange.baseMipLevel = 0;
+            barrier.subresourceRange.levelCount = 1;
+            barrier.subresourceRange.baseArrayLayer = 0;
+            barrier.subresourceRange.layerCount = 1;
 
-// //             vkQueueSubmit(vk._graphicQueue, 1, &submitInfo, VkFence.Null);
-// //             vkQueueWaitIdle(vk._graphicQueue);
+        VkPipelineStageFlagBits sourceStage=VkPipelineStageFlagBits. VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        VkPipelineStageFlagBits destinationStage = VkPipelineStageFlagBits .VK_PIPELINE_STAGE_TRANSFER_BIT;
 
-// //             vkFreeCommandBuffers(vk._device, vk._commandPool, 1, cb);
-// //         }
-// //     }
+        if (oldLayout == VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+            barrier.srcAccessMask = 0;
+            barrier.dstAccessMask = (uint)VkAccessFlagBits.VK_ACCESS_TRANSFER_WRITE_BIT;
+
+            sourceStage = VkPipelineStageFlagBits. VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            destinationStage = VkPipelineStageFlagBits .VK_PIPELINE_STAGE_TRANSFER_BIT;
+        } else if (oldLayout == VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout ==VkImageLayout.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+            barrier.srcAccessMask = (uint)VkAccessFlagBits.VK_ACCESS_TRANSFER_WRITE_BIT;
+            barrier.dstAccessMask = (uint)VkAccessFlagBits.VK_ACCESS_SHADER_READ_BIT;
+
+            sourceStage = VkPipelineStageFlagBits .VK_PIPELINE_STAGE_TRANSFER_BIT;
+            destinationStage = VkPipelineStageFlagBits .VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        } else {
+            Guard.ThrowWhenConditionIsTrue(true,"unsupported layout transition!");
+        }
+
+        func.vkCmdPipelineBarrier(
+            commandBuffer,
+            (uint)sourceStage, (uint)destinationStage,
+            0,
+            0, null,
+            0, null,
+            1, &barrier
+        );
+
+        EndSingleTimeCommands(ref func , ref data ,commandBuffer);
+    }
+
+    private unsafe static void CopyBufferToImage(ref GraphicDeviceFunction func,ref GraphicDeviceData data,VkBuffer buffer,  uint width, uint height) 
+    {
+        VkCommandBuffer commandBuffer = BeginSingleTimeCommands(ref func , ref data);
+
+        VkBufferImageCopy region = default;
+        region.bufferOffset = 0;
+        region.bufferRowLength = 0;
+        region.bufferImageHeight = 0;
+        region.imageSubresource.aspectMask = (uint)VkImageAspectFlagBits.VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.mipLevel = 0;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.layerCount = 1;
+        
+        VkOffset3D offset3D = new(); offset3D.x=0;offset3D.y=0;offset3D.z =0;
+        region.imageOffset = offset3D;
+        VkExtent3D extent3D = new(); extent3D.width = width; extent3D.height = height; extent3D.depth =1;
+        region.imageExtent = extent3D;
+
+        func.vkCmdCopyBufferToImage(commandBuffer, buffer, data.TextureImage, VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+        EndSingleTimeCommands(ref func , ref data, commandBuffer);
+    }
+
+    private unsafe static VkCommandBuffer BeginSingleTimeCommands(ref GraphicDeviceFunction func,ref GraphicDeviceData data)
+    {
+        
+        VkCommandBufferAllocateInfo allocInfo = default;
+            allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+            allocInfo.level = VkCommandBufferLevel.VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+            allocInfo.commandPool = data.VkCommandPool;
+            allocInfo.commandBufferCount = 1;
+
+        VkCommandBuffer commandBuffer = VkCommandBuffer.Null;
+
+        func.vkAllocateCommandBuffers(data.VkDevice, &allocInfo, &commandBuffer);
+
+        VkCommandBufferBeginInfo beginInfo = new();
+            beginInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+            beginInfo.flags =(uint) VkCommandBufferUsageFlagBits.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+        func.vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+        return commandBuffer;
+    }
+
+    private unsafe static void EndSingleTimeCommands(ref GraphicDeviceFunction func,ref GraphicDeviceData data, VkCommandBuffer commandBuffer) 
+    {
+        func.vkEndCommandBuffer(commandBuffer);
+       
+        VkSubmitInfo submitInfo = default;
+        submitInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers =&commandBuffer;
+        
+        func.vkQueueSubmit(data.VkGraphicQueue, 1, &submitInfo, VkFence.Null);
+        func.vkQueueWaitIdle(data.VkGraphicQueue);
+
+        func.vkFreeCommandBuffers(data.VkDevice, data.VkCommandPool, 1, &commandBuffer);
+       
+    }
 
     #endregion
 
@@ -1805,13 +1828,15 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
     #endregion
 
-    private unsafe static void UpdateUniformBuffer(ref GraphicDeviceFunction func,ref GraphicDeviceData data)
+    private unsafe static void UpdateUniformBuffer(in GraphicDeviceFunction func,ref GraphicDeviceData data, in GraphicRenderConfig pipeline )
     {
-        
+        nint ptr = nint.Zero;
+        Marshal.StructureToPtr<Uniform_MVP>( pipeline.ubo,ptr,false );
+
         // fixed(void* ptr = &render.ubo)
         // {
         //     var p = MemoryHelper.AsPointer<Uniform_MVP>( ref render.ubo);
-        //     memcpy(data.uniformBuffersMapped[CurrentFrame].ToPointer(), p, (ulong)Marshal.SizeOf(render.ubo )  );
+            memcpy(data.uniformBuffersMapped[CurrentFrame].ToPointer(), ptr.ToPointer() , (ulong)Marshal.SizeOf(pipeline.ubo )  );
         // }
         
     }
@@ -2178,7 +2203,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
             throw new Exception("Failed to acquire swap chain Images");
         }
 
-        UpdateUniformBuffer(ref func,ref  data);
+        // UpdateUniformBuffer(ref func,ref  data);
 
         func.vkResetFences(data.VkDevice, 1, &CurrentinFlightFence);
 

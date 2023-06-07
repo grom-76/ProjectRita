@@ -30,6 +30,7 @@ public sealed class GraphicRenderConfig
     public Uniform_MVP ubo = new();
     public int VerticeSize =0;
     public bool IsStaging = true;
+    public string TextureName ="";
 
     public GraphicRenderConfig() {}
 

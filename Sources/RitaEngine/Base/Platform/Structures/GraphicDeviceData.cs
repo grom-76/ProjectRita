@@ -55,7 +55,9 @@ public struct GraphicDeviceData : IEquatable<GraphicDeviceData>
     public VkDeviceMemory[] uniformBuffersMemory= new VkDeviceMemory[2];
     public nint[] uniformBuffersMapped = new nint[2];
 
-
+    public VkImage TextureImage = VkImage.Null;
+    public VkDeviceMemory TextureImageMemory = VkDeviceMemory.Null;
+    public string TextureName ="";
     public GraphicDeviceData()
     {
         _address = AddressOfPtrThis( ) ;

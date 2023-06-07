@@ -6976,6 +6976,4 @@ public	class ImageResult
 
 #endregion
 
-
-
 #pragma warning restore

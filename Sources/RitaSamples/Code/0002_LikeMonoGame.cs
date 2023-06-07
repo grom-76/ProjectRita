@@ -48,6 +48,7 @@ public static class Sample_0002
             GraphicDevice.Render.VertexEntryPoint ="main";
             GraphicDevice.Render.FragmentShaderFileNameSPV = path + "fragment_base.spv";
             GraphicDevice.Render.VertexShaderFileNameSPV = path + "vertex_base.spv";
+            GraphicDevice.Render.TextureName = path+"tex.bmp";
             GraphicDevice.BuildRender();
         }
 
