@@ -3,8 +3,8 @@ namespace RitaEngine.Base.Platform.Structures;
 using System.Collections.Generic;
 using RitaEngine.Base.Platform.API.Vulkan;
 
-[ SkipLocalsInit]
-public struct GraphicDeviceCapabilities : IEquatable<GraphicDeviceCapabilities>
+[StructLayout(LayoutKind.Sequential, Pack = RitaEngine.Base.BaseHelper.FORCE_ALIGNEMENT), SkipLocalsInit]
+public struct GraphicDevicePhysical : IEquatable<GraphicDevicePhysical>
 {
     public VkPhysicalDeviceProperties PhysicalDeviceProperties = new();
      #region VKDeivce
@@ -14,63 +14,81 @@ public struct GraphicDeviceCapabilities : IEquatable<GraphicDeviceCapabilities>
     public VkPhysicalDeviceFeatures Features = new();
     public VkPhysicalDeviceLimits Limits = new();
     
-
+    public VkPhysicalDevice VkPhysicalDevice = VkPhysicalDevice.Null;
     #endregion
     
-    public string[] ValidationLayers = null!;
-    public string[] InstanceExtensions = null!;      
+    public uint VkGraphicFamilyIndice =0;
+    public uint VkPresentFamilyIndice=0;
     public string[] DeviceExtensions = null!;
-    public bool EnableDebug = false;
-    public byte[] GameName = null!;
-    // public string GameVersion = string.Empty;
-    public uint VkVersion =0;
-
-    #region Surface
-    public unsafe void* Handle =(void*)0;
-    public unsafe void* HInstance =(void*)0;
-    public int Width =1280;
-    public int Height = 720;
-
-    #endregion
-
-    private nint _address = nint.Zero;
 
    
-    public GraphicDeviceCapabilities() 
+    public GraphicDevicePhysical() 
     { 
-        var sizeEmpty = Unsafe.SizeOf<GraphicDeviceCapabilities>();
-        var size =  Marshal.SizeOf(this);
-         _address = AddressOfPtrThis( ) ;
-        Log.Info($"Create Graphic Device Capabilities => size : {sizeEmpty}, {size } {_address:X} ");
+        // var sizeEmpty = Unsafe.SizeOf<GraphicDeviceCapabilities>();
+        // var size =  Marshal.SizeOf(this);
+        //  _address = AddressOfPtrThis( ) ;
+        // Log.Info($"Create Graphic Device Capabilities => size : {sizeEmpty}, {size } {_address:X} ");
        
         PhysicalDeviceProperties.sparseProperties = new();
         PhysicalDeviceProperties.limits = new();
     }
     public void Release()
     {
-        var sizeEmpty = Unsafe.SizeOf<GraphicDeviceCapabilities>();
-        var size =  Marshal.SizeOf(this);
-        Log.Info($"Release Graphic Device Capabilities => size : {sizeEmpty}, {size } {AddressOfPtrThis( ):X}");
+        // var sizeEmpty = Unsafe.SizeOf<GraphicDevicePhysical>();
+        // var size =  Marshal.SizeOf(this);
+        // Log.Info($"Release Graphic Device Capabilities => size : {sizeEmpty}, {size } {AddressOfPtrThis( ):X}");
         DeviceExtensions = null!;
-        ValidationLayers = null!;
-        InstanceExtensions = null!;
         Formats= null!;
         PresentModes = null!;
     }
 
-     public unsafe nint AddressOfPtrThis( ) { 
-            #pragma warning disable CS8500
-        fixed (void* pointer = &this )  { return((nint) pointer ) ; }  
-        #pragma warning restore
-    }
+  
         #region OVERRIDE    
     public override string ToString()  
         => string.Format($"DataModule" );
     public override int GetHashCode() => (int)0;
-    public override bool Equals(object? obj) => obj is GraphicDeviceCapabilities data && this.Equals(data) ;
-    public bool Equals(GraphicDeviceCapabilities other)=>  false;
-    public static bool operator ==(GraphicDeviceCapabilities left, GraphicDeviceCapabilities right) => left.Equals(right);
-    public static bool operator !=(GraphicDeviceCapabilities left, GraphicDeviceCapabilities  right) => !left.Equals(right);
+    public override bool Equals(object? obj) => obj is GraphicDevicePhysical data && this.Equals(data) ;
+    public bool Equals(GraphicDevicePhysical other)=>  false;
+    public static bool operator ==(GraphicDevicePhysical left, GraphicDevicePhysical right) => left.Equals(right);
+    public static bool operator !=(GraphicDevicePhysical left, GraphicDevicePhysical  right) => !left.Equals(right);
     #endregion
 }
 
+[StructLayout(LayoutKind.Sequential, Pack = RitaEngine.Base.BaseHelper.FORCE_ALIGNEMENT), SkipLocalsInit]
+public struct GraphicDeviceApp
+{
+    
+    public string[] ValidationLayers = null!;
+    public string[] InstanceExtensions = null!;
+    public byte[] GameName = null!;
+    // public string GameVersion = string.Empty;
+    public unsafe void* Handle =(void*)0;
+    public unsafe void* HInstance =(void*)0;
+    public int Width =1280;
+    public int Height = 720;
+    public VkSurfaceKHR VkSurface = VkSurfaceKHR.Null;
+    public VkInstance VkInstance = VkInstance.Null;
+    public VkDebugUtilsMessengerEXT DebugMessenger = VkDebugUtilsMessengerEXT.Null;
+    public uint Version=0;
+    public bool EnableDebug = false;
+
+    public GraphicDeviceApp()
+    {
+    }
+
+    public unsafe void Release()
+    {
+        // Handle = null!;// do in Window
+        // HInstance = null!;
+        GameName = null!;
+        ValidationLayers = null!;
+        InstanceExtensions = null!;
+    }
+}
+
+[StructLayout(LayoutKind.Sequential, Pack = RitaEngine.Base.BaseHelper.FORCE_ALIGNEMENT), SkipLocalsInit]
+public struct GraphicDeviceSwapChain
+{
+
+
+}

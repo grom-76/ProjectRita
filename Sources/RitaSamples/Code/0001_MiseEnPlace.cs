@@ -20,6 +20,8 @@ public static class Sample_0001
         RitaEngine.Base.Platform.Inputs input = new();
         RitaEngine.Base.Platform.AudioDevice audio = new();
         RitaEngine.Base.Platform.GraphicDevice graphic = new();
+        RitaEngine.Base.Platform.Config.GraphicDeviceConfig graphicConfig = new();
+        RitaEngine.Base.Platform.Config.GraphicRenderConfig renderConfig = new();
         
         RitaEngine.Base.Audio.PlayerSound2D snd = new( );
         try
@@ -39,19 +41,19 @@ public static class Sample_0001
             audio.Config.Channels = AudioChannels.stereo;
             audio.Init();
 
-            graphic.Config.EnableDebugMode = true;
-            graphic.Init( win);
+            graphicConfig.EnableDebugMode = true;
+            graphic.Init( graphicConfig, win);
             // END INITIALIZE SYSTEM
 
             
             snd.Init( audio, path+  "demo.wav");
 
-            graphic.Render.BackColorARGB = RitaEngine.Base.Math.Color.Palette.Lavender ;
-            graphic.Render.FragmentEntryPoint ="main";
-            graphic.Render.VertexEntryPoint ="main";
-            graphic.Render.FragmentShaderFileNameSPV = path + "fragment_base.spv";
-            graphic.Render.VertexShaderFileNameSPV = path + "vertex_base.spv";
-            graphic.BuildRender();
+            renderConfig.BackColorARGB = RitaEngine.Base.Math.Color.Palette.Lavender ;
+            renderConfig.FragmentEntryPoint ="main";
+            renderConfig.VertexEntryPoint ="main";
+            renderConfig.FragmentShaderFileNameSPV = path + "fragment_base.spv";
+            renderConfig.VertexShaderFileNameSPV = path + "vertex_base.spv";
+            graphic.BuildRender(renderConfig);
             // BEGIN LOOP
             win.Show();
 
@@ -67,7 +69,7 @@ public static class Sample_0001
                     snd.PlaySource();
                 }
 
-                graphic.Draw();
+                graphic.DrawRender();
 
                 win.DispatchPending();
                 input.Update();

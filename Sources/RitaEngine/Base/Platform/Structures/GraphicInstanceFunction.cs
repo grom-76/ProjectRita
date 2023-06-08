@@ -47,7 +47,7 @@ public unsafe /*readonly*/  delegate* unmanaged< VkDevice,VkDescriptorSetLayoutC
 #endregion
 #region VK_VERSION_1_3
 public unsafe /*readonly*/  delegate* unmanaged< VkPhysicalDevice,UInt32*,VkPhysicalDeviceToolProperties*,VkResult > vkGetPhysicalDeviceToolProperties = null;
-
+// public unsafe /*readonly*/  delegate* unmanaged< VkPhysicalDevice,VkPhysicalDeviceMemoryProperties*,void > vkGetPhysicalDeviceMemoryProperties = null;
 #endregion
 #region VK_KHR_surface
 public unsafe /*readonly*/  delegate* unmanaged< VkInstance,VkSurfaceKHR,VkAllocationCallbacks*,void > vkDestroySurfaceKHR = null;

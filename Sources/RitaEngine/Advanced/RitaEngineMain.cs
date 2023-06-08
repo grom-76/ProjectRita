@@ -10,14 +10,10 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
 {
     #region PUBLIC ACCESS 
 
+    
     /// <summary> Ctor Empty for settings game use each instance </summary>
     public RitaEngineMain()
     {     
-        graphicDeviceConfig = new();
-        graphicRenderConfig = new();
-        graphicDeviceData = new();
-        graphicDeviceCapabilities = new();
-        graphic = new( graphicDeviceConfig , graphicRenderConfig , graphicDeviceData , graphicDeviceCapabilities);
     }
     
     /// <summary>  Just Run  with try catch  </summary>
@@ -60,7 +56,7 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
         Init();
         clock.Init();
         win.Init();
-        graphic.Init( win);
+        graphic.Init(GraphicConfig, win );
         input.Init( win);
         audio.Init();
         
@@ -133,12 +129,8 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
     RitaEngine.Base.Platform.Window win = new();
     RitaEngine.Base.Platform.Inputs input = new();
     RitaEngine.Base.Platform.AudioDevice audio = new();
-    RitaEngine.Base.Platform.GraphicDevice graphic ;
-    RitaEngine.Base.Platform.Config.GraphicDeviceConfig graphicDeviceConfig;
-    RitaEngine.Base.Platform.Config.GraphicRenderConfig graphicRenderConfig;
-    RitaEngine.Base.Platform.Structures.GraphicDeviceData graphicDeviceData;
-    RitaEngine.Base.Platform.Structures.GraphicDeviceCapabilities graphicDeviceCapabilities;
-    
+    RitaEngine.Base.Platform.GraphicDevice graphic =new();
+
     private bool _disposed = false ;
 
     #endregion
@@ -147,9 +139,9 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
     public ref readonly RitaEngine.Base.Platform.Window Window => ref win;
     public ref readonly RitaEngine.Base.Platform.Inputs Input => ref input;
     public ref readonly RitaEngine.Base.Platform.AudioDevice AudioDevice => ref  audio;
-    public ref RitaEngine.Base.Platform.GraphicDevice GraphicDevice => ref graphic;
-
-
+    public ref readonly RitaEngine.Base.Platform.GraphicDevice GraphicDevice => ref graphic;
+    public RitaEngine.Base.Platform.Config.GraphicDeviceConfig GraphicConfig = new();
+    public RitaEngine.Base.Platform.Config.GraphicRenderConfig RenderConfig = new();
 
     #region [ Abstract to override ]
 

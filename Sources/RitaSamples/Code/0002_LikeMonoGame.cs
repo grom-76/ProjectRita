@@ -36,20 +36,20 @@ public static class Sample_0002
             Input.Config.ShowCursor = true;
             AudioDevice.Config.Category = AudioCategory.GameMedia;
             AudioDevice.Config.Channels = AudioChannels.stereo;
-            GraphicDevice.Config.EnableDebugMode = true;
+            GraphicConfig.EnableDebugMode = true;
         }
 
         protected override void Load()
         {
             snd.Init( AudioDevice ,  path+  "demo.wav" );
 
-            GraphicDevice.Render.BackColorARGB = RitaEngine.Base.Math.Color.Palette.BlanchedAlmond;
-            GraphicDevice.Render.FragmentEntryPoint ="main";
-            GraphicDevice.Render.VertexEntryPoint ="main";
-            GraphicDevice.Render.FragmentShaderFileNameSPV = path + "fragment_base.spv";
-            GraphicDevice.Render.VertexShaderFileNameSPV = path + "vertex_base.spv";
-            GraphicDevice.Render.TextureName = path+"tex.bmp";
-            GraphicDevice.BuildRender();
+            RenderConfig.BackColorARGB = RitaEngine.Base.Math.Color.Palette.BlanchedAlmond;
+            RenderConfig.FragmentEntryPoint ="main";
+            RenderConfig.VertexEntryPoint ="main";
+            RenderConfig.FragmentShaderFileNameSPV = path + "fragment_base.spv";
+            RenderConfig.VertexShaderFileNameSPV = path + "vertex_base.spv";
+            RenderConfig.TextureName = path+"tex.bmp";
+            GraphicDevice.BuildRender(RenderConfig);
         }
 
         protected override void Release()
@@ -59,7 +59,7 @@ public static class Sample_0002
 
         protected override void UpdateDraw()
         {
-           GraphicDevice.Draw();
+           GraphicDevice.DrawRender();
         }
 
         protected override void UpdateInputs()
@@ -88,9 +88,9 @@ public static class Sample_0002
         // ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         // ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f, 10.0f);
         // ubo.proj[1][1] *= -1;
-        GraphicDevice.Render.ubo.Model = RitaEngine.Base.Math.Matrix.Identite;
+            RenderConfig.ubo.Model = RitaEngine.Base.Math.Matrix.Identite;
         
-        GraphicDevice.Update();
+            GraphicDevice.UpdateRender(RenderConfig);
         }
 
         protected override void WarmUp()
