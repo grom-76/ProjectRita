@@ -39,10 +39,6 @@ public struct GraphicDeviceData : IEquatable<GraphicDeviceData>
     public VkPipeline VkGraphicsPipeline = VkPipeline.Null;
 
 
-    public VkDescriptorSetLayout DescriptorSetLayout = VkDescriptorSetLayout.Null;
-    public VkDescriptorSetLayout[] Layouts = new VkDescriptorSetLayout[2];
-    public VkDescriptorSet[] DescriptorSets =null!; 
-    public VkDescriptorPool DescriptorPool = VkDescriptorPool.Null;
     
     public VkClearValue ClearColor = new();
     public VkOffset2D  RenderAreaOffset = new();
@@ -73,6 +69,12 @@ public struct GraphicDeviceData : IEquatable<GraphicDeviceData>
     public VkDeviceMemory DepthImageMemory = VkDeviceMemory.Null;
     public VkImageView DepthImageView = VkImageView.Null;
 
+   
+    public VkDescriptorSetLayout DescriptorSetLayout = VkDescriptorSetLayout.Null;
+    // public VkDescriptorSetLayout[] Layouts = null!;
+    public VkDescriptorSet[] DescriptorSets  = new VkDescriptorSet[2];
+    public VkDescriptorPool DescriptorPool = VkDescriptorPool.Null;
+
     public Position3f_Color3f_UV2f[] Vertices = null!;
     public short[] Indices = null!;
     public string VertexShaderFileNameSPV ="";
@@ -80,14 +82,19 @@ public struct GraphicDeviceData : IEquatable<GraphicDeviceData>
     public string FragmentEntryPoint ="";
     public string VertexEntryPoint="";
     public Uniform_MVP ubo = new();
-
-    // public float MaxSamplerAnisotropy;
-    public string TextureName ="";
+     public string TextureName ="";
     public GraphicDeviceData()   {  }
     
     public void Release()
     {
+        uniformBuffers = null!;
+        uniformBuffersMemory= null!;
+        foreach( var ptr in uniformBuffersMapped)
+            Marshal.FreeHGlobal(ptr);
+        uniformBuffersMapped = null!;
+
         DescriptorSets =null!; 
+        // Layouts = null!;
         VkCommandBuffers = null!;
         ImageAvailableSemaphores = null!;
         RenderFinishedSemaphores = null!;

@@ -6,9 +6,13 @@ public struct Uniform_MVP
     public Matrix View;
     public Matrix Projection;
 
+    public unsafe void* AddressOfPtrThis( ){fixed (void* pointer = &this)  { return( pointer ) ; }  }
+
     public Uniform_MVP(Matrix model , Matrix view , Matrix projection)
         => (Model, View,Projection )=(model,view,projection);
-};
+    
+    public Uniform_MVP() { Model = new() ; View = new(); Projection = new(); }
+}
 
 public struct Position2f_Color3f
 {

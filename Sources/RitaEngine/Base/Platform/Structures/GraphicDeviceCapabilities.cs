@@ -86,7 +86,7 @@ public struct GraphicDeviceSwapChainData
     public VkSurfaceFormatKHR VkSurfaceFormat = new();
     public VkImage[] VkImages = new VkImage[3]; //for CreateImagesView and RecreateSwapChain ....
     public VkImageView[] VkSwapChainImageViews = new VkImageView[3];
-    public VkFramebuffer[] VkFramebuffers =null!;//need for render => NEEDVALID SWAP CHAIN
+    public VkFramebuffer[] VkFramebuffers = new VkFramebuffer[3];//need for render => NEEDVALID SWAP CHAIN
     public uint ImageCount =3;
 
     public GraphicDeviceSwapChainData(int count = 3 )

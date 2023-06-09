@@ -61,7 +61,7 @@ public static class Sample_0002
 
         protected override void UpdateDraw()
         {
-           GraphicDevice.DrawRender();
+          
         }
 
         protected override void UpdateInputs()
