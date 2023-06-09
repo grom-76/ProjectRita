@@ -29,7 +29,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
    
     public unsafe void Init(in GraphicDeviceConfig config, in Window window )
     {
-        TransfertToData(in config,in window ,ref _functions , ref _data);
+        TransfertToData(in config,in window ,ref _functions , ref _data);   
         GraphicDeviceImplement.Init(ref _functions , ref _data);
     }
 
@@ -43,6 +43,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         data.App.HInstance = window.GetWindowHInstance();
         data.App.Width = window.GetWindowWidth();
         data.App.Height = window.GetWindowheight();
+        data.GetFrameBufferCallback = window.GetFrameBuffer;
     }
 
     public unsafe void Release()
@@ -54,17 +55,32 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
     public void Pause()
     {
-
+        GraphicDeviceImplement.Pause( _functions.DeviceFunction , ref _data);
     }
 
     public void BuildRender(in GraphicRenderConfig config)
     {
-        // TransfertToRender(in config, in _functions , ref _data);
+        TransfertToRender(in config, in _functions , ref _data);
+        GraphicDeviceImplement.BuildRender(ref _functions, ref _data);
+    }
+
+    private void TransfertToRender(in GraphicRenderConfig pipeline, in GraphicDeviceFunctions functions, ref GraphicDeviceData data)
+    {
+        data.RenderAreaOffset.x =0;
+        data.RenderAreaOffset.y =0;       
+        data.ClearColor = new(ColorHelper.ToRGBA( (uint)pipeline.BackColorARGB),00000.0f,0);
+        data.ubo = pipeline.ubo;
+        data.Indices = pipeline.Indices;
+        data.Vertices = pipeline.Vertices;
+        data.IndicesSize =(uint) pipeline.Indices.Length;
+        data.TextureName =  pipeline.TextureName;
+        data.MAX_FRAMES_IN_FLIGHT = pipeline.MAX_FRAMES_IN_FLIGHT;
+
     }
 
     public void UpdateRender(in GraphicRenderConfig config)
     {
-        // TransfertToRender(in config, in _functions , ref _data);
+        TransfertToRender(in config, in _functions , ref _data);
 
     }
     /// <summary>
@@ -87,129 +103,97 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
 public static class GraphicDeviceImplement
 {
-
+    #region public PRUPOSE
     public static void Init(ref GraphicDeviceFunctions func , ref GraphicDeviceData data)
     {
+// APP  : WSI , DEBUG , INSTANCE        
         CreateInstanceAndDebug(ref func,ref data);
         CreateSurface(ref func.InstanceFunction , ref data);
 // //DEVICE          
         SelectPhysicalDevice(ref func.InstanceFunction ,ref data);
         GetPhysicalInformations( ref func, ref data);
         CreateLogicalDevice(ref func ,ref data );
-
 // //SWAP CHAIN
-//         CreateSwapChain( ref _device , ref _data,ref _infos);
-//         CreateImageViews( ref _device , ref _data );
-       
-//         _data.MAX_FRAMES_IN_FLIGHT = _render.MAX_FRAMES_IN_FLIGHT;// only need this config
-
-//         // CreateCommandPool(ref _device , ref _data);
-// // DATA BARIERS SYNCHRO QUEUES        
-//         CreateSyncObjects(ref _device , ref _data);
-
-//         CreateQueues( ref _device , ref _data);
+        CreateSwapChain( ref func.DeviceFunction , ref data);
+        CreateImageViews( ref func.DeviceFunction , ref data );
     }
     
     public static unsafe void Release(in GraphicDeviceFunctions func , ref GraphicDeviceData data )
     {
         Log.Info("Dispose Graphic Device");
 
-        // DisposeFrameBuffer(ref _device, ref _data);
-        // DisposeSwapChain(ref _device, ref _data);
+        DisposeForReCreateSwapChain( func , ref data);
 
-        // DisposeBuildRender(ref _device, ref _data);
+        DisposeBuildRender(func, ref data);
         
-        // Pause(ref _device,ref _data);
-
-        // DisposeSyncObjects(ref _device ,ref _data);
-
         DisposeLogicalDevice(in func.InstanceFunction ,ref data);
         DisposeSurface(func.InstanceFunction, ref data);
-        DisposeInstanceAndDebug(in func,ref data);
-       
+        DisposeInstanceAndDebug(in func,ref data);  
     }
-    
-    #region private PRUPOSE
 
-    private unsafe static void Pause(in GraphicDeviceFunction func,ref GraphicDeviceData data  )
+    public unsafe static void Pause(in GraphicDeviceFunction func,ref GraphicDeviceData data  )
     {
         if ( !data.VkDevice.IsNull){
             func.vkDeviceWaitIdle(data.VkDevice).Check($"WAIT IDLE VkDevice : {data.VkDevice}");
         }
     }
 
-    private unsafe static void BuildRender(ref GraphicDeviceFunction func,ref GraphicDeviceData data,ref GraphicRenderConfig pipeline)
+    public unsafe static void BuildRender(ref GraphicDeviceFunctions func,ref GraphicDeviceData data)
     {
-        data.RenderAreaOffset.x =0;
-        data.RenderAreaOffset.y =0;       
-        data.ClearColor = new(ColorHelper.ToRGBA( (uint)pipeline.BackColorARGB),00000.0f,0);
-        CreateRenderPass(ref func,ref data, ref pipeline);
-
-        CreateDescriptorSetLayout(ref func , ref data, ref pipeline);
-        CreateFramebuffers(ref func,ref data);
-
-        CreateCommandPool(ref func,ref data);
-
+        CreateRenderPass(ref func,ref data);
+        CreateDescriptorSetLayout(ref func.DeviceFunction , ref data);
+        CreatePipelineLayout( ref func.DeviceFunction , ref data);
+        CreatePipeline(ref func.DeviceFunction, ref data );
+        CreateCommandPool(ref func.DeviceFunction,ref data);
         CreateDepthResources( ref func, ref data);
-
+        CreateFramebuffers(ref func.DeviceFunction,ref data);
         CreateTextureImage(ref func , ref data);
-
-        CreateTextureImageView(ref func , ref data);
-        CreateTextureSampler(ref func , ref data);
-
-        CreateVertexBuffer( ref func , ref data ,ref pipeline);
-
-        data.IndicesSize =(uint) pipeline.Indices.Length;
-        CreateIndexBuffer( ref func , ref data , ref pipeline);
-        CreateUniformBuffers(ref func , ref data , ref pipeline);
-
-        CreateDescriptorPool(ref func,ref data);
-        CreateDescriptorSets(ref func,ref data);
-
-        CreateCommandBuffer(ref func,ref data,ref pipeline);
-        
-        data.TextureName =  pipeline.TextureName;
-
-        CreateVertexBuffer(ref func, ref data ,ref pipeline) ;
-        CreatePipelineLayout( ref func , ref data);
-        CreatePipeline(ref func, ref data,ref pipeline );
+        CreateTextureImageView(ref func.DeviceFunction , ref data);
+        CreateTextureSampler(ref func.DeviceFunction , ref data);
+        //LoadModel => Do in TransfertConfigRenderToData 
+        CreateVertexBuffer( ref func , ref data );
+        CreateIndexBuffer( ref func , ref data);
+        CreateUniformBuffers(ref func , ref data );
+        CreateDescriptorPool(ref func.DeviceFunction,ref data);
+        CreateDescriptorSets(ref func.DeviceFunction,ref data);
+        CreateCommandBuffer(ref func.DeviceFunction,ref data);
+        CreateSyncObjects(ref func.DeviceFunction , ref data);
     }
     
-    private unsafe static void DisposeBuildRender(ref GraphicDeviceFunction func,ref GraphicDeviceData data  )
+    public unsafe static void DisposeBuildRender(in  GraphicDeviceFunctions func,ref GraphicDeviceData data  )
     {
-        Pause( func,ref data);
-
-        DisposePipeline(ref func,ref data);
-        DisposeRenderPass(ref func,ref data);
-        DisposeUniformBuffers(ref func , ref data);
-        DisposeTextureSampler(ref func , ref data);
-        DisposeTextureImage(ref func , ref data);
-        DisposeDescriptorPool(ref func , ref data);
-        DisposeBuffers(ref func , ref data);
-        DisposeCommandPool(ref func,ref data);
+        DisposePipeline( func.DeviceFunction,ref data);
+        DisposeRenderPass( func.DeviceFunction,ref data);
+        DisposeUniformBuffers( func.DeviceFunction , ref data);
+        DisposeTextureSampler( func.DeviceFunction , ref data);
+        DisposeTextureImage( func.DeviceFunction , ref data);
+        DisposeDescriptorPool( func.DeviceFunction , ref data);
+        DisposeBuffers( func.DeviceFunction , ref data);
+        DisposeSyncObjects( func.DeviceFunction ,ref data);
+        DisposeCommandPool( func.DeviceFunction,ref data);
     }
 
-    private unsafe static void ReCreateSwapChain(ref GraphicDeviceFunction func,ref GraphicDeviceData data)
+    public unsafe static void ReCreateSwapChain(ref GraphicDeviceFunctions func,ref GraphicDeviceData data)
     {
-        if ( data.VkDevice == VkDevice.Null)return ;
+        if ( data.SwapChain.VkSwapChain == VkSwapchainKHR.Null)return ;
 
-        // RECT rect = new();
-        //  GetClientRect( data.WindowHandle,&rect);
-        // uint width = (uint)rect.Right;
-        // uint height = (uint)rect.Bottom;
-        // data.VkSurfaceArea.width = width;
-        // data.VkSurfaceArea.height = height;
-        //need uint width, uint height
-        Pause( func,ref data);
-        // DisposeDepthResources( ref func , ref data);
-        // DisposeSwapChain(ref func,ref data);
+        data.GetFrameBufferCallback(ref data.SwapChain.VkSurfaceArea.width ,ref data.SwapChain.VkSurfaceArea.height );
 
-        // DisposeFrameBuffer(ref func,ref data);
+        DisposeForReCreateSwapChain( func, ref data);
        
-        // // CreateSwapChain(ref func,ref data, ref infos);
-        // CreateImageViews(ref func, ref data);
-        // CreateDepthResources( ref func, ref data);
-        // CreateFramebuffers(ref func,ref data);
+        CreateSwapChain(ref func.DeviceFunction,ref data);
+        CreateImageViews(ref func.DeviceFunction, ref data);
+        CreateDepthResources( ref func, ref data);
+        CreateFramebuffers(ref func.DeviceFunction,ref data);
+        
+    }
+
+    public unsafe static void DisposeForReCreateSwapChain(in GraphicDeviceFunctions func,ref GraphicDeviceData data)
+    {
+        Pause( func.DeviceFunction,ref data);
+        DisposeDepthResources(  func.DeviceFunction , ref data);
+        DisposeFrameBuffer(func.DeviceFunction, ref data);
+        DisposeSwapChain(func.DeviceFunction , ref data);
     }
 
     public static string VersionToString( uint version ) => $"{VK.VK_VERSION_MAJOR(version)}.{VK.VK_VERSION_MINOR(version)}.{VK.VK_VERSION_PATCH(version)} ";
@@ -386,7 +370,7 @@ public static class GraphicDeviceImplement
 
     #endregion
     
-    #region DEvice
+    #region PHYSICAL DEVICE 
 
     private static unsafe void SelectPhysicalDevice( ref GraphicInstanceFunction func,ref GraphicDeviceData data )
     {
@@ -483,30 +467,8 @@ public static class GraphicDeviceImplement
             func.InstanceFunction.vkGetPhysicalDeviceFeatures(data.Physical.VkPhysicalDevice,features );
         } 
 
-    }
     
-    private static unsafe void CreateLogicalDevice(ref GraphicDeviceFunctions func,ref GraphicDeviceData data )
-    {
-        VkDeviceQueueCreateInfo* queueCreateInfos = stackalloc VkDeviceQueueCreateInfo[2];
-
-       uint[] uniqueQueueFamilies = new uint[]{
-            data.Physical.VkGraphicFamilyIndice,
-            data.Physical.VkPresentFamilyIndice
-        };
-
-        float queuePriority = 1.0f;
-        uint queueCount = 0;
-        foreach (uint queueFamily in uniqueQueueFamilies)
-        {
-            queueCreateInfos[queueCount++] = new VkDeviceQueueCreateInfo {
-                sType = VkStructureType. VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
-                queueFamilyIndex = queueFamily,
-                queueCount = 1,
-                pQueuePriorities = &queuePriority
-            };
-        }
-
-        // EXTENSIONS -------------------------------------------------
+        // DZEVICE  EXTENSIONS -------------------------------------------------
         uint propertyCount = 0;
         func.InstanceFunction.vkEnumerateDeviceExtensionProperties(data.Physical.VkPhysicalDevice, null, &propertyCount, null).Check();
 
@@ -520,57 +482,20 @@ public static class GraphicDeviceImplement
            data.Physical.DeviceExtensions[i] = Encoding.UTF8.GetString( properties[i].extensionName, (int) length ); //new string(properties[i].extensionName); //
         }
         data.Physical.DeviceExtensions[propertyCount] = VK.VK_KHR_SWAPCHAIN_EXTENSION_NAME ;
-                
-        // CREATE DEVICE INFO ---------------------------------------------------------
-        using var deviceExtensions = new StrArrayUnsafe(ref data.Physical.DeviceExtensions);
-        VkDeviceCreateInfo createInfo = default;
-        createInfo.sType =  VkStructureType.VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-        createInfo.queueCreateInfoCount = (uint)queueCount;
-        createInfo.pQueueCreateInfos = queueCreateInfos;
-        fixed ( VkPhysicalDeviceFeatures* features = &data.Physical.Features) {createInfo.pEnabledFeatures = features;}
-        createInfo.enabledExtensionCount = (uint)deviceExtensions.Count;
-        createInfo.ppEnabledExtensionNames = deviceExtensions;
-        createInfo.pNext = null ;
-        
-        using var layerNames = new RitaEngine.Base.Strings.StrArrayUnsafe(ref data.App.ValidationLayers);
-        if ( data.App.EnableDebug)
-        {          
-            createInfo.enabledLayerCount = layerNames.Count ;
-            createInfo.ppEnabledLayerNames = layerNames ;
-        }
-        else
-        {
-            createInfo.enabledLayerCount = (uint)0  ;
-            createInfo.ppEnabledLayerNames = null ;
+
+        // FOR SWAP CHAIN ----------------------------------------------------
+        data.SwapChain.VkPresentMode = ChooseSwapPresentMode(ref data);
+        data.SwapChain.VkSurfaceFormat  = ChooseSwapSurfaceFormat(ref data);
+        data.SwapChain.VkSurfaceArea = ChooseSwapExtent(ref data);
+        data.SwapChain.VkFormat = data.SwapChain.VkSurfaceFormat.format;
+
+        data.SwapChain.ImageCount = data.Physical.Capabilities.minImageCount + 1;
+        if (data.Physical.Capabilities.maxImageCount > 0 && data.SwapChain.ImageCount > data.Physical.Capabilities.maxImageCount) {
+            data.SwapChain.ImageCount = data.Physical.Capabilities.maxImageCount;
         }
 
-        fixed(VkDevice* device = &data.VkDevice){
-            func.InstanceFunction.vkCreateDevice(data.Physical.VkPhysicalDevice, &createInfo, null, device).Check("Error creation vkDevice");
-        }
        
-       VkHelper.ValidateExtensionsForLoad(ref data.Physical.DeviceExtensions,0 );
 
-       func.InitDevicesFunctions( GraphicDeviceLoaderFunction.vkGetDeviceProcAddr , data.VkDevice);
-       Log.Info($"Create Device :{data.VkDevice}");
-
-        fixed(VkQueue* gq =&data.VkGraphicQueue)
-        {
-            func.DeviceFunction.vkGetDeviceQueue(data.VkDevice, data.Physical.VkGraphicFamilyIndice, 0,gq);
-        }
-        fixed(VkQueue* pq = &data.VkPresentQueue)
-        {
-            func.DeviceFunction.vkGetDeviceQueue(data.VkDevice, data.Physical.VkPresentFamilyIndice, 0, pq); 
-        }
-
-        Log.Info($"Graphic Queues : indice :{ data.Physical.VkGraphicFamilyIndice} Adr[{data.VkGraphicQueue}]\nPresent : indice :{data.Physical.VkPresentFamilyIndice} Adr[{data.VkPresentQueue}]");
-    }
-
-    private static unsafe void DisposeLogicalDevice(in GraphicInstanceFunction func,ref GraphicDeviceData data )
-    {
-        Log.Info("Dispose Logical Device ");
-        if ( !data.VkDevice.IsNull){
-            func.vkDestroyDevice(data.VkDevice, null);
-        }  
     }
 
     private unsafe static (uint graphicsFamily, uint presentFamily) FindQueueFamilies(ref GraphicInstanceFunction func,VkPhysicalDevice device, VkSurfaceKHR surface)
@@ -683,126 +608,16 @@ public static class GraphicDeviceImplement
         return details;
     }
 
-    #endregion
-
-    #region SWAP CHAIN
-    private static uint ClampUInt(uint value, uint min, uint max) =>value < min ? min : value > max ? max : value;
-    
-    private static unsafe void CreateSwapChain(ref GraphicDeviceFunction func,ref GraphicDeviceData data)
+    private  static VkSurfaceFormatKHR ChooseSwapSurfaceFormat( ref GraphicDeviceData data)
     {
-        // VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(Infos.Formats);
-        // VkPresentModeKHR presentMode = ChooseSwapPresentMode(Infos.PresentModes);
-        data.VkPresentMode = ChooseSwapPresentMode(data.Physical.PresentModes);
-        data.VkSurfaceFormat  = ChooseSwapSurfaceFormat(data.Physical.Formats);
-        data.VkSurfaceArea = ChooseSwapExtent(ref data);
-        
-        uint imageCount = data.Physical.Capabilities.minImageCount + 1;
-        if (data.Physical.Capabilities.maxImageCount > 0 && imageCount > data.Physical.Capabilities.maxImageCount) {
-            imageCount = data.Physical.Capabilities.maxImageCount;
-        }
-
-        uint* queueFamilyIndices = stackalloc uint[2]{data.Physical.VkGraphicFamilyIndice, data.Physical.VkPresentFamilyIndice};
-
-        VkSwapchainCreateInfoKHR createInfo = default;
-            createInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-            createInfo.surface = data.App.VkSurface;
-            createInfo.minImageCount = imageCount;
-            createInfo.imageFormat =  data.VkSurfaceFormat.format;
-            createInfo.imageColorSpace = data.VkSurfaceFormat.colorSpace;
-            createInfo.imageExtent = data.VkSurfaceArea;
-            createInfo.imageArrayLayers = 1;
-            createInfo.imageUsage = (uint)VkImageUsageFlagBits.VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-            
-            if (data.Physical.VkGraphicFamilyIndice != data.Physical.VkPresentFamilyIndice) {
-                createInfo.imageSharingMode = VkSharingMode.VK_SHARING_MODE_CONCURRENT;
-                createInfo.queueFamilyIndexCount = 2;
-                createInfo.pQueueFamilyIndices = queueFamilyIndices;
-            } else {
-                createInfo.imageSharingMode = VkSharingMode.VK_SHARING_MODE_EXCLUSIVE;
-            }
-            
-            createInfo.preTransform = data.Physical.Capabilities.currentTransform;
-            createInfo.compositeAlpha = VkCompositeAlphaFlagBitsKHR.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-            createInfo.presentMode = data.VkPresentMode;
-            createInfo.clipped = VK.VK_TRUE;
-            createInfo.oldSwapchain = VkSwapchainKHR.Null;
-
-        fixed (VkSwapchainKHR* swapchainPtr = &data.VkSwapChain){
-            func.vkCreateSwapchainKHR(data.VkDevice, &createInfo, null, swapchainPtr).Check("failed to create swap chain!");
-        }
-
-        Log.Info($"Create SwapChain {data.VkSwapChain}\nMode : {presentMode}\nSize :[{data.VkSurfaceArea.width},{data.VkSurfaceArea.height}] ");
-
-        // SWWAP CHAIN IMAGES
-
-        func.vkGetSwapchainImagesKHR(data.VkDevice, data.VkSwapChain, &imageCount, null);
-
-        data.VkImages = new VkImage[imageCount];
-
-        fixed (VkImage* swapchainImagesPtr = data.VkImages){
-            func.vkGetSwapchainImagesKHR(data.VkDevice,data.VkSwapChain, &imageCount, swapchainImagesPtr).Check("vkGetSwapchainImagesKHR");
-        }
-        
-        Log.Info($"Create {data.VkImages.Length} SwapChainImages ");
-    }
-
-    private static unsafe void CreateImageViews(ref GraphicDeviceFunction func,ref GraphicDeviceData data )
-    {
-        int size  = data.VkImages.Length;
-        data.VkSwapChainImageViews = new VkImageView[size ];
-
-        Log.Info($"Create {size} Image View use Format : {data.VkFormat}");
-        for (int i = 0; i < size; i++)
-        {
-            VkImageViewCreateInfo imageViewCreateInfo= default;//New<VkImageViewCreateInfo>();
-                imageViewCreateInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO; //VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-                imageViewCreateInfo.image = data.VkImages[i];
-                imageViewCreateInfo.viewType = VkImageViewType.VK_IMAGE_VIEW_TYPE_2D;// VK_IMAGE_VIEW_TYPE_2D ;//VkImageViewType.VK_IMAGE_VIEW_TYPE_2D;// VK_IMAGE_VIEW_TYPE_2D;
-                imageViewCreateInfo.format = data.VkFormat;
-
-                imageViewCreateInfo.components.r = VkComponentSwizzle.VK_COMPONENT_SWIZZLE_IDENTITY;
-                imageViewCreateInfo.components.g = VkComponentSwizzle.VK_COMPONENT_SWIZZLE_IDENTITY;
-                imageViewCreateInfo.components.b = VkComponentSwizzle.VK_COMPONENT_SWIZZLE_IDENTITY;
-                imageViewCreateInfo.components.a = VkComponentSwizzle.VK_COMPONENT_SWIZZLE_IDENTITY;
-                
-                imageViewCreateInfo.subresourceRange.aspectMask = (uint)VkImageAspectFlagBits.VK_IMAGE_ASPECT_COLOR_BIT;;
-                imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
-                imageViewCreateInfo.subresourceRange.levelCount = 1;
-                imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
-                imageViewCreateInfo.subresourceRange.layerCount = 1;
-
-            fixed(VkImageView* img =  &data.VkSwapChainImageViews[i]){
-                func.vkCreateImageView(data.VkDevice, &imageViewCreateInfo, null, img).Check("failed to create image views!");
-            }
-            // Log.Info($"\t -[{i}] {data.VkSwapChainImageViews[i]}  :{config.SwapChain.ImageViewType},{config.SwapChain.ImageViewComponentSwizzle},{ config.SwapChain.ImageViewImageAspect}"); 
-        }
-    }
-    
-    private static unsafe void DisposeSwapChain(ref GraphicDeviceFunction func,ref GraphicDeviceData data )
-    {
-        Log.Info("Dispose SWAP CHAIN ");
-        if (!data.VkDevice.IsNull && data.VkSwapChainImageViews != null) {
-            Log.Info($"ReleaseSwap chain Images viewe [{data.VkSwapChainImageViews .Length}]");
-            foreach (var imageView in data.VkSwapChainImageViews) {
-                func.vkDestroyImageView(data.VkDevice, imageView, null); }
-        }
-
-        if ( !data.VkDevice.IsNull && !data.VkSwapChain.IsNull ){
-           
-            func.vkDestroySwapchainKHR(data.VkDevice, data.VkSwapChain, null);
-        }
-    }
-
-    private  static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(ReadOnlySpan<VkSurfaceFormatKHR> availableFormats)
-    {
-        foreach (VkSurfaceFormatKHR availableFormat in availableFormats)
+        foreach (VkSurfaceFormatKHR availableFormat in data.Physical.Formats)
         {
             if (availableFormat.format == VkFormat.VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VkColorSpaceKHR.VK_COLOR_SPACE_SRGB_NONLINEAR_KHR )
             {
                 return availableFormat;
             }
         }
-        return availableFormats[0];
+        return data.Physical.Formats[0];
     }
 
     private static  VkExtent2D ChooseSwapExtent( ref GraphicDeviceData data) 
@@ -819,9 +634,9 @@ public static class GraphicDeviceImplement
         }
     }
 
-    private  static VkPresentModeKHR ChooseSwapPresentMode(ReadOnlySpan<VkPresentModeKHR> availablePresentModes)
+    private  static VkPresentModeKHR ChooseSwapPresentMode( ref GraphicDeviceData data )
     {
-        foreach (VkPresentModeKHR availablePresentMode in availablePresentModes)
+        foreach (VkPresentModeKHR availablePresentMode in data.Physical.PresentModes)
         {
             if (availablePresentMode == VkPresentModeKHR.VK_PRESENT_MODE_MAILBOX_KHR)
             {
@@ -832,16 +647,393 @@ public static class GraphicDeviceImplement
         return VkPresentModeKHR.VK_PRESENT_MODE_FIFO_KHR;
     }
 
+    private static uint ClampUInt(uint value, uint min, uint max) =>value < min ? min : value > max ? max : value;
+
+    #endregion
+
+    #region DEVICE
+    
+    private static unsafe void CreateLogicalDevice(ref GraphicDeviceFunctions func,ref GraphicDeviceData data )
+    {
+        VkDeviceQueueCreateInfo* queueCreateInfos = stackalloc VkDeviceQueueCreateInfo[2];
+
+       uint[] uniqueQueueFamilies = new uint[]{
+            data.Physical.VkGraphicFamilyIndice,
+            data.Physical.VkPresentFamilyIndice
+        };
+
+        float queuePriority = 1.0f;
+        uint queueCount = 0;
+        foreach (uint queueFamily in uniqueQueueFamilies)
+        {
+            queueCreateInfos[queueCount++] = new VkDeviceQueueCreateInfo {
+                sType = VkStructureType. VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+                queueFamilyIndex = queueFamily,
+                queueCount = 1,
+                pQueuePriorities = &queuePriority
+            };
+        }
+
+        // CREATE DEVICE INFO ---------------------------------------------------------
+        using var deviceExtensions = new StrArrayUnsafe(ref data.Physical.DeviceExtensions);
+        VkDeviceCreateInfo createInfo = default;
+        createInfo.sType =  VkStructureType.VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        createInfo.queueCreateInfoCount = (uint)queueCount;
+        createInfo.pQueueCreateInfos = queueCreateInfos;
+        fixed ( VkPhysicalDeviceFeatures* features = &data.Physical.Features) {createInfo.pEnabledFeatures = features;}
+        createInfo.enabledExtensionCount = (uint)deviceExtensions.Count;
+        createInfo.ppEnabledExtensionNames = deviceExtensions;
+        createInfo.pNext = null ;
+        
+        using var layerNames = new RitaEngine.Base.Strings.StrArrayUnsafe(ref data.App.ValidationLayers);
+        if ( data.App.EnableDebug)
+        {          
+            createInfo.enabledLayerCount = layerNames.Count ;
+            createInfo.ppEnabledLayerNames = layerNames ;
+        }
+        else
+        {
+            createInfo.enabledLayerCount = (uint)0  ;
+            createInfo.ppEnabledLayerNames = null ;
+        }
+
+        fixed(VkDevice* device = &data.VkDevice){
+            func.InstanceFunction.vkCreateDevice(data.Physical.VkPhysicalDevice, &createInfo, null, device).Check("Error creation vkDevice");
+        }
+       
+       VkHelper.ValidateExtensionsForLoad(ref data.Physical.DeviceExtensions,0 );
+
+       func.InitDevicesFunctions( GraphicDeviceLoaderFunction.vkGetDeviceProcAddr , data.VkDevice);
+
+       Log.Info($"Create Device :{data.VkDevice}");
+
+        fixed(VkQueue* gq =&data.VkGraphicQueue)
+        {
+            func.DeviceFunction.vkGetDeviceQueue(data.VkDevice, data.Physical.VkGraphicFamilyIndice, 0,gq);
+        }
+        fixed(VkQueue* pq = &data.VkPresentQueue)
+        {
+            func.DeviceFunction.vkGetDeviceQueue(data.VkDevice, data.Physical.VkPresentFamilyIndice, 0, pq); 
+        }
+
+        Log.Info($"Graphic Queues : indice :{ data.Physical.VkGraphicFamilyIndice} Adr[{data.VkGraphicQueue}]\nPresent : indice :{data.Physical.VkPresentFamilyIndice} Adr[{data.VkPresentQueue}]");
+    }
+
+    private static unsafe void DisposeLogicalDevice(in GraphicInstanceFunction func,ref GraphicDeviceData data )
+    {
+        Log.Info("Dispose Logical Device ");
+        if ( !data.VkDevice.IsNull){
+            func.vkDestroyDevice(data.VkDevice, null);
+        }  
+    }
+
+
+    #endregion
+
+    #region SWAP CHAIN
+    
+    private static unsafe void CreateSwapChain(ref GraphicDeviceFunction func,ref GraphicDeviceData data)
+    {
+       uint imageCount  = data.SwapChain.ImageCount;
+
+        uint* queueFamilyIndices = stackalloc uint[2]{data.Physical.VkGraphicFamilyIndice, data.Physical.VkPresentFamilyIndice};
+
+        VkSwapchainCreateInfoKHR createInfo = default;
+            createInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+            createInfo.surface = data.App.VkSurface;
+            createInfo.minImageCount = imageCount;
+            createInfo.imageFormat =  data.SwapChain.VkSurfaceFormat.format;
+            createInfo.imageColorSpace = data.SwapChain.VkSurfaceFormat.colorSpace;
+            createInfo.imageExtent = data.SwapChain.VkSurfaceArea;
+            createInfo.imageArrayLayers = 1;
+            createInfo.imageUsage = (uint)VkImageUsageFlagBits.VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+            
+            if (data.Physical.VkGraphicFamilyIndice != data.Physical.VkPresentFamilyIndice) {
+                createInfo.imageSharingMode = VkSharingMode.VK_SHARING_MODE_CONCURRENT;
+                createInfo.queueFamilyIndexCount = 2;
+                createInfo.pQueueFamilyIndices = queueFamilyIndices;
+            } else {
+                createInfo.imageSharingMode = VkSharingMode.VK_SHARING_MODE_EXCLUSIVE;
+            }
+            
+            createInfo.preTransform = data.Physical.Capabilities.currentTransform;
+            createInfo.compositeAlpha = VkCompositeAlphaFlagBitsKHR.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+            createInfo.presentMode = data.SwapChain.VkPresentMode;
+            createInfo.clipped = VK.VK_TRUE;
+            createInfo.oldSwapchain = VkSwapchainKHR.Null;
+
+        fixed (VkSwapchainKHR* swapchainPtr = &data.SwapChain.VkSwapChain){
+            func.vkCreateSwapchainKHR(data.VkDevice, &createInfo, null, swapchainPtr).Check("failed to create swap chain!");
+        }
+
+        Log.Info($"Create SwapChain {data.SwapChain.VkSwapChain}\nMode : {data.SwapChain.VkPresentMode}\nSize :[{data.SwapChain.VkSurfaceArea.width},{data.SwapChain.VkSurfaceArea.height}] ");
+
+        // SWWAP CHAIN IMAGES ----------------------------------------------------------------------
+
+        func.vkGetSwapchainImagesKHR(data.VkDevice, data.SwapChain.VkSwapChain, &imageCount, null);
+
+        data.SwapChain.VkImages = new VkImage[imageCount];
+
+        fixed (VkImage* swapchainImagesPtr = data.SwapChain.VkImages){
+            func.vkGetSwapchainImagesKHR(data.VkDevice,data.SwapChain.VkSwapChain, &imageCount, swapchainImagesPtr).Check("vkGetSwapchainImagesKHR");
+        }
+        
+        Log.Info($"Create {data.SwapChain.VkImages.Length} SwapChainImages ");
+    }
+
+    private static unsafe void CreateImageViews(ref GraphicDeviceFunction func,ref GraphicDeviceData data )
+    {
+        uint size  = data.SwapChain.ImageCount;
+        data.SwapChain.VkSwapChainImageViews = new VkImageView[size ];
+
+        for (uint i = 0; i < size; i++)
+        {
+            VkImageViewCreateInfo imageViewCreateInfo= default;//New<VkImageViewCreateInfo>();
+                imageViewCreateInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO; //VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+                imageViewCreateInfo.image = data.SwapChain.VkImages[i];
+                imageViewCreateInfo.viewType = VkImageViewType.VK_IMAGE_VIEW_TYPE_2D;// VK_IMAGE_VIEW_TYPE_2D ;//VkImageViewType.VK_IMAGE_VIEW_TYPE_2D;// VK_IMAGE_VIEW_TYPE_2D;
+                imageViewCreateInfo.format = data.SwapChain.VkFormat;
+
+                imageViewCreateInfo.components.r = VkComponentSwizzle.VK_COMPONENT_SWIZZLE_IDENTITY;
+                imageViewCreateInfo.components.g = VkComponentSwizzle.VK_COMPONENT_SWIZZLE_IDENTITY;
+                imageViewCreateInfo.components.b = VkComponentSwizzle.VK_COMPONENT_SWIZZLE_IDENTITY;
+                imageViewCreateInfo.components.a = VkComponentSwizzle.VK_COMPONENT_SWIZZLE_IDENTITY;
+                
+                imageViewCreateInfo.subresourceRange.aspectMask = (uint)VkImageAspectFlagBits.VK_IMAGE_ASPECT_COLOR_BIT;
+                imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+                imageViewCreateInfo.subresourceRange.levelCount = 1;
+                imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+                imageViewCreateInfo.subresourceRange.layerCount = 1;
+
+            fixed(VkImageView* img =  &data.SwapChain.VkSwapChainImageViews[i]){
+                func.vkCreateImageView(data.VkDevice, &imageViewCreateInfo, null, img).Check("failed to create image views!");
+            }
+            Log.Info($"\t -[{i}] {data.SwapChain.VkSwapChainImageViews[i]} : {data.SwapChain.VkFormat}"); 
+        }
+    }
+    
+    private static unsafe void DisposeSwapChain(in GraphicDeviceFunction func,ref GraphicDeviceData data )
+    {
+        if (!data.VkDevice.IsNull && data.SwapChain.VkSwapChainImageViews != null) {
+            Log.Info($"Release Swap chain Images View [{data.SwapChain.VkSwapChainImageViews .Length}]");
+            foreach (var imageView in data.SwapChain.VkSwapChainImageViews) {
+                func.vkDestroyImageView(data.VkDevice, imageView, null); }
+        }
+
+        if ( !data.VkDevice.IsNull && !data.SwapChain.VkSwapChain.IsNull )
+        {
+           Log.Info($"Release Swapchain Instancew [{data.SwapChain.VkSwapChain}]");
+            func.vkDestroySwapchainKHR(data.VkDevice, data.SwapChain.VkSwapChain, null);
+        }
+    }
+
+    #endregion
+    
+    #region RenderPass
+
+    private static unsafe void CreateRenderPass(ref GraphicDeviceFunctions func,ref GraphicDeviceData data) 
+    {
+        // COLOR 
+        VkAttachmentDescription colorAttachment =default;// New<VkAttachmentDescription>(); //new(){
+            colorAttachment.format = data.SwapChain.VkFormat;
+            colorAttachment.samples = VkSampleCountFlagBits.VK_SAMPLE_COUNT_1_BIT;
+            colorAttachment.loadOp = VkAttachmentLoadOp.VK_ATTACHMENT_LOAD_OP_CLEAR;
+            colorAttachment.storeOp = VkAttachmentStoreOp. VK_ATTACHMENT_STORE_OP_STORE;
+            colorAttachment.stencilLoadOp = VkAttachmentLoadOp.VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+            colorAttachment.stencilStoreOp =VkAttachmentStoreOp. VK_ATTACHMENT_STORE_OP_DONT_CARE;
+            colorAttachment.initialLayout = VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED;
+            colorAttachment.finalLayout = VkImageLayout.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+            colorAttachment.flags =0;
+            colorAttachment.finalLayout = VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED;
+
+        //ONLY IF DEPTH RESOURCE
+          VkAttachmentDescription depthAttachment =default;// New<VkAttachmentDescription>(); //new(){
+            depthAttachment.format = FindDepthFormat(func.InstanceFunction, data.Physical.VkPhysicalDevice);
+            depthAttachment.samples = VkSampleCountFlagBits.VK_SAMPLE_COUNT_1_BIT;
+            depthAttachment.loadOp = VkAttachmentLoadOp.VK_ATTACHMENT_LOAD_OP_CLEAR;
+            depthAttachment.storeOp = VkAttachmentStoreOp. VK_ATTACHMENT_STORE_OP_STORE;
+            depthAttachment.stencilLoadOp = VkAttachmentLoadOp.VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+            depthAttachment.stencilStoreOp =VkAttachmentStoreOp. VK_ATTACHMENT_STORE_OP_DONT_CARE;
+            depthAttachment.initialLayout = VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED;
+            depthAttachment.finalLayout = VkImageLayout.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+            depthAttachment.flags =0;
+            depthAttachment.finalLayout = VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED;
+
+        // POST PROCESSING       
+         VkAttachmentReference colorAttachmentRef = default;// New<VkAttachmentReference>();//new() {
+            colorAttachmentRef.attachment = 1;// TODO voir pourquoi 0 dans tutorial
+            colorAttachmentRef.layout =VkImageLayout. VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            
+         
+         VkAttachmentReference depthAttachmentRef = default;// New<VkAttachmentReference>();//new() {
+            depthAttachmentRef.attachment =1;
+            depthAttachmentRef.layout =VkImageLayout.VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+        
+        VkSubpassDescription subpass = default ;//New<VkSubpassDescription>(); //new(){
+            subpass.pipelineBindPoint = VkPipelineBindPoint. VK_PIPELINE_BIND_POINT_GRAPHICS;
+            subpass.colorAttachmentCount = 1;
+            subpass.pColorAttachments = &colorAttachmentRef;
+            subpass.pDepthStencilAttachment =&depthAttachmentRef;
+            // subpass.flags =0;
+            // subpass.inputAttachmentCount=0;
+            // subpass.pDepthStencilAttachment = null;
+            // subpass.pInputAttachments = null;
+            // subpass.pPreserveAttachments = null;
+            // subpass.preserveAttachmentCount=0;
+
+        VkSubpassDependency dependency =default; //  New <VkSubpassDependency>();
+            dependency.srcSubpass = VK.VK_SUBPASS_EXTERNAL;
+            dependency.dstSubpass = 0;
+            dependency.srcStageMask = (uint)VkPipelineStageFlagBits. VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | (uint)VkPipelineStageFlagBits.VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+            dependency.srcAccessMask = 0;
+            dependency.dstStageMask =(uint) VkPipelineStageFlagBits.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT| (uint)VkPipelineStageFlagBits.VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+            dependency.dstAccessMask =(uint)VkAccessFlagBits. VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT| (uint)VkAccessFlagBits.VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+            dependency.dependencyFlags =0;
+
+        //RENDER PASS 
+        VkAttachmentDescription* attachments = stackalloc VkAttachmentDescription[] { colorAttachment, depthAttachment };
+
+        VkRenderPassCreateInfo renderPassInfo = default;// New<VkRenderPassCreateInfo>();//new()
+            renderPassInfo.sType = VkStructureType. VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+            renderPassInfo.attachmentCount = 2;
+            renderPassInfo.pAttachments = attachments;
+            renderPassInfo.subpassCount = 1;
+            renderPassInfo.pSubpasses = &subpass;
+            renderPassInfo.dependencyCount = 1;
+            renderPassInfo.pDependencies = &dependency;
+            renderPassInfo.flags =0;
+            renderPassInfo.pNext =null;
+
+        fixed( VkRenderPass* renderPass= &data.Render.VkRenderPass ){
+            func.DeviceFunction.vkCreateRenderPass(data.VkDevice, &renderPassInfo, null, renderPass).Check("failed to create render pass!");
+        }
+
+        Log.Info($"Create Render Pass : {data.Render.VkRenderPass}");
+    }
+
+    private static unsafe void DisposeRenderPass(in GraphicDeviceFunction func,ref GraphicDeviceData data  )
+    {
+        if (!data.VkDevice.IsNull && !data.Render.VkRenderPass.IsNull)
+            func.vkDestroyRenderPass(data.VkDevice,data.Render.VkRenderPass,null);
+    }
+
+    #endregion
+
+    #region  Descirptor Set
+
+    private unsafe static void CreateDescriptorSetLayout(ref GraphicDeviceFunction func, ref GraphicDeviceData data  ) 
+    {
+        VkDescriptorSetLayoutBinding uboLayoutBinding = default;
+            uboLayoutBinding.binding = 0;
+            uboLayoutBinding.descriptorCount = 1;
+            uboLayoutBinding.descriptorType = VkDescriptorType. VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            uboLayoutBinding.pImmutableSamplers = null;
+            uboLayoutBinding.stageFlags =(uint) VkShaderStageFlagBits.VK_SHADER_STAGE_VERTEX_BIT;
+
+        VkDescriptorSetLayoutCreateInfo layoutInfo = default;
+        layoutInfo.sType = VkStructureType. VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        layoutInfo.bindingCount = 1;
+        layoutInfo.pBindings = &uboLayoutBinding;
+
+        fixed( VkDescriptorSetLayout* layout = &data.DescriptorSetLayout ){
+            func.vkCreateDescriptorSetLayout(data.VkDevice, &layoutInfo, null, layout).Check("failed to create descriptor set layout!");
+        }
+    }
+
+    private unsafe static void CreateUniformBuffers(ref GraphicDeviceFunctions func, ref GraphicDeviceData data   ) 
+    {
+        VkDeviceSize bufferSize = (uint)(Marshal.SizeOf<Uniform_MVP>() );
+
+        for (int i = 0; i < data.MAX_FRAMES_IN_FLIGHT; i++) 
+        {
+            
+            CreateStagingBuffer(ref func, ref data, bufferSize, 
+            VkBufferUsageFlagBits.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
+            VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
+            VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,ref data.uniformBuffers[i],ref data.uniformBuffersMemory[i]);
+            
+            //TODO if void ** is oK ?
+            fixed(void* p = &data.uniformBuffersMapped[i])
+            {
+                func.DeviceFunction.vkMapMemory(data.VkDevice,data.uniformBuffersMemory[i], 0, bufferSize, 0, &p).Check("Map Memeory Unifommr pb");
+            }
+            
+        }   
+    }
+
+    private unsafe static void DisposeUniformBuffers(in GraphicDeviceFunction func, ref GraphicDeviceData data ) 
+    {
+        for (nint i = 0; i < data.MAX_FRAMES_IN_FLIGHT; i++) 
+        {
+            func.vkDestroyBuffer(data.VkDevice, data.uniformBuffers[i], null);
+            func.vkFreeMemory(data.VkDevice, data.uniformBuffersMemory[i], null);
+        }
+    }
+
+    private unsafe static void UpdateUniformBuffer(in GraphicDeviceFunction func,ref GraphicDeviceData data )
+    {
+        nint ptr = nint.Zero;
+        Marshal.StructureToPtr<Uniform_MVP>( data.ubo,ptr,false );
+
+        // fixed(void* ptr = &render.ubo)
+        // {
+        //     var p = MemoryHelper.AsPointer<Uniform_MVP>( ref render.ubo);
+            memcpy(data.uniformBuffersMapped[CurrentFrame].ToPointer(), ptr.ToPointer() , (ulong)Marshal.SizeOf(data.ubo )  );
+        // }
+        
+    }
+
+    #endregion
+  
+    #region  FrameBuffer
+
+    private static unsafe void CreateFramebuffers( ref GraphicDeviceFunction func,ref GraphicDeviceData data)
+    {
+        int size= data.SwapChain.VkSwapChainImageViews.Length;
+        data.SwapChain.VkFramebuffers = new VkFramebuffer[size];
+        // create frameubuufer array in data max 6  3 swapchain (triple bufer x 2 for stereoscopic// data.VkFramebuffers = new VkFramebuffer[size] ;// swapChainFramebuffers.resize(swapChainImageViews.size());
+
+        for (int i = 0; i < size; i++)
+        {
+            VkImageView[] attachments = new[]{ data.SwapChain.VkSwapChainImageViews[i] };
+
+            VkFramebufferCreateInfo framebufferInfo = default;
+                framebufferInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+                framebufferInfo.renderPass = data.Render.VkRenderPass;
+                framebufferInfo.attachmentCount = (uint)attachments.Length ;
+                fixed( VkImageView* attachmentPtr =&attachments[0] ) {
+                    framebufferInfo.pAttachments = attachmentPtr; 
+                }
+                framebufferInfo.width = data.SwapChain.VkSurfaceArea.width;
+                framebufferInfo.height = data.SwapChain.VkSurfaceArea.height;
+                framebufferInfo.layers = 1;
+
+            fixed( VkFramebuffer* frame = &data.SwapChain.VkFramebuffers[i]) {
+                func.vkCreateFramebuffer(data.VkDevice, &framebufferInfo, null, frame).Check("failed to create framebuffer!"); 
+            }
+        }
+        Log.Info($"Create  FrameBuffer ");
+    }
+
+    private unsafe static void DisposeFrameBuffer(in GraphicDeviceFunction func,ref GraphicDeviceData data  )
+    {
+        if (data.SwapChain.VkFramebuffers != null)
+        {
+            foreach (var framebuffer in  data.SwapChain.VkFramebuffers) {
+                if( !framebuffer.IsNull)
+                    func.vkDestroyFramebuffer(data.VkDevice, framebuffer, null); 
+            }
+        }
+    }
+
     #endregion
 
     #region DEpth Buffering 
-    private unsafe static void CreateDepthResources(ref GraphicDeviceFunction func, ref GraphicDeviceData data)
+    private unsafe static void CreateDepthResources(ref GraphicDeviceFunctions func, ref GraphicDeviceData data)
     {
-        VkFormat depthFormat = FindDepthFormat();
+        VkFormat depthFormat = FindDepthFormat(func.InstanceFunction , data.Physical.VkPhysicalDevice);
 
-        //CreateImage(swapChainExtent.width, swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, 
-        // VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
-        // CreateImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
         CreateImage(ref func , ref data, ref data.DepthImage , ref data.DepthImageMemory, (uint)data.Viewport.width, (uint)data.Viewport.height, 
             depthFormat, 
             VkImageTiling.VK_IMAGE_TILING_OPTIMAL, 
@@ -860,89 +1052,56 @@ public static class GraphicDeviceImplement
         viewInfo.subresourceRange.layerCount = 1;
 
         fixed (VkImageView* imageView = &data.DepthImageView ){
-            func.vkCreateImageView(data.VkDevice, &viewInfo, null, imageView).Check("failed to create image view!");
+            func.DeviceFunction.vkCreateImageView(data.VkDevice, &viewInfo, null, imageView).Check("failed to create image view!");
         }
-       
-
     }
     
-    private static unsafe  VkFormat FindSupportedFormat(VkFormat[] candidates, VkImageTiling tiling, VkFormatFeatureFlagBits features) 
-     {
-        // for (VkFormat format : candidates) 
-        // {
-        //     VkFormatProperties props;
-        //     vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
+    private static unsafe  VkFormat FindSupportedFormat(in GraphicInstanceFunction func, in VkPhysicalDevice physicalDevice,  VkFormat[] candidates, VkImageTiling tiling, VkFormatFeatureFlagBits features) 
+    {
 
-        //     if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
-        //         return format;
-        //     } else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
-        //         return format;
-        //     }
-        // }
         foreach ( VkFormat format in candidates)
         {
-            // TODO FindSupportFormat
+        //Get PhysicalFormatProperties --------------------------------------------------------
+        VkFormatProperties formatProperties;
+        func.vkGetPhysicalDeviceFormatProperties(physicalDevice,format, &formatProperties);
+
+            if (tiling == VkImageTiling.VK_IMAGE_TILING_LINEAR && (formatProperties.linearTilingFeatures & (uint)features) == (uint)features) 
+            {
+                return format;
+            } 
+            else if (tiling == VkImageTiling.VK_IMAGE_TILING_OPTIMAL && (formatProperties.optimalTilingFeatures & (uint)features) == (uint)features) 
+            {
+                return format;
+            }
         }
         return VkFormat.VK_FORMAT_A8B8G8R8_SRGB_PACK32;
         //  throw std::runtime_error("failed to find supported format!");
     }
     
-    private static unsafe VkFormat FindDepthFormat() 
+    private static unsafe VkFormat FindDepthFormat( in GraphicInstanceFunction func, in VkPhysicalDevice physicalDevice ) 
     {
-        return FindSupportedFormat(
+        return FindSupportedFormat(func , physicalDevice,
             new VkFormat[] {VkFormat.VK_FORMAT_D32_SFLOAT, VkFormat.VK_FORMAT_D32_SFLOAT_S8_UINT, VkFormat.VK_FORMAT_D24_UNORM_S8_UINT},
             VkImageTiling.VK_IMAGE_TILING_OPTIMAL,
              VkFormatFeatureFlagBits.VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
         );
     }
 
-    private unsafe static void DisposeDepthResources(ref GraphicDeviceFunction func, ref GraphicDeviceData data)
+    private unsafe static void DisposeDepthResources(in GraphicDeviceFunction func, ref GraphicDeviceData data)
     {
-        func.vkDestroyImageView(data.VkDevice,data.DepthImageView, null);
-        func.vkDestroyImage(data.VkDevice, data.DepthImage, null);
-        func.vkFreeMemory(data.VkDevice, data.DepthImageMemory, null);
-    }
-
-    #endregion
-
-    #region  FrameBuffer
-
-    private static unsafe void CreateFramebuffers( ref GraphicDeviceFunction func,ref GraphicDeviceData data)
-    {
-        var size= data.VkSwapChainImageViews.Length;
-        // create frameubuufer array in data max 6  3 swapchain (triple bufer x 2 for stereoscopic// data.VkFramebuffers = new VkFramebuffer[size] ;// swapChainFramebuffers.resize(swapChainImageViews.size());
-
-        for (int i = 0; i < size; i++)
+        if ( data.DepthImageView != VkImageView.Null )
         {
-            VkImageView[] attachments = new[]{ data.VkSwapChainImageViews[i] };
-
-            VkFramebufferCreateInfo framebufferInfo = new();
-                framebufferInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-                framebufferInfo.renderPass = data.VkRenderPass;
-                framebufferInfo.attachmentCount = (uint)attachments.Length ;
-                fixed( VkImageView* attachmentPtr =&attachments[0] ) {
-                    framebufferInfo.pAttachments = attachmentPtr; 
-                }
-                framebufferInfo.width = data.VkSurfaceArea.width;
-                framebufferInfo.height = data.VkSurfaceArea.height;
-                framebufferInfo.layers = 1;
-
-            fixed( VkFramebuffer* frame = &data.VkFramebuffers[i]) {
-                func.vkCreateFramebuffer(data.VkDevice, &framebufferInfo, null, frame).Check("failed to create framebuffer!"); 
-            }
+            func.vkDestroyImageView(data.VkDevice,data.DepthImageView, null);
         }
-        Log.Info($"Create {size} FrameBuffer ");
-    }
-
-    private unsafe static void DisposeFrameBuffer(ref GraphicDeviceFunction func,ref GraphicDeviceData data  )
-    {
-        if (!data.VkDevice.IsNull && data.VkFramebuffers != null)
+        if(data.DepthImage != VkImage.Null )
         {
-            foreach (var framebuffer in  data.VkFramebuffers) {
-                if( !framebuffer.IsNull)
-                    func.vkDestroyFramebuffer(data.VkDevice, framebuffer, null); 
-            }
+            func.vkDestroyImage(data.VkDevice, data.DepthImage, null);
         }
+        if ( data.DepthImageMemory != VkDeviceMemory.Null)
+        {
+            func.vkFreeMemory(data.VkDevice, data.DepthImageMemory, null);
+        }
+        
     }
 
     #endregion
@@ -964,7 +1123,7 @@ public static class GraphicDeviceImplement
         Log.Info($"Create Command Pool With : {VkCommandPoolCreateFlagBits.VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT}");
     }
 
-    private static unsafe void CreateCommandBuffer(ref GraphicDeviceFunction func,ref GraphicDeviceData data ,ref GraphicRenderConfig pipeline) 
+    private static unsafe void CreateCommandBuffer(ref GraphicDeviceFunction func,ref GraphicDeviceData data ) 
     {
         // data.VkCommandBuffers = new VkCommandBuffer[pipeline.MAX_FRAMES_IN_FLIGHT]; 
 
@@ -978,10 +1137,10 @@ public static class GraphicDeviceImplement
             func.vkAllocateCommandBuffers(data.VkDevice, &allocInfo, commandBuffer ).Check("failed to allocate command buffers!"); 
         }
 
-        Log.Info($"Create Allocate Command buffer count : {pipeline.MAX_FRAMES_IN_FLIGHT}");
+        Log.Info($"Create Allocate Command buffer count : {data.MAX_FRAMES_IN_FLIGHT}");
     }
 
-    private unsafe static void DisposeCommandPool(ref GraphicDeviceFunction func,ref GraphicDeviceData data )
+    private unsafe static void DisposeCommandPool(in GraphicDeviceFunction func,ref GraphicDeviceData data )
     {
         if (!data.VkDevice.IsNull && !data.VkCommandPool .IsNull){
             func.vkDestroyCommandPool(data.VkDevice, data.VkCommandPool , null);
@@ -992,9 +1151,9 @@ public static class GraphicDeviceImplement
 
     #region Vertex & Index
  
-    private unsafe static void CreateVertexBuffer(ref GraphicDeviceFunction func, ref GraphicDeviceData data ,ref GraphicRenderConfig pipeline ) 
+    private unsafe static void CreateVertexBuffer(ref GraphicDeviceFunctions func, ref GraphicDeviceData data  ) 
     {
-        VkDeviceSize bufferSize = (uint)(Marshal.SizeOf<Position2f_Color3f>() * pipeline.Vertices.Length);
+        VkDeviceSize bufferSize = (uint)(Marshal.SizeOf<Position2f_Color3f>() * data.Vertices.Length);
 
         VkBuffer stagingBuffer = new();
         VkDeviceMemory stagingBufferMemory = new();
@@ -1008,11 +1167,11 @@ public static class GraphicDeviceImplement
         
         void* vertexdata;
 
-        func.vkMapMemory(data.VkDevice, stagingBufferMemory, 0, bufferSize, 0, &vertexdata);
-        fixed (void* p = &pipeline.Vertices[0]){ 
+        func.DeviceFunction.vkMapMemory(data.VkDevice, stagingBufferMemory, 0, bufferSize, 0, &vertexdata);
+        fixed (void* p = &data.Vertices[0]){ 
             memcpy(vertexdata, p,  bufferSize); 
         }
-        func.vkUnmapMemory(data.VkDevice, stagingBufferMemory);
+        func.DeviceFunction.vkUnmapMemory(data.VkDevice, stagingBufferMemory);
 
         CreateStagingBuffer(ref func, ref data,bufferSize, 
             VkBufferUsageFlagBits.VK_BUFFER_USAGE_TRANSFER_DST_BIT 
@@ -1021,15 +1180,15 @@ public static class GraphicDeviceImplement
             ref  data.VertexBuffer, 
             ref data.VertexBufferMemory);
 
-        CopyStagingBuffer(ref func, ref data,stagingBuffer, data.VertexBuffer, bufferSize);
+        CopyStagingBuffer(ref func.DeviceFunction, ref data,stagingBuffer, data.VertexBuffer, bufferSize);
 
-        func.vkDestroyBuffer(data.VkDevice, stagingBuffer, null);
-        func.vkFreeMemory(data.VkDevice, stagingBufferMemory, null);
+        func.DeviceFunction.vkDestroyBuffer(data.VkDevice, stagingBuffer, null);
+        func.DeviceFunction.vkFreeMemory(data.VkDevice, stagingBufferMemory, null);
     }
 
-    private unsafe static void CreateIndexBuffer(ref GraphicDeviceFunction func, ref GraphicDeviceData data ,ref GraphicRenderConfig pipeline  ) 
+    private unsafe static void CreateIndexBuffer(ref GraphicDeviceFunctions func, ref GraphicDeviceData data   ) 
     {
-        VkDeviceSize bufferSize = (uint)(Marshal.SizeOf<short>() * pipeline.Indices.Length);
+        VkDeviceSize bufferSize = (uint)(Marshal.SizeOf<short>() * data.Indices.Length);
 
         VkBuffer stagingBuffer = new();
         VkDeviceMemory stagingBufferMemory = new();
@@ -1042,9 +1201,9 @@ public static class GraphicDeviceImplement
             ref stagingBufferMemory);
         
         void* indicesdata;
-        func.vkMapMemory(data.VkDevice, stagingBufferMemory, 0, bufferSize, 0, &indicesdata);
-        fixed (void* p = &pipeline.Indices[0]){ memcpy(indicesdata, p,  bufferSize); }  
-        func.vkUnmapMemory(data.VkDevice, stagingBufferMemory);
+        func.DeviceFunction.vkMapMemory(data.VkDevice, stagingBufferMemory, 0, bufferSize, 0, &indicesdata);
+        fixed (void* p = &data.Indices[0]){ memcpy(indicesdata, p,  bufferSize); }  
+        func.DeviceFunction.vkUnmapMemory(data.VkDevice, stagingBufferMemory);
 
         CreateStagingBuffer(ref func , ref data , bufferSize, 
             VkBufferUsageFlagBits.VK_BUFFER_USAGE_TRANSFER_DST_BIT 
@@ -1053,13 +1212,13 @@ public static class GraphicDeviceImplement
             ref data.IndicesBuffer, 
             ref data.IndicesBufferMemory);
 
-        CopyStagingBuffer(ref func , ref data ,stagingBuffer, data.IndicesBuffer, bufferSize);
+        CopyStagingBuffer(ref func.DeviceFunction , ref data ,stagingBuffer, data.IndicesBuffer, bufferSize);
 
-        func.vkDestroyBuffer(data.VkDevice, stagingBuffer, null);
-        func.vkFreeMemory(data.VkDevice, stagingBufferMemory, null);
+        func.DeviceFunction.vkDestroyBuffer(data.VkDevice, stagingBuffer, null);
+        func.DeviceFunction.vkFreeMemory(data.VkDevice, stagingBufferMemory, null);
     }
 
-    private unsafe static void DisposeBuffers(ref GraphicDeviceFunction func, ref GraphicDeviceData data)
+    private unsafe static void DisposeBuffers(in GraphicDeviceFunction func, ref GraphicDeviceData data)
     {
         if( !data.IndicesBuffer.IsNull)
         {
@@ -1080,7 +1239,7 @@ public static class GraphicDeviceImplement
         
     }
 
-    private unsafe static void CreateStagingBuffer(ref GraphicDeviceFunction func, ref GraphicDeviceData data ,VkDeviceSize size, VkBufferUsageFlagBits usage, 
+    private unsafe static void CreateStagingBuffer(ref GraphicDeviceFunctions func, ref GraphicDeviceData data ,VkDeviceSize size, VkBufferUsageFlagBits usage, 
         VkMemoryPropertyFlagBits  properties,ref VkBuffer buffer,ref VkDeviceMemory bufferMemory) 
     {
         VkBufferCreateInfo bufferInfo =new();
@@ -1090,11 +1249,11 @@ public static class GraphicDeviceImplement
         bufferInfo.sharingMode = VkSharingMode.VK_SHARING_MODE_EXCLUSIVE;
 
         fixed(VkBuffer* buf =  &buffer){
-            func.vkCreateBuffer(data.VkDevice, &bufferInfo, null, buf).Check("failed to create vertex buffer!");
+            func.DeviceFunction.vkCreateBuffer(data.VkDevice, &bufferInfo, null, buf).Check("failed to create vertex buffer!");
         }
         
         VkMemoryRequirements memRequirements = new();
-        func.vkGetBufferMemoryRequirements(data.VkDevice, buffer, &memRequirements);
+        func.DeviceFunction.vkGetBufferMemoryRequirements(data.VkDevice, buffer, &memRequirements);
 
         VkMemoryAllocateInfo allocInfo = new();
             allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -1103,10 +1262,10 @@ public static class GraphicDeviceImplement
             allocInfo.pNext = null;
 
         fixed(VkDeviceMemory* memory =  &bufferMemory) {
-            func.vkAllocateMemory(data.VkDevice, &allocInfo, null, memory).Check("failed to allocate vertex buffer memory!");
+            func.DeviceFunction.vkAllocateMemory(data.VkDevice, &allocInfo, null, memory).Check("failed to allocate vertex buffer memory!");
         }
         
-        func.vkBindBufferMemory(data.VkDevice, buffer, bufferMemory, 0);
+        func.DeviceFunction.vkBindBufferMemory(data.VkDevice, buffer, bufferMemory, 0);
     }
 
     private unsafe static void CopyStagingBuffer(ref GraphicDeviceFunction func, ref GraphicDeviceData data, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
@@ -1151,22 +1310,21 @@ public static class GraphicDeviceImplement
 			*ap++ = *bp++;
 	}
 
-    public unsafe static uint FindMemoryType(ref GraphicDeviceFunction func, ref GraphicDeviceData data , uint memoryTypeBits, VkMemoryPropertyFlagBits properties)
+    public unsafe static uint FindMemoryType(ref GraphicDeviceFunctions func, ref GraphicDeviceData data , uint memoryTypeBits, VkMemoryPropertyFlagBits properties)
     {
-        // VkPhysicalDeviceMemoryProperties memoryProperties = new();
-        //     // memProperties.
-        // func.vkGetPhysicalDeviceMemoryProperties(data.VkPhysicalDevice, &memoryProperties);
+        VkPhysicalDeviceMemoryProperties memoryProperties = new();
+            // memProperties.
+        func.InstanceFunction.vkGetPhysicalDeviceMemoryProperties(data.Physical.VkPhysicalDevice, &memoryProperties);
 
-
-        // uint count = memoryProperties.memoryTypeCount;
-        // for (uint i = 0; i < count; i++)
-        // {
-        //     if ( (memoryTypeBits & 1) == 1 && (memoryProperties.memoryTypes[(int)i].propertyFlags & (uint)properties) == (uint)properties)
-        //     {
-        //         return i;
-        //     }
-        //     memoryTypeBits >>= 1;
-        // }
+        uint count = memoryProperties.memoryTypeCount;
+        for (uint i = 0; i < count; i++)
+        {
+            if ( (memoryTypeBits & 1) == 1 && (memoryProperties.memoryTypes[(int)i].propertyFlags & (uint)properties) == (uint)properties)
+            {
+                return i;
+            }
+            memoryTypeBits >>= 1;
+        }
 
         return uint.MaxValue;
     }
@@ -1177,7 +1335,7 @@ public static class GraphicDeviceImplement
         
     //     VkBufferCreateInfo bufferInfo = default;
     //         bufferInfo.sType = VkStructureType. VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    //         bufferInfo.size = (uint)(Marshal.SizeOf<Position2f_Color3f>() * pipeline.Vertices.Length);
+    //         bufferInfo.size = (uint)(Marshal.SizeOf<Position2f_Color3f>() * data.Vertices.Length);
     //         bufferInfo.usage = (uint)VkBufferUsageFlagBits. VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     //         bufferInfo.sharingMode = VkSharingMode.VK_SHARING_MODE_EXCLUSIVE;
 
@@ -1208,78 +1366,28 @@ public static class GraphicDeviceImplement
 
     //     func.vkMapMemory(data.VkDevice,data.VertexBufferMemory, 0, bufferInfo.size, 0, &vertexdata);
         
-    //     fixed (void* p = &pipeline.Vertices[0]){ 
+    //     fixed (void* p = &data.Vertices[0]){ 
     //         memcpy(vertexdata, p,  bufferInfo.size); 
     //     }  
     //     func.vkUnmapMemory(data.VkDevice, data.VertexBufferMemory);
     // }
 
     #endregion
-
-     #region  Descirptor Set
-
-    private unsafe static void CreateDescriptorSetLayout(ref GraphicDeviceFunction func, ref GraphicDeviceData data ,ref GraphicRenderConfig pipeline  ) 
-    {
-        VkDescriptorSetLayoutBinding uboLayoutBinding = default;
-            uboLayoutBinding.binding = 0;
-            uboLayoutBinding.descriptorCount = 1;
-            uboLayoutBinding.descriptorType = VkDescriptorType. VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            uboLayoutBinding.pImmutableSamplers = null;
-            uboLayoutBinding.stageFlags =(uint) VkShaderStageFlagBits.VK_SHADER_STAGE_VERTEX_BIT;
-
-        VkDescriptorSetLayoutCreateInfo layoutInfo = default;
-        layoutInfo.sType = VkStructureType. VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        layoutInfo.bindingCount = 1;
-        layoutInfo.pBindings = &uboLayoutBinding;
-
-        fixed( VkDescriptorSetLayout* layout = &data.DescriptorSetLayout ){
-            func.vkCreateDescriptorSetLayout(data.VkDevice, &layoutInfo, null, layout).Check("failed to create descriptor set layout!");
-        }
-    }
-
-    private unsafe static void CreateUniformBuffers(ref GraphicDeviceFunction func, ref GraphicDeviceData data ,ref GraphicRenderConfig pipeline  ) 
-    {
-        VkDeviceSize bufferSize = (uint)(Marshal.SizeOf<Uniform_MVP>() );
-
-        for (int i = 0; i < pipeline.MAX_FRAMES_IN_FLIGHT; i++) 
-        {
-            
-            CreateStagingBuffer(ref func, ref data, bufferSize, 
-            VkBufferUsageFlagBits.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
-            VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
-            VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,ref data.uniformBuffers[i],ref data.uniformBuffersMemory[i]);
-            
-            //TODO if void ** is oK ?
-            fixed(void* p = &data.uniformBuffersMapped[i])
-            {
-                func.vkMapMemory(data.VkDevice,data.uniformBuffersMemory[i], 0, bufferSize, 0, &p).Check("Map Memeory Unifommr pb");
-            }
-            
-        }   
-    }
-
-    private unsafe static void DisposeUniformBuffers(ref GraphicDeviceFunction func, ref GraphicDeviceData data ) 
-    {
-        for (nint i = 0; i < data.MAX_FRAMES_IN_FLIGHT; i++) 
-        {
-            func.vkDestroyBuffer(data.VkDevice, data.uniformBuffers[i], null);
-            func.vkFreeMemory(data.VkDevice, data.uniformBuffersMemory[i], null);
-        }
-    }
-
-    #endregion
-    
+  
     #region Desciptor pool descriptor set
     private static unsafe void CreateDescriptorPool(ref GraphicDeviceFunction func, ref GraphicDeviceData data)
     {
-        VkDescriptorPoolSize poolSize = new();
-            poolSize.type =VkDescriptorType. VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            poolSize.descriptorCount = (uint)(data.MAX_FRAMES_IN_FLIGHT);
+        VkDescriptorPoolSize* poolSizes = stackalloc VkDescriptorPoolSize[2];
 
-        VkDescriptorPoolCreateInfo poolInfo= new();
+        poolSizes[0].type =VkDescriptorType. VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSizes[0].descriptorCount = (uint)(data.MAX_FRAMES_IN_FLIGHT);
+        poolSizes[1].type = VkDescriptorType.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        poolSizes[1].descriptorCount =(uint)(data.MAX_FRAMES_IN_FLIGHT);
+
+        VkDescriptorPoolCreateInfo poolInfo= default;
             poolInfo.sType =VkStructureType. VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-            poolInfo.poolSizeCount = 1;
-            poolInfo.pPoolSizes = &poolSize;
+            poolInfo.poolSizeCount = 2;
+            poolInfo.pPoolSizes = poolSizes;
             poolInfo.maxSets = (uint)(data.MAX_FRAMES_IN_FLIGHT);
 
         fixed(VkDescriptorPool* pool =  &data.DescriptorPool){
@@ -1292,7 +1400,7 @@ public static class GraphicDeviceImplement
         // std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
         // VkDescriptorSetLayout[] layouts  =  
 
-        VkDescriptorSetAllocateInfo allocInfo = new();
+        VkDescriptorSetAllocateInfo allocInfo = default;
             allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
             allocInfo.descriptorPool = data.DescriptorPool;
             allocInfo.descriptorSetCount = (uint)(data.MAX_FRAMES_IN_FLIGHT);
@@ -1301,7 +1409,7 @@ public static class GraphicDeviceImplement
             }
             
 
-        // data.DescriptorSets = new VkDescriptorSet[ data.MAX_FRAMES_IN_FLIGHT];
+        data.DescriptorSets = new VkDescriptorSet[ data.MAX_FRAMES_IN_FLIGHT];
 
         fixed(VkDescriptorSet* descriptor =&data.DescriptorSets[0]  ){
             func.vkAllocateDescriptorSets(data.VkDevice, &allocInfo, descriptor).Check("failed to allocate descriptor sets!");
@@ -1314,20 +1422,10 @@ public static class GraphicDeviceImplement
             bufferInfo.offset = 0;
             bufferInfo.range = (uint)Marshal.SizeOf<Uniform_MVP>();
 
-            // VkWriteDescriptorSet descriptorWrite = default;
-            // descriptorWrite.sType = VkStructureType.VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            // descriptorWrite.dstSet = data.DescriptorSets[i];
-            // descriptorWrite.dstBinding = 0;
-            // descriptorWrite.dstArrayElement = 0;
-            // descriptorWrite.descriptorType = VkDescriptorType. VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            // descriptorWrite.descriptorCount = 1;
-            // descriptorWrite.pBufferInfo = &bufferInfo;
             VkDescriptorImageInfo imageInfo =default;
             imageInfo.imageLayout = VkImageLayout.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             imageInfo.imageView = data.TextureImageView;
             imageInfo.sampler = data.TextureSampler;
-
-            
 
             descriptorWrites[0].sType = VkStructureType. VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             descriptorWrites[0].dstSet = data.DescriptorSets[i];
@@ -1349,7 +1447,7 @@ public static class GraphicDeviceImplement
         }
     }
 
-    private static unsafe void DisposeDescriptorPool(ref GraphicDeviceFunction func, ref GraphicDeviceData data)
+    private static unsafe void DisposeDescriptorPool(in GraphicDeviceFunction func, ref GraphicDeviceData data)
     {
         if ( !data.DescriptorPool.IsNull)
         {
@@ -1366,8 +1464,7 @@ public static class GraphicDeviceImplement
 
     #region Texture
 
-// // // TEXTURE
-    private unsafe static void CreateTextureImage(ref GraphicDeviceFunction func,ref GraphicDeviceData data )
+    private unsafe static void CreateTextureImage(ref GraphicDeviceFunctions func,ref GraphicDeviceData data )
     {
         uint texWidth=512, texHeight=512;
         uint texChannels=4;
@@ -1394,9 +1491,9 @@ public static class GraphicDeviceImplement
 
         
         void* ptr;
-        func.vkMapMemory(data.VkDevice, stagingBufferMemory, 0, imageSize, 0, &ptr);
+        func.DeviceFunction.vkMapMemory(data.VkDevice, stagingBufferMemory, 0, imageSize, 0, &ptr);
         fixed (void* p = &result.Data[0] ){ memcpy(ptr, p,  imageSize ); }  
-        func.vkUnmapMemory(data.VkDevice, stagingBufferMemory);
+        func.DeviceFunction.vkUnmapMemory(data.VkDevice, stagingBufferMemory);
 
         // // stbi_image_free(pixels);
         file = null!;
@@ -1408,15 +1505,15 @@ public static class GraphicDeviceImplement
         VkImageUsageFlagBits.VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits.VK_IMAGE_USAGE_SAMPLED_BIT, 
         VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT   );
 
-        TransitionImageLayout(ref func , ref data,  VkFormat.VK_FORMAT_R8G8B8A8_SRGB, VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED, VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-            CopyBufferToImage(ref  func,ref  data,stagingBuffer, (texWidth), (texHeight));
-        TransitionImageLayout(ref func , ref data, VkFormat.VK_FORMAT_R8G8B8A8_SRGB, VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VkImageLayout.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        TransitionImageLayout(ref func.DeviceFunction , ref data,  VkFormat.VK_FORMAT_R8G8B8A8_SRGB, VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED, VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+            CopyBufferToImage(ref  func.DeviceFunction,ref  data,stagingBuffer, (texWidth), (texHeight));
+        TransitionImageLayout(ref func.DeviceFunction , ref data, VkFormat.VK_FORMAT_R8G8B8A8_SRGB, VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VkImageLayout.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-        func.vkDestroyBuffer(data.VkDevice, stagingBuffer, null);
-        func.vkFreeMemory(data.VkDevice, stagingBufferMemory, null);
+        func.DeviceFunction.vkDestroyBuffer(data.VkDevice, stagingBuffer, null);
+        func.DeviceFunction.vkFreeMemory(data.VkDevice, stagingBufferMemory, null);
     }
 
-    private unsafe static void DisposeTextureImage(ref GraphicDeviceFunction func, ref GraphicDeviceData data)
+    private unsafe static void DisposeTextureImage(in GraphicDeviceFunction func, ref GraphicDeviceData data)
     {
         if( !data.TextureImage.IsNull)
         {
@@ -1428,7 +1525,7 @@ public static class GraphicDeviceImplement
         }
         
     }
-    private unsafe static void CreateImage(ref GraphicDeviceFunction func,ref GraphicDeviceData data, ref VkImage image,ref VkDeviceMemory imageMemory,  uint width, uint height, VkFormat format, VkImageTiling tiling,
+    private unsafe static void CreateImage(ref GraphicDeviceFunctions func,ref GraphicDeviceData data, ref VkImage image,ref VkDeviceMemory imageMemory,  uint width, uint height, VkFormat format, VkImageTiling tiling,
          VkImageUsageFlagBits usage, VkMemoryPropertyFlagBits properties) 
     {
         VkImageCreateInfo imageInfo = new();
@@ -1447,11 +1544,11 @@ public static class GraphicDeviceImplement
             imageInfo.sharingMode = VkSharingMode. VK_SHARING_MODE_EXCLUSIVE;
 
         fixed( VkImage* img = &image) {
-            func.vkCreateImage(data.VkDevice, &imageInfo, null,img).Check("failed to create image!");
+            func.DeviceFunction.vkCreateImage(data.VkDevice, &imageInfo, null,img).Check("failed to create image!");
         }
         
         VkMemoryRequirements memRequirements;
-        func.vkGetImageMemoryRequirements(data.VkDevice, image, &memRequirements);
+        func.DeviceFunction.vkGetImageMemoryRequirements(data.VkDevice, image, &memRequirements);
 
         VkMemoryAllocateInfo allocInfo = default;
         allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -1459,10 +1556,10 @@ public static class GraphicDeviceImplement
         allocInfo.memoryTypeIndex = FindMemoryType(ref func , ref data, memRequirements.memoryTypeBits, properties);
 
         fixed (VkDeviceMemory* imgMem = &imageMemory  ){
-            func.vkAllocateMemory(data.VkDevice, &allocInfo, null, imgMem).Check("failed to allocate image memory!");
+            func.DeviceFunction.vkAllocateMemory(data.VkDevice, &allocInfo, null, imgMem).Check("failed to allocate image memory!");
         }
 
-        func.vkBindImageMemory( data.VkDevice, image,imageMemory, 0).Check("Bind Image Memory");
+        func.DeviceFunction.vkBindImageMemory( data.VkDevice, image,imageMemory, 0).Check("Bind Image Memory");
     }
 
     private unsafe static void TransitionImageLayout(ref GraphicDeviceFunction func,ref GraphicDeviceData data, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) 
@@ -1579,10 +1676,7 @@ public static class GraphicDeviceImplement
     #region SAMPLER
     private unsafe static void CreateTextureSampler(ref GraphicDeviceFunction func, ref GraphicDeviceData data)
     {
-        // VkPhysicalDeviceProperties properties = default;
         
-        // func.vkGetPhysicalDeviceProperties(data.VkPhysicalDevice, &properties);
-
         VkSamplerCreateInfo samplerInfo = default;
         samplerInfo.sType =  VkStructureType.VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
         samplerInfo.magFilter = VkFilter.VK_FILTER_LINEAR;
@@ -1591,7 +1685,7 @@ public static class GraphicDeviceImplement
         samplerInfo.addressModeV = VkSamplerAddressMode.VK_SAMPLER_ADDRESS_MODE_REPEAT;
         samplerInfo.addressModeW = VkSamplerAddressMode.VK_SAMPLER_ADDRESS_MODE_REPEAT;
         samplerInfo.anisotropyEnable = VK.VK_TRUE;
-        // samplerInfo.maxAnisotropy = data.MaxSamplerAnisotropy;
+        samplerInfo.maxAnisotropy = data.Physical.PhysicalDeviceProperties.limits.maxSamplerAnisotropy;
         samplerInfo.borderColor = VkBorderColor . VK_BORDER_COLOR_INT_OPAQUE_BLACK;
         samplerInfo.unnormalizedCoordinates = VK.VK_FALSE;
         samplerInfo.compareEnable = VK.VK_FALSE;
@@ -1624,7 +1718,7 @@ public static class GraphicDeviceImplement
 
   
 
-    private unsafe static void DisposeTextureSampler(ref GraphicDeviceFunction func, ref GraphicDeviceData data)
+    private unsafe static void DisposeTextureSampler(in GraphicDeviceFunction func, ref GraphicDeviceData data)
     {
         if( !data.TextureSampler.IsNull)
         {
@@ -1764,7 +1858,7 @@ public static class GraphicDeviceImplement
         }
     }
 
-    private static unsafe void DisposeSyncObjects(ref GraphicDeviceFunction func,ref GraphicDeviceData data)
+    private static unsafe void DisposeSyncObjects(in GraphicDeviceFunction func,ref GraphicDeviceData data)
     {
         if (  !data.VkDevice.IsNull && data.RenderFinishedSemaphores != null){
             for ( int i = 0 ; i< data.MAX_FRAMES_IN_FLIGHT ; i++){
@@ -1789,97 +1883,6 @@ public static class GraphicDeviceImplement
                 }
             }
         }
-    }
-
-    #endregion
-
-    #region RenderPass
-
-    private static unsafe void CreateRenderPass(ref GraphicDeviceFunction func,ref GraphicDeviceData data,ref GraphicRenderConfig pipeline) 
-    {
-        // COLOR 
-        VkAttachmentDescription colorAttachment =default;// New<VkAttachmentDescription>(); //new(){
-            colorAttachment.format = data.VkFormat;
-            colorAttachment.samples = VkSampleCountFlagBits.VK_SAMPLE_COUNT_1_BIT;
-            colorAttachment.loadOp = VkAttachmentLoadOp.VK_ATTACHMENT_LOAD_OP_CLEAR;
-            colorAttachment.storeOp = VkAttachmentStoreOp. VK_ATTACHMENT_STORE_OP_STORE;
-            colorAttachment.stencilLoadOp = VkAttachmentLoadOp.VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-            colorAttachment.stencilStoreOp =VkAttachmentStoreOp. VK_ATTACHMENT_STORE_OP_DONT_CARE;
-            colorAttachment.initialLayout = VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED;
-            colorAttachment.finalLayout = VkImageLayout.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-            colorAttachment.flags =0;
-            colorAttachment.finalLayout = VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED;
-
-        //ONLY IF DEPTH RESOURCE
-          VkAttachmentDescription depthAttachment =default;// New<VkAttachmentDescription>(); //new(){
-            depthAttachment.format = FindDepthFormat();
-            depthAttachment.samples = VkSampleCountFlagBits.VK_SAMPLE_COUNT_1_BIT;
-            depthAttachment.loadOp = VkAttachmentLoadOp.VK_ATTACHMENT_LOAD_OP_CLEAR;
-            depthAttachment.storeOp = VkAttachmentStoreOp. VK_ATTACHMENT_STORE_OP_STORE;
-            depthAttachment.stencilLoadOp = VkAttachmentLoadOp.VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-            depthAttachment.stencilStoreOp =VkAttachmentStoreOp. VK_ATTACHMENT_STORE_OP_DONT_CARE;
-            depthAttachment.initialLayout = VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED;
-            depthAttachment.finalLayout = VkImageLayout.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-            depthAttachment.flags =0;
-            depthAttachment.finalLayout = VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED;
-
-        // POST PROCESSING       
-         VkAttachmentReference colorAttachmentRef = default;// New<VkAttachmentReference>();//new() {
-            colorAttachmentRef.attachment = 1;// TODO voir pourquoi 0 dans tutorial
-            colorAttachmentRef.layout =VkImageLayout. VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            
-         
-         VkAttachmentReference depthAttachmentRef = default;// New<VkAttachmentReference>();//new() {
-            depthAttachmentRef.attachment =1;
-            depthAttachmentRef.layout =VkImageLayout.VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-        
-        VkSubpassDescription subpass = default ;//New<VkSubpassDescription>(); //new(){
-            subpass.pipelineBindPoint = VkPipelineBindPoint. VK_PIPELINE_BIND_POINT_GRAPHICS;
-            subpass.colorAttachmentCount = 1;
-            subpass.pColorAttachments = &colorAttachmentRef;
-            subpass.pDepthStencilAttachment =&depthAttachmentRef;
-            // subpass.flags =0;
-            // subpass.inputAttachmentCount=0;
-            // subpass.pDepthStencilAttachment = null;
-            // subpass.pInputAttachments = null;
-            // subpass.pPreserveAttachments = null;
-            // subpass.preserveAttachmentCount=0;
-
-        VkSubpassDependency dependency =default; //  New <VkSubpassDependency>();
-            dependency.srcSubpass = VK.VK_SUBPASS_EXTERNAL;
-            dependency.dstSubpass = 0;
-            dependency.srcStageMask = (uint)VkPipelineStageFlagBits. VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | (uint)VkPipelineStageFlagBits.VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-            dependency.srcAccessMask = 0;
-            dependency.dstStageMask =(uint) VkPipelineStageFlagBits.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT| (uint)VkPipelineStageFlagBits.VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-            dependency.dstAccessMask =(uint)VkAccessFlagBits. VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT| (uint)VkAccessFlagBits.VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-            dependency.dependencyFlags =0;
-
-        //RENDER PASS 
-        VkAttachmentDescription* attachments = stackalloc VkAttachmentDescription[] { colorAttachment, depthAttachment };
-
-        VkRenderPassCreateInfo renderPassInfo = default;// New<VkRenderPassCreateInfo>();//new()
-            renderPassInfo.sType = VkStructureType. VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-            renderPassInfo.attachmentCount = 2;
-            renderPassInfo.pAttachments = attachments;
-            renderPassInfo.subpassCount = 1;
-            renderPassInfo.pSubpasses = &subpass;
-            renderPassInfo.dependencyCount = 1;
-            renderPassInfo.pDependencies = &dependency;
-            renderPassInfo.flags =0;
-            renderPassInfo.pNext =null;
-
-        fixed( VkRenderPass* renderPass= &data.VkRenderPass ){
-            func.vkCreateRenderPass(data.VkDevice, &renderPassInfo, null, renderPass).Check("failed to create render pass!");
-        }
-
-        Log.Info($"Create Render Pass : {data.VkRenderPass}");
-    }
-
-    private static unsafe void DisposeRenderPass(ref GraphicDeviceFunction func,ref GraphicDeviceData data  )
-    {
-        if (!data.VkDevice.IsNull && !data.VkRenderPass.IsNull)
-            func.vkDestroyRenderPass(data.VkDevice,data.VkRenderPass,null);
     }
 
     #endregion
@@ -1914,9 +1917,7 @@ public static class GraphicDeviceImplement
         if ( data.DescriptorSetLayout.IsNull)
         {
             pipelineLayoutInfo.setLayoutCount = 0;            // Optionnel
-            // fixed (VkDescriptorSetLayout* layout = &vk.descriptorSetLayout ){pipelineLayoutInfo.pSetLayouts = layout;}         // Optionnel
             pipelineLayoutInfo.pushConstantRangeCount = 0;    // Optionnel
-            
         }
         else
         {
@@ -1924,37 +1925,25 @@ public static class GraphicDeviceImplement
             fixed (VkDescriptorSetLayout* layout = &data.DescriptorSetLayout )
             {pipelineLayoutInfo.pSetLayouts = layout;}         // Optionnel
             pipelineLayoutInfo.pushConstantRangeCount = 0;    // Optionnel
-            
         }
             
-        fixed( VkPipelineLayout* layout = &data.VkpipelineLayout ){
+        fixed( VkPipelineLayout* layout = &data.VkpipelineLayout )
+        {
             func.vkCreatePipelineLayout(data.VkDevice, &pipelineLayoutInfo, null, layout).Check ("failed to create pipeline layout!");
         }
     }
 
     #endregion
 
-    private unsafe static void UpdateUniformBuffer(in GraphicDeviceFunction func,ref GraphicDeviceData data, in GraphicRenderConfig pipeline )
-    {
-        nint ptr = nint.Zero;
-        Marshal.StructureToPtr<Uniform_MVP>( pipeline.ubo,ptr,false );
 
-        // fixed(void* ptr = &render.ubo)
-        // {
-        //     var p = MemoryHelper.AsPointer<Uniform_MVP>( ref render.ubo);
-            memcpy(data.uniformBuffersMapped[CurrentFrame].ToPointer(), ptr.ToPointer() , (ulong)Marshal.SizeOf(pipeline.ubo )  );
-        // }
-        
-    }
-
-    private static unsafe void CreatePipeline(ref GraphicDeviceFunction func,ref GraphicDeviceData data , ref GraphicRenderConfig pipeline )
+    private static unsafe void CreatePipeline(ref GraphicDeviceFunction func,ref GraphicDeviceData data )
     {
         #region SHADERS
 
-        Pipeline_CreateShaderModule( out VkShaderModule  vertShaderModule , ref func, ref data , pipeline.VertexShaderFileNameSPV);
-        Pipeline_CreateShaderModule( out VkShaderModule  fragShaderModule , ref func, ref data , pipeline.FragmentShaderFileNameSPV);
-        using RitaEngine.Base.Strings.StrUnsafe fragentryPoint = new(pipeline.FragmentEntryPoint);
-        using RitaEngine.Base.Strings.StrUnsafe vertentryPoint = new(pipeline.VertexEntryPoint);
+        Pipeline_CreateShaderModule( out VkShaderModule  vertShaderModule , ref func, ref data , data.VertexShaderFileNameSPV);
+        Pipeline_CreateShaderModule( out VkShaderModule  fragShaderModule , ref func, ref data , data.FragmentShaderFileNameSPV);
+        using RitaEngine.Base.Strings.StrUnsafe fragentryPoint = new(data.FragmentEntryPoint);
+        using RitaEngine.Base.Strings.StrUnsafe vertentryPoint = new(data.VertexEntryPoint);
        
         VkPipelineShaderStageCreateInfo* shaderStages = stackalloc VkPipelineShaderStageCreateInfo[2];        
             shaderStages[0] = new();
@@ -1982,8 +1971,7 @@ public static class GraphicDeviceImplement
 
         VkPipelineVertexInputStateCreateInfo vertexInputInfo =default;
         vertexInputInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        // if ( pipeline.VertexOutsideShader)
-        // {
+
   
         VkVertexInputBindingDescription bindingDescription =new();// GetBindingDescription( ref bindingDescription);
             bindingDescription.binding = 0;
@@ -2013,20 +2001,6 @@ public static class GraphicDeviceImplement
             vertexInputInfo.pVertexAttributeDescriptions=attributeDescriptions;
             vertexInputInfo.pVertexBindingDescriptions=&bindingDescription;
 
-          
-        // }
-        // else //ELSE vertex inside shader
-        // {   
-
-        //     vertexInputInfo.vertexBindingDescriptionCount = 0;
-        //     vertexInputInfo.vertexAttributeDescriptionCount = 0;
-        //     vertexInputInfo.pNext = null;
-        //     vertexInputInfo.flags =0;
-        //     vertexInputInfo.pVertexAttributeDescriptions=null;
-        //     vertexInputInfo.pVertexBindingDescriptions=null;
-        // }
-
-       
         #endregion
 
         #region INPUT ASSEMBLY
@@ -2069,8 +2043,8 @@ public static class GraphicDeviceImplement
         // VkViewport viewport=new();
             data.Viewport.x = 0.0f;
             data.Viewport.y = 0.0f;
-            data.Viewport.width = (float) data.VkSurfaceArea.width;
-            data.Viewport.height = (float) data.VkSurfaceArea.height;
+            data.Viewport.width = (float) data.SwapChain.VkSurfaceArea.width;
+            data.Viewport.height = (float) data.SwapChain.VkSurfaceArea.height;
             data.Viewport.minDepth = 0.0f;
             data.Viewport.maxDepth = 1.0f;
 
@@ -2079,7 +2053,7 @@ public static class GraphicDeviceImplement
                 offset.y = 0;
 
             data.Scissor.offset = offset;
-            data.Scissor.extent = data.VkSurfaceArea;
+            data.Scissor.extent = data.SwapChain.VkSurfaceArea;
 
         VkPipelineViewportStateCreateInfo viewportState =default;
             viewportState.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -2170,7 +2144,7 @@ public static class GraphicDeviceImplement
             pipelineInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
             pipelineInfo.flags = (uint)VkPipelineCreateFlagBits.VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT ;
 
-            pipelineInfo.renderPass = data.VkRenderPass;
+            pipelineInfo.renderPass = data.Render.VkRenderPass;
             pipelineInfo.subpass = 0;
             pipelineInfo.basePipelineHandle = VkPipeline.Null;
             
@@ -2242,10 +2216,10 @@ public static class GraphicDeviceImplement
        { //BEGIN RENDER PASS
          VkRenderPassBeginInfo renderPassInfo = default;
             renderPassInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO; //VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-            renderPassInfo.renderPass = data.VkRenderPass;
-            renderPassInfo.framebuffer = data.VkFramebuffers[imageIndex];
+            renderPassInfo.renderPass = data.Render.VkRenderPass;
+            renderPassInfo.framebuffer = data.SwapChain.VkFramebuffers[imageIndex];
             renderPassInfo.renderArea.offset = data.RenderAreaOffset;
-            renderPassInfo.renderArea.extent = data.VkSurfaceArea;
+            renderPassInfo.renderArea.extent = data.SwapChain.VkSurfaceArea;
             renderPassInfo.clearValueCount = 1;
             // renderPassInfo.pClearValues =  data.ClearColor;//
             fixed(VkClearValue* clearColor = &data.ClearColor ) {  renderPassInfo.pClearValues =  clearColor; }
@@ -2309,7 +2283,7 @@ public static class GraphicDeviceImplement
     private static int CurrentFrame =0;
 
     // [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private static unsafe  void DrawPipeline(ref GraphicDeviceFunction func, ref GraphicDeviceData data )
+    private static unsafe  void DrawPipeline(ref GraphicDeviceFunctions func, ref GraphicDeviceData data )
     {
         uint imageIndex=0;
         VkFence CurrentinFlightFence = data.InFlightFences[/*data.*/CurrentFrame];
@@ -2318,17 +2292,17 @@ public static class GraphicDeviceImplement
         VkSemaphore* waitSemaphores = stackalloc VkSemaphore[1] {CurrentImageAvailableSemaphore};// VkSemaphore[] waitSemaphores = {CurrentImageAvailableSemaphore};
         UInt32* waitStages  = stackalloc UInt32[1]{(uint)VkPipelineStageFlagBits.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT }; //*VkPipelineStageFlags*/UInt32[] waitStages = {(uint)VkPipelineStageFlagBits.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
         VkSemaphore*   signalSemaphores  = stackalloc VkSemaphore[1] {CurrentRenderFinishedSemaphore} ;// VkSemaphore[] signalSemaphores = {CurrentRenderFinishedSemaphore};
-        VkSwapchainKHR* swapChains = stackalloc  VkSwapchainKHR[1]{ data.VkSwapChain };// VkSwapchainKHR[] swapChains = { data.VkSwapChain };
+        VkSwapchainKHR* swapChains = stackalloc  VkSwapchainKHR[1]{ data.SwapChain.VkSwapChain };// VkSwapchainKHR[] swapChains = { data.VkSwapChain };
         VkCommandBuffer commandBuffer =data.VkCommandBuffers[/*data.*/CurrentFrame];
 
-        func.vkWaitForFences(data.VkDevice, 1,&CurrentinFlightFence, VK.VK_TRUE, data.tick_timeout).Check("Acquire Image");
+        func.DeviceFunction.vkWaitForFences(data.VkDevice, 1,&CurrentinFlightFence, VK.VK_TRUE, data.tick_timeout).Check("Acquire Image");
 
-        VkResult result = func.vkAcquireNextImageKHR(data.VkDevice, data.VkSwapChain, data.tick_timeout,CurrentImageAvailableSemaphore, VkFence.Null, &imageIndex);
+        VkResult result = func.DeviceFunction.vkAcquireNextImageKHR(data.VkDevice, data.SwapChain.VkSwapChain, data.tick_timeout,CurrentImageAvailableSemaphore, VkFence.Null, &imageIndex);
 
         if ( result == VkResult.VK_ERROR_OUT_OF_DATE_KHR)
         {
-            // ReCreateSwapChain( ref func,ref data,ref infos);
-            // RecreatePipeline(ref data ,in pipeline);
+            ReCreateSwapChain( ref func,ref data);
+            
             return ;
         }
         else if (result != VkResult.VK_SUCCESS && result != VkResult.VK_SUBOPTIMAL_KHR )
@@ -2338,10 +2312,10 @@ public static class GraphicDeviceImplement
 
         // UpdateUniformBuffer(ref func,ref  data);
 
-        func.vkResetFences(data.VkDevice, 1, &CurrentinFlightFence);
+        func.DeviceFunction.vkResetFences(data.VkDevice, 1, &CurrentinFlightFence);
 
         //----------Début de l'enregistrement des commandes--------------------------------------------------   
-        RecordCommandBuffer(  func,ref data, in  commandBuffer, imageIndex);
+        RecordCommandBuffer(  func.DeviceFunction,ref data, in  commandBuffer, imageIndex);
         //----------Fin de l'enregistrement des commandes--------------------------------------------------    
 
 
@@ -2355,7 +2329,7 @@ public static class GraphicDeviceImplement
             submitInfo.signalSemaphoreCount = 1;
             submitInfo.pSignalSemaphores = signalSemaphores ;// fixed( VkSemaphore* signalSemaphoresPtr =&signalSemaphores[0]){ submitInfo.pSignalSemaphores = signalSemaphoresPtr; }
         
-        func.vkQueueSubmit(data.VkGraphicQueue, 1, &submitInfo,  CurrentinFlightFence ).Check("failed to submit draw command buffer!");
+        func.DeviceFunction.vkQueueSubmit(data.VkGraphicQueue, 1, &submitInfo,  CurrentinFlightFence ).Check("failed to submit draw command buffer!");
         
         VkPresentInfoKHR presentInfo=default;
             presentInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PRESENT_INFO_KHR; //VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -2365,12 +2339,11 @@ public static class GraphicDeviceImplement
             presentInfo.swapchainCount = 1;
             presentInfo.pSwapchains = swapChains;//fixed( VkSwapchainKHR* swapChainsPtr = &swapChains[0]){ presentInfo.pSwapchains = swapChainsPtr; }
         
-        result = func.vkQueuePresentKHR(data.VkPresentQueue, &presentInfo); //.Check("Present Image");  
+        result = func.DeviceFunction.vkQueuePresentKHR(data.VkPresentQueue, &presentInfo); //.Check("Present Image");  
 
         if ( result == VkResult.VK_ERROR_OUT_OF_DATE_KHR || result == VkResult.VK_SUBOPTIMAL_KHR )
         {
-            // ReCreateSwapChain(ref func,ref data,ref infos);
-            //  RecreatePipeline(ref data ,in pipeline);
+           ReCreateSwapChain( ref func,ref data);
         }
         else if (result != VkResult.VK_SUCCESS )
         {
@@ -2379,7 +2352,7 @@ public static class GraphicDeviceImplement
        /*data.*/CurrentFrame = ((/*data.*/CurrentFrame + 1) % data.MAX_FRAMES_IN_FLIGHT);   
     }
 
-    private static unsafe void DisposePipeline(ref GraphicDeviceFunction func,ref GraphicDeviceData data)
+    private static unsafe void DisposePipeline(in GraphicDeviceFunction func,ref GraphicDeviceData data)
     {
         if( !data.VkDevice.IsNull && !data.VkpipelineLayout.IsNull){
             func.vkDestroyPipelineLayout(data.VkDevice, data.VkpipelineLayout, null);

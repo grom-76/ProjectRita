@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using RitaEngine.Base.Platform.API.Vulkan;
 
 [StructLayout(LayoutKind.Sequential, Pack = RitaEngine.Base.BaseHelper.FORCE_ALIGNEMENT), SkipLocalsInit]
-public struct GraphicDevicePhysical : IEquatable<GraphicDevicePhysical>
+public struct GraphicDevicePhysicalData : IEquatable<GraphicDevicePhysicalData>
 {
     public VkPhysicalDeviceProperties PhysicalDeviceProperties = new();
      #region VKDeivce
@@ -20,7 +20,7 @@ public struct GraphicDevicePhysical : IEquatable<GraphicDevicePhysical>
     public string[] DeviceExtensions = null!;
 
    
-    public GraphicDevicePhysical() 
+    public GraphicDevicePhysicalData() 
     { 
         PhysicalDeviceProperties.sparseProperties = new();
         PhysicalDeviceProperties.limits = new();
@@ -33,19 +33,19 @@ public struct GraphicDevicePhysical : IEquatable<GraphicDevicePhysical>
     }
 
   
-        #region OVERRIDE    
+    #region OVERRIDE    
     public override string ToString()  
         => string.Format($"DataModule" );
     public override int GetHashCode() => (int)0;
-    public override bool Equals(object? obj) => obj is GraphicDevicePhysical data && this.Equals(data) ;
-    public bool Equals(GraphicDevicePhysical other)=>  false;
-    public static bool operator ==(GraphicDevicePhysical left, GraphicDevicePhysical right) => left.Equals(right);
-    public static bool operator !=(GraphicDevicePhysical left, GraphicDevicePhysical  right) => !left.Equals(right);
+    public override bool Equals(object? obj) => obj is GraphicDevicePhysicalData data && this.Equals(data) ;
+    public bool Equals(GraphicDevicePhysicalData other)=>  false;
+    public static bool operator ==(GraphicDevicePhysicalData left, GraphicDevicePhysicalData right) => left.Equals(right);
+    public static bool operator !=(GraphicDevicePhysicalData left, GraphicDevicePhysicalData  right) => !left.Equals(right);
     #endregion
 }
 
 [StructLayout(LayoutKind.Sequential, Pack = RitaEngine.Base.BaseHelper.FORCE_ALIGNEMENT), SkipLocalsInit]
-public struct GraphicDeviceApp
+public struct GraphicDeviceAppData
 {
     
     public string[] ValidationLayers = null!;
@@ -62,7 +62,7 @@ public struct GraphicDeviceApp
     public uint Version=0;
     public bool EnableDebug = false;
 
-    public GraphicDeviceApp()
+    public GraphicDeviceAppData()
     {
     }
 
@@ -77,8 +77,44 @@ public struct GraphicDeviceApp
 }
 
 [StructLayout(LayoutKind.Sequential, Pack = RitaEngine.Base.BaseHelper.FORCE_ALIGNEMENT), SkipLocalsInit]
-public struct GraphicDeviceSwapChain
+public struct GraphicDeviceSwapChainData
 {
+    public VkSwapchainKHR VkSwapChain = VkSwapchainKHR.Null ;
+    public VkExtent2D VkSurfaceArea = new();
+    public VkFormat VkFormat = VkFormat.VK_FORMAT_UNDEFINED;
+    public VkPresentModeKHR VkPresentMode = VkPresentModeKHR.VK_PRESENT_MODE_IMMEDIATE_KHR;// v-sync ???
+    public VkSurfaceFormatKHR VkSurfaceFormat = new();
+    public VkImage[] VkImages = new VkImage[3]; //for CreateImagesView and RecreateSwapChain ....
+    public VkImageView[] VkSwapChainImageViews = new VkImageView[3];
+    public VkFramebuffer[] VkFramebuffers =null!;//need for render => NEEDVALID SWAP CHAIN
+    public uint ImageCount =3;
+
+    public GraphicDeviceSwapChainData(int count = 3 )
+    {
+        VkImages = new VkImage[count];
+        VkSwapChainImageViews = new VkImageView[count];
+        VkFramebuffers = new VkFramebuffer[count];
+    }
+
+    public unsafe void Release()
+    {
+        VkImages = null!;
+        VkSwapChainImageViews = null!;
+        VkFramebuffers = null!;
+    }
+}
+
+[StructLayout(LayoutKind.Sequential, Pack = RitaEngine.Base.BaseHelper.FORCE_ALIGNEMENT), SkipLocalsInit]
+public struct GraphicDeviceRenderData
+{
+    
+    public VkRenderPass VkRenderPass = VkRenderPass.Null;
 
 
+    public GraphicDeviceRenderData(){ }
+
+    public void Release()
+    {
+
+    }
 }

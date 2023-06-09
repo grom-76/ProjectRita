@@ -1,23 +1,31 @@
 namespace RitaEngine.Base.Platform.Structures;
 
+using RitaEngine.Base.Math.Vertex;
 using RitaEngine.Base.Platform.API.Vulkan;
 
 [StructLayout(LayoutKind.Sequential, Pack = RitaEngine.Base.BaseHelper.FORCE_ALIGNEMENT), SkipLocalsInit]
 public struct GraphicDeviceData : IEquatable<GraphicDeviceData>
 {
-    public GraphicDeviceApp  App = new();
-    public GraphicDevicePhysical Physical = new();
-    public GraphicDeviceSwapChain SwapChain = new();
+    public delegate void PFN_GetFrameBuffer( ref uint x , ref uint y);
+
+    public PFN_GetFrameBuffer GetFrameBufferCallback = null!;
+
+    public GraphicDeviceAppData  App = new();
+    public GraphicDevicePhysicalData Physical = new();
+    public GraphicDeviceSwapChainData SwapChain = new();
+    public GraphicDeviceRenderData Render = new();
+
+    public int MAX_FRAMES_IN_FLIGHT =2;
 
 
-    public VkFramebuffer[] VkFramebuffers = new VkFramebuffer[3];//need for render => NEEDVALID SWAP CHAIN
+
     public VkCommandBuffer[] VkCommandBuffers = new VkCommandBuffer[3];// TODO same number than MAX FRAME FILGHT  TODO MAXFRAME FILGHT in settings ?  
     
-    public VkImageView[] VkSwapChainImageViews = new VkImageView[3];
+   //SYNC
     public VkSemaphore[] ImageAvailableSemaphores = new VkSemaphore[2];
     public VkSemaphore[] RenderFinishedSemaphores = new VkSemaphore[2];
     public VkFence[] InFlightFences = new VkFence[2];
-    public VkRenderPass VkRenderPass = VkRenderPass.Null;
+    //---------        
 
     
     public VkDevice VkDevice = VkDevice.Null; 
@@ -25,17 +33,15 @@ public struct GraphicDeviceData : IEquatable<GraphicDeviceData>
     public VkQueue VkGraphicQueue = VkQueue.Null;// used for draw
 
 
-    // public VkSwapchainKHR VkSwapChain = VkSwapchainKHR.Null ;
-    // public VkExtent2D VkSurfaceArea = new();
-    // public VkFormat VkFormat = VkFormat.VK_FORMAT_UNDEFINED;
-    // public VkImage[] VkImages = new VkImage[3]; //for CreateImagesView and RecreateSwapChain ....
     
     public VkCommandPool VkCommandPool = VkCommandPool.Null;// not used for draw but importante??? only need to create command buffer 
     public VkPipelineLayout VkpipelineLayout = VkPipelineLayout.Null;
     public VkPipeline VkGraphicsPipeline = VkPipeline.Null;
+
+
     public VkDescriptorSetLayout DescriptorSetLayout = VkDescriptorSetLayout.Null;
     public VkDescriptorSetLayout[] Layouts = new VkDescriptorSetLayout[2];
-    public VkDescriptorSet[] DescriptorSets = new VkDescriptorSet[2]; 
+    public VkDescriptorSet[] DescriptorSets =null!; 
     public VkDescriptorPool DescriptorPool = VkDescriptorPool.Null;
     
     public VkClearValue ClearColor = new();
@@ -44,10 +50,7 @@ public struct GraphicDeviceData : IEquatable<GraphicDeviceData>
     public VkRect2D Scissor = new();
     public ulong tick_timeout = ulong.MaxValue;
     
-    private nint _address = nint.Zero;
-    
-    public int MAX_FRAMES_IN_FLIGHT =2;
-    public bool VertexOutsideShader = false;
+  
 // vertex code 19
     public VkBuffer VertexBuffer = VkBuffer.Null;
     public VkBuffer IndicesBuffer = VkBuffer.Null;
@@ -70,20 +73,29 @@ public struct GraphicDeviceData : IEquatable<GraphicDeviceData>
     public VkDeviceMemory DepthImageMemory = VkDeviceMemory.Null;
     public VkImageView DepthImageView = VkImageView.Null;
 
+    public Position3f_Color3f_UV2f[] Vertices = null!;
+    public short[] Indices = null!;
+    public string VertexShaderFileNameSPV ="";
+    public string FragmentShaderFileNameSPV ="";
+    public string FragmentEntryPoint ="";
+    public string VertexEntryPoint="";
+    public Uniform_MVP ubo = new();
+
     // public float MaxSamplerAnisotropy;
     public string TextureName ="";
     public GraphicDeviceData()   {  }
     
     public void Release()
     {
-        
-        VkFramebuffers = null!;
-        // VkImages = null!;
-        VkSwapChainImageViews = null!;
+        DescriptorSets =null!; 
         VkCommandBuffers = null!;
         ImageAvailableSemaphores = null!;
         RenderFinishedSemaphores = null!;
         InFlightFences = null!;
+
+        SwapChain.Release();
+        Physical.Release();
+        App.Release();
     }
 
  

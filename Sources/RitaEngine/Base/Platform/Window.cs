@@ -27,6 +27,16 @@ public struct Window : IEquatable<Window>
     public unsafe int GetWindowWidth() => _data.Width ;
     public unsafe int GetWindowheight() => _data.Height ;
     public byte[] GetWindowName() => _data.Title ;
+
+    public void GetFrameBuffer(ref uint width , ref uint height)
+    {
+        unsafe{
+        RECT rect = new();
+        _funcs.GetClientRect( _data.Handle,&rect);
+        width = (uint)rect.Right;
+        height = (uint)rect.Bottom;
+        }
+    }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public unsafe void Init()
