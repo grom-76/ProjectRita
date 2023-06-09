@@ -75,6 +75,11 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         data.IndicesSize =(uint) pipeline.Indices.Length;
         data.TextureName =  pipeline.TextureName;
         data.MAX_FRAMES_IN_FLIGHT = pipeline.MAX_FRAMES_IN_FLIGHT;
+        data.FragmentEntryPoint = pipeline.FragmentEntryPoint;
+        data.VertexEntryPoint = pipeline.VertexEntryPoint;
+        data.FragmentShaderFileNameSPV = pipeline.FragmentShaderFileNameSPV;
+        data.VertexShaderFileNameSPV = pipeline.VertexShaderFileNameSPV;
+
 
     }
 
@@ -1975,7 +1980,7 @@ public static class GraphicDeviceImplement
   
         VkVertexInputBindingDescription bindingDescription =new();// GetBindingDescription( ref bindingDescription);
             bindingDescription.binding = 0;
-            bindingDescription.stride =(uint) Marshal.SizeOf<Position3f_Color3f_UV2f>();
+            bindingDescription.stride =(uint) Position3f_Color3f_UV2f.Stride;
             bindingDescription.inputRate = VkVertexInputRate.VK_VERTEX_INPUT_RATE_VERTEX;
 
         VkVertexInputAttributeDescription* attributeDescriptions = stackalloc VkVertexInputAttributeDescription[3] ; // GetAttributeDescriptions(  attributeDescriptions);
@@ -1989,10 +1994,10 @@ public static class GraphicDeviceImplement
             attributeDescriptions[1].format = VkFormat.VK_FORMAT_R32G32B32_SFLOAT;
             attributeDescriptions[1].offset =   (uint)Position3f_Color3f_UV2f.OffsetColor;//(uint)Marshal.OffsetOf( typeof(Position2f_Color3f), "Color" ) ;//2;//offsetof(Vertex, color);
             
-            attributeDescriptions[1].binding = 0;
-            attributeDescriptions[1].location = 2;
-            attributeDescriptions[1].format = VkFormat.VK_FORMAT_R32G32_SFLOAT;
-            attributeDescriptions[1].offset =   (uint)Position3f_Color3f_UV2f.OffsetUV; //(uint)Marshal.OffsetOf( typeof(Position2f_Color3f), "Color" ) ;//2;//offsetof(Vertex, color);
+            attributeDescriptions[2].binding = 0;
+            attributeDescriptions[2].location = 2;
+            attributeDescriptions[2].format = VkFormat.VK_FORMAT_R32G32_SFLOAT;
+            attributeDescriptions[2].offset =   (uint)Position3f_Color3f_UV2f.OffsetUV; //(uint)Marshal.OffsetOf( typeof(Position2f_Color3f), "Color" ) ;//2;//offsetof(Vertex, color);
             
             vertexInputInfo.vertexBindingDescriptionCount = 1;
             vertexInputInfo.vertexAttributeDescriptionCount = 3;

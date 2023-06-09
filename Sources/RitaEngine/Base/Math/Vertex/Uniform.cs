@@ -44,10 +44,10 @@ public struct Position3f_Color3f_UV2f
     public Vector3 Color;
     public Vector2 UV;
 
-    public static readonly int Stride = Unsafe.SizeOf<Position3f_Color3f_UV2f>();
-    public static readonly nint OffsetPosition =  Marshal.OffsetOf<Position3f_Color3f_UV2f>( nameof(Position));
-    public static readonly nint OffsetColor =  Marshal.OffsetOf<Position3f_Color3f_UV2f>( nameof(Color));
-    public static readonly nint OffsetUV =  Marshal.OffsetOf<Position3f_Color3f_UV2f>( nameof(UV));
+    public static readonly int Stride = sizeof(float)*8;
+    public static readonly int OffsetPosition =  Marshal.OffsetOf<Position3f_Color3f_UV2f>( nameof(Position)).ToInt32();
+    public static readonly int OffsetColor =  Marshal.OffsetOf<Position3f_Color3f_UV2f>( nameof(Color)).ToInt32();
+    public static readonly int OffsetUV =  Marshal.OffsetOf<Position3f_Color3f_UV2f>( nameof(UV)).ToInt32();
     public uint FormatPosition = (uint)RitaEngine.Base.Platform.API.Vulkan.VkFormat.VK_FORMAT_R32G32B32_SFLOAT;
     public uint FormatColor =(uint)RitaEngine.Base.Platform.API.Vulkan.VkFormat.VK_FORMAT_R32G32B32_SFLOAT;
     public uint FormatUV =(uint)RitaEngine.Base.Platform.API.Vulkan.VkFormat.VK_FORMAT_R32G32_SFLOAT;

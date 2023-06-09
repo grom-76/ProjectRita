@@ -24,7 +24,8 @@ public static class Sample_0002
         public MyGame()
         {
             RitaEngine.Base.Log.Config(Log.Display.OnConsole);
-        
+            RitaEngine.Base.Resources.Shaders. CreateSPIRV(path, "shader_depth.vert","shader_depth_vert.spv", RitaEngine.Base.Resources.Shaders.ShaderType.VertexShader , "main");
+            RitaEngine.Base.Resources.Shaders. CreateSPIRV(path, "shader_depth.frag","shader_depth_frag.spv", RitaEngine.Base.Resources.Shaders.ShaderType.FragmentShader , "main");
         }
 
         protected override void Init()
@@ -46,9 +47,10 @@ public static class Sample_0002
             RenderConfig.BackColorARGB = RitaEngine.Base.Math.Color.Palette.BlanchedAlmond;
             RenderConfig.FragmentEntryPoint ="main";
             RenderConfig.VertexEntryPoint ="main";
-            RenderConfig.FragmentShaderFileNameSPV = path + "fragment_base.spv";
-            RenderConfig.VertexShaderFileNameSPV = path + "vertex_base.spv";
-            RenderConfig.TextureName = path+"tex.bmp";
+            RenderConfig.FragmentShaderFileNameSPV = path + "shader_depth_frag.spv";
+            RenderConfig.VertexShaderFileNameSPV = path + "shader_depth_vert.spv";
+            RenderConfig.TextureName = path+"wood.png";
+
             GraphicDevice.BuildRender(RenderConfig);
         }
 
@@ -83,12 +85,9 @@ public static class Sample_0002
         // auto currentTime = std::chrono::high_resolution_clock::now();
         // float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-        // UniformBufferObject ubo{};
-        // ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        // ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        // ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f, 10.0f);
-        // ubo.proj[1][1] *= -1;
             RenderConfig.ubo.Model = RitaEngine.Base.Math.Matrix.Identite;
+            RenderConfig.ubo.Projection = RitaEngine.Base.Math.Matrix.Perspective( 45.0f,1280,720,0.1f,100.0f);
+            RenderConfig.ubo.View = RitaEngine.Base.Math.Matrix.LookAt( new(2.0f,2.0f,2.0f), new(0.0f,0.0f,0.0f), new(0.0f,0.0f,1.0f));
         
             GraphicDevice.UpdateRender(RenderConfig);
         }
