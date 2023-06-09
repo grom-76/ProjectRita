@@ -93,12 +93,11 @@ public static class GraphicDeviceImplement
         CreateInstanceAndDebug(ref func,ref data);
         CreateSurface(ref func.InstanceFunction , ref data);
 // //DEVICE          
-//         SelectPhysicalDevice(ref _instance ,ref _data, ref _infos);
-//         CreateLogicalDevice(ref _instance ,ref _data, ref _infos  );
+        SelectPhysicalDevice(ref func.InstanceFunction ,ref data);
+        GetPhysicalInformations( ref func, ref data);
+        CreateLogicalDevice(ref func ,ref data );
 
 // //SWAP CHAIN
-        
-
 //         CreateSwapChain( ref _device , ref _data,ref _infos);
 //         CreateImageViews( ref _device , ref _data );
        
@@ -124,10 +123,7 @@ public static class GraphicDeviceImplement
 
         // DisposeSyncObjects(ref _device ,ref _data);
 
-        // DisposeQueues(ref _device ,ref _data);
-
-        // DisposeLogicalDevice(ref _instance,ref _data);
-        // //  na pas de disposeDisposePhysicalDevice(ref _data);
+        DisposeLogicalDevice(in func.InstanceFunction ,ref data);
         DisposeSurface(func.InstanceFunction, ref data);
         DisposeInstanceAndDebug(in func,ref data);
        
@@ -178,6 +174,7 @@ public static class GraphicDeviceImplement
         CreatePipelineLayout( ref func , ref data);
         CreatePipeline(ref func, ref data,ref pipeline );
     }
+    
     private unsafe static void DisposeBuildRender(ref GraphicDeviceFunction func,ref GraphicDeviceData data  )
     {
         Pause( func,ref data);
@@ -472,6 +469,20 @@ public static class GraphicDeviceImplement
 
         // VkDisplayModePropertiesKHR*  displayModes = stackalloc VkDisplayModePropertiesKHR[(int)displayModeProperties];
         // func.vkGetDisplayModePropertiesKHR(data.VkPhysicalDevice, &displayModeProperties, displayModes );
+
+        // PHYSICAL DEVICE PROPERTIES -------------------------------------------
+        fixed (VkPhysicalDeviceProperties* phd =   &data.Physical.PhysicalDeviceProperties)
+        {
+            func.InstanceFunction.vkGetPhysicalDeviceProperties(data.Physical.VkPhysicalDevice ,phd );
+        }
+
+        // GET Physical FEATURES ----------------------------------------------------------
+
+        fixed ( VkPhysicalDeviceFeatures* features = &data.Physical.Features)
+        {
+            func.InstanceFunction.vkGetPhysicalDeviceFeatures(data.Physical.VkPhysicalDevice,features );
+        } 
+
     }
     
     private static unsafe void CreateLogicalDevice(ref GraphicDeviceFunctions func,ref GraphicDeviceData data )
@@ -509,20 +520,7 @@ public static class GraphicDeviceImplement
            data.Physical.DeviceExtensions[i] = Encoding.UTF8.GetString( properties[i].extensionName, (int) length ); //new string(properties[i].extensionName); //
         }
         data.Physical.DeviceExtensions[propertyCount] = VK.VK_KHR_SWAPCHAIN_EXTENSION_NAME ;
-        
-        // PHYSICAL DEVICE PROPERTIES -------------------------------------------
-        fixed (VkPhysicalDeviceProperties* phd =   &data.Physical.PhysicalDeviceProperties)
-        {
-            func.InstanceFunction.vkGetPhysicalDeviceProperties(data.Physical.VkPhysicalDevice ,phd );
-        }
-
-        // GET FEATURES ----------------------------------------------------------
-
-        fixed ( VkPhysicalDeviceFeatures* features = &data.Physical.Features)
-        {
-            func.InstanceFunction.vkGetPhysicalDeviceFeatures(data.Physical.VkPhysicalDevice,features );
-        } 
-
+                
         // CREATE DEVICE INFO ---------------------------------------------------------
         using var deviceExtensions = new StrArrayUnsafe(ref data.Physical.DeviceExtensions);
         VkDeviceCreateInfo createInfo = default;
@@ -555,17 +553,19 @@ public static class GraphicDeviceImplement
        func.InitDevicesFunctions( GraphicDeviceLoaderFunction.vkGetDeviceProcAddr , data.VkDevice);
        Log.Info($"Create Device :{data.VkDevice}");
 
-        fixed(VkQueue* gq =&data.VkGraphicQueue){
-                func.DeviceFunction.vkGetDeviceQueue(data.VkDevice, data.Physical.VkGraphicFamilyIndice, 0,gq);
-            }
-            fixed(VkQueue* pq = &data.VkPresentQueue){
-                func.DeviceFunction.vkGetDeviceQueue(data.VkDevice, data.Physical.VkPresentFamilyIndice, 0, pq); 
-            }
+        fixed(VkQueue* gq =&data.VkGraphicQueue)
+        {
+            func.DeviceFunction.vkGetDeviceQueue(data.VkDevice, data.Physical.VkGraphicFamilyIndice, 0,gq);
+        }
+        fixed(VkQueue* pq = &data.VkPresentQueue)
+        {
+            func.DeviceFunction.vkGetDeviceQueue(data.VkDevice, data.Physical.VkPresentFamilyIndice, 0, pq); 
+        }
 
-            Log.Info($"Graphic Queues : indice :{ data.Physical.VkGraphicFamilyIndice} Adr[{data.VkGraphicQueue}]\nPresent : indice :{data.Physical.VkPresentFamilyIndice} Adr[{data.VkPresentQueue}]");
+        Log.Info($"Graphic Queues : indice :{ data.Physical.VkGraphicFamilyIndice} Adr[{data.VkGraphicQueue}]\nPresent : indice :{data.Physical.VkPresentFamilyIndice} Adr[{data.VkPresentQueue}]");
     }
 
-    private static unsafe void DisposeLogicalDevice(ref GraphicInstanceFunction func,ref GraphicDeviceData data )
+    private static unsafe void DisposeLogicalDevice(in GraphicInstanceFunction func,ref GraphicDeviceData data )
     {
         Log.Info("Dispose Logical Device ");
         if ( !data.VkDevice.IsNull){
@@ -685,79 +685,6 @@ public static class GraphicDeviceImplement
 
     #endregion
 
-    #region DEpth Buffering 
-    private unsafe static void CreateDepthResources(ref GraphicDeviceFunction func, ref GraphicDeviceData data)
-    {
-        VkFormat depthFormat = FindDepthFormat();
-
-        //CreateImage(swapChainExtent.width, swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, 
-        // VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
-        // CreateImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
-        CreateImage(ref func , ref data, ref data.DepthImage , ref data.DepthImageMemory, (uint)data.Viewport.width, (uint)data.Viewport.height, 
-            depthFormat, 
-            VkImageTiling.VK_IMAGE_TILING_OPTIMAL, 
-            VkImageUsageFlagBits.VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VkImageUsageFlagBits.VK_IMAGE_USAGE_SAMPLED_BIT, 
-            VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT   );
-        
-        VkImageViewCreateInfo viewInfo = default;
-        viewInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        viewInfo.image = data.DepthImage;
-        viewInfo.viewType = VkImageViewType. VK_IMAGE_VIEW_TYPE_2D;
-        viewInfo.format = VkFormat. VK_FORMAT_R8G8B8A8_SRGB;
-        viewInfo.subresourceRange.aspectMask =  (uint)VkImageAspectFlagBits.VK_IMAGE_ASPECT_DEPTH_BIT;
-        viewInfo.subresourceRange.baseMipLevel = 0;
-        viewInfo.subresourceRange.levelCount = 1;
-        viewInfo.subresourceRange.baseArrayLayer = 0;
-        viewInfo.subresourceRange.layerCount = 1;
-
-        fixed (VkImageView* imageView = &data.DepthImageView ){
-            func.vkCreateImageView(data.VkDevice, &viewInfo, null, imageView).Check("failed to create image view!");
-        }
-       
-
-    }
-     private static unsafe  VkFormat FindSupportedFormat(VkFormat[] candidates, VkImageTiling tiling, VkFormatFeatureFlagBits features) 
-     {
-        // for (VkFormat format : candidates) 
-        // {
-        //     VkFormatProperties props;
-        //     vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
-
-        //     if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
-        //         return format;
-        //     } else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
-        //         return format;
-        //     }
-        // }
-        foreach ( VkFormat format in candidates)
-        {
-            // TODO FindSupportFormat
-        }
-        return VkFormat.VK_FORMAT_A8B8G8R8_SRGB_PACK32;
-        //  throw std::runtime_error("failed to find supported format!");
-    }
-
-    private static unsafe VkFormat FindDepthFormat() 
-    {
-        return FindSupportedFormat(
-            new VkFormat[] {VkFormat.VK_FORMAT_D32_SFLOAT, VkFormat.VK_FORMAT_D32_SFLOAT_S8_UINT, VkFormat.VK_FORMAT_D24_UNORM_S8_UINT},
-            VkImageTiling.VK_IMAGE_TILING_OPTIMAL,
-             VkFormatFeatureFlagBits.VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
-        );
-    }
-
-    private unsafe static void DisposeDepthResources(ref GraphicDeviceFunction func, ref GraphicDeviceData data)
-    {
-        func.vkDestroyImageView(data.VkDevice,data.DepthImageView, null);
-        func.vkDestroyImage(data.VkDevice, data.DepthImage, null);
-        func.vkFreeMemory(data.VkDevice, data.DepthImageMemory, null);
-    }
-
-    #endregion
-
-
-
-    
     #region SWAP CHAIN
     private static uint ClampUInt(uint value, uint min, uint max) =>value < min ? min : value > max ? max : value;
     
@@ -765,67 +692,58 @@ public static class GraphicDeviceImplement
     {
         // VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(Infos.Formats);
         // VkPresentModeKHR presentMode = ChooseSwapPresentMode(Infos.PresentModes);
-
-        // // Choose Swap Extend
-        // //need surface ..........
-
-        // // data.VkSurfaceArea = new VkExtent2D(){
-        // //     width = ClampUInt( (uint)Infos.Width, Infos.Capabilities.minImageExtent.width, Infos.Capabilities.maxImageExtent.width),
-        // //     height = ClampUInt( (uint)Infos.Height, Infos.Capabilities.minImageExtent.height, Infos.Capabilities.maxImageExtent.height),
-        // // };
-
-        // uint imageCount = Infos.Capabilities.minImageCount + 1;
-        // if (Infos.Capabilities.maxImageCount > 0 && imageCount > Infos.Capabilities.maxImageCount) {
-        //     imageCount = Infos.Capabilities.maxImageCount;
-        // }
-
-        // // (data.VkGraphicFamilyIndice,data.VkPresentFamilyIndice) = FindQueueFamilies(data.VkPhysicalDevice,data.VkSurface);
-        // uint* queueFamilyIndices = stackalloc uint[2]{data.VkGraphicFamilyIndice, data.VkPresentFamilyIndice};
-
-        // VkSwapchainCreateInfoKHR createInfo = default;
-        //     createInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-        //     createInfo.surface = data.VkSurface;
-        //     createInfo.minImageCount = imageCount;
-        //     createInfo.imageFormat = surfaceFormat.format;
-        //     createInfo.imageColorSpace = surfaceFormat.colorSpace;
-        //     createInfo.imageExtent = data.VkSurfaceArea;
-        //     createInfo.imageArrayLayers = 1;
-        //     createInfo.imageUsage = (uint)VkImageUsageFlagBits.VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-            
-        //     if (data.VkGraphicFamilyIndice != data.VkPresentFamilyIndice) {
-        //         createInfo.imageSharingMode = VkSharingMode.VK_SHARING_MODE_CONCURRENT;
-        //         createInfo.queueFamilyIndexCount = 2;
-        //         createInfo.pQueueFamilyIndices = queueFamilyIndices;
-        //     } else {
-        //         createInfo.imageSharingMode = VkSharingMode.VK_SHARING_MODE_EXCLUSIVE;
-        //     }
-            
-        //     createInfo.preTransform = Infos.Capabilities.currentTransform;
-        //     createInfo.compositeAlpha = VkCompositeAlphaFlagBitsKHR.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-        //     createInfo.presentMode = presentMode;
-        //     createInfo.clipped = VK.VK_TRUE;
-        //     createInfo.oldSwapchain = VkSwapchainKHR.Null;
-
-        // fixed (VkSwapchainKHR* swapchainPtr = &data.VkSwapChain){
-        //     func.vkCreateSwapchainKHR(data.VkDevice, &createInfo, null, swapchainPtr).Check("failed to create swap chain!");
-        // }
-
-        // Log.Info($"Create SwapChain {data.VkSwapChain}\nMode : {presentMode}\nSize :[{data.VkSurfaceArea.width},{data.VkSurfaceArea.height}] ");
-
-        // // SWWAP CHAIN IMAGES
-
-        // func.vkGetSwapchainImagesKHR(data.VkDevice, data.VkSwapChain, &imageCount, null);
-
-        // data.VkImages = new VkImage[imageCount];
-
-        // fixed (VkImage* swapchainImagesPtr = data.VkImages){
-        //     func.vkGetSwapchainImagesKHR(data.VkDevice,data.VkSwapChain, &imageCount, swapchainImagesPtr).Check("vkGetSwapchainImagesKHR");
-        // }
+        data.VkPresentMode = ChooseSwapPresentMode(data.Physical.PresentModes);
+        data.VkSurfaceFormat  = ChooseSwapSurfaceFormat(data.Physical.Formats);
+        data.VkSurfaceArea = ChooseSwapExtent(ref data);
         
-        // Log.Info($"Create {data.VkImages.Length} SwapChainImages ");
+        uint imageCount = data.Physical.Capabilities.minImageCount + 1;
+        if (data.Physical.Capabilities.maxImageCount > 0 && imageCount > data.Physical.Capabilities.maxImageCount) {
+            imageCount = data.Physical.Capabilities.maxImageCount;
+        }
 
-        // data.VkFormat  = surfaceFormat.format;
-   
+        uint* queueFamilyIndices = stackalloc uint[2]{data.Physical.VkGraphicFamilyIndice, data.Physical.VkPresentFamilyIndice};
+
+        VkSwapchainCreateInfoKHR createInfo = default;
+            createInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+            createInfo.surface = data.App.VkSurface;
+            createInfo.minImageCount = imageCount;
+            createInfo.imageFormat =  data.VkSurfaceFormat.format;
+            createInfo.imageColorSpace = data.VkSurfaceFormat.colorSpace;
+            createInfo.imageExtent = data.VkSurfaceArea;
+            createInfo.imageArrayLayers = 1;
+            createInfo.imageUsage = (uint)VkImageUsageFlagBits.VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+            
+            if (data.Physical.VkGraphicFamilyIndice != data.Physical.VkPresentFamilyIndice) {
+                createInfo.imageSharingMode = VkSharingMode.VK_SHARING_MODE_CONCURRENT;
+                createInfo.queueFamilyIndexCount = 2;
+                createInfo.pQueueFamilyIndices = queueFamilyIndices;
+            } else {
+                createInfo.imageSharingMode = VkSharingMode.VK_SHARING_MODE_EXCLUSIVE;
+            }
+            
+            createInfo.preTransform = data.Physical.Capabilities.currentTransform;
+            createInfo.compositeAlpha = VkCompositeAlphaFlagBitsKHR.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+            createInfo.presentMode = data.VkPresentMode;
+            createInfo.clipped = VK.VK_TRUE;
+            createInfo.oldSwapchain = VkSwapchainKHR.Null;
+
+        fixed (VkSwapchainKHR* swapchainPtr = &data.VkSwapChain){
+            func.vkCreateSwapchainKHR(data.VkDevice, &createInfo, null, swapchainPtr).Check("failed to create swap chain!");
+        }
+
+        Log.Info($"Create SwapChain {data.VkSwapChain}\nMode : {presentMode}\nSize :[{data.VkSurfaceArea.width},{data.VkSurfaceArea.height}] ");
+
+        // SWWAP CHAIN IMAGES
+
+        func.vkGetSwapchainImagesKHR(data.VkDevice, data.VkSwapChain, &imageCount, null);
+
+        data.VkImages = new VkImage[imageCount];
+
+        fixed (VkImage* swapchainImagesPtr = data.VkImages){
+            func.vkGetSwapchainImagesKHR(data.VkDevice,data.VkSwapChain, &imageCount, swapchainImagesPtr).Check("vkGetSwapchainImagesKHR");
+        }
+        
+        Log.Info($"Create {data.VkImages.Length} SwapChainImages ");
     }
 
     private static unsafe void CreateImageViews(ref GraphicDeviceFunction func,ref GraphicDeviceData data )
@@ -887,25 +805,19 @@ public static class GraphicDeviceImplement
         return availableFormats[0];
     }
 
-    // private static  VkExtent2D ChooseSwapExtent(in VkSurfaceCapabilitiesKHR capabilities) 
-    // {
-    //     if (capabilities.currentExtent.width != uint.MaxValue /*std::numeric_limits<uint32_t>::max()*/) {
-    //         return capabilities.currentExtent;
-    //     } else {
-    //         int width=1920, height=720;
-    //         // glfwGetFramebufferSize(surface, &width, &height);
+    private static  VkExtent2D ChooseSwapExtent( ref GraphicDeviceData data) 
+    {
+        if ( data.Physical.Capabilities.currentExtent.width != uint.MaxValue /*std::numeric_limits<uint32_t>::max()*/) {
+            return data.Physical.Capabilities.currentExtent;
+        } else {
+            VkExtent2D actualExtent =new() {
+                width = ClampUInt( (uint)data.App.Width, data.Physical.Capabilities.minImageExtent.width, data.Physical.Capabilities.maxImageExtent.width),
+                height = ClampUInt( (uint)data.App.Height, data.Physical.Capabilities.minImageExtent.height, data.Physical.Capabilities.maxImageExtent.height),
+            };
 
-    //         VkExtent2D actualExtent =new() {
-    //             width = (uint)(width),
-    //             height = (uint)(height)
-    //         };
-
-    //         // actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-    //         // actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
-
-    //         return actualExtent;
-    //     }
-    // }
+            return actualExtent;
+        }
+    }
 
     private  static VkPresentModeKHR ChooseSwapPresentMode(ReadOnlySpan<VkPresentModeKHR> availablePresentModes)
     {
@@ -918,6 +830,77 @@ public static class GraphicDeviceImplement
         }
 
         return VkPresentModeKHR.VK_PRESENT_MODE_FIFO_KHR;
+    }
+
+    #endregion
+
+    #region DEpth Buffering 
+    private unsafe static void CreateDepthResources(ref GraphicDeviceFunction func, ref GraphicDeviceData data)
+    {
+        VkFormat depthFormat = FindDepthFormat();
+
+        //CreateImage(swapChainExtent.width, swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, 
+        // VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
+        // CreateImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+        CreateImage(ref func , ref data, ref data.DepthImage , ref data.DepthImageMemory, (uint)data.Viewport.width, (uint)data.Viewport.height, 
+            depthFormat, 
+            VkImageTiling.VK_IMAGE_TILING_OPTIMAL, 
+            VkImageUsageFlagBits.VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VkImageUsageFlagBits.VK_IMAGE_USAGE_SAMPLED_BIT, 
+            VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT   );
+        
+        VkImageViewCreateInfo viewInfo = default;
+        viewInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        viewInfo.image = data.DepthImage;
+        viewInfo.viewType = VkImageViewType. VK_IMAGE_VIEW_TYPE_2D;
+        viewInfo.format = VkFormat. VK_FORMAT_R8G8B8A8_SRGB;
+        viewInfo.subresourceRange.aspectMask =  (uint)VkImageAspectFlagBits.VK_IMAGE_ASPECT_DEPTH_BIT;
+        viewInfo.subresourceRange.baseMipLevel = 0;
+        viewInfo.subresourceRange.levelCount = 1;
+        viewInfo.subresourceRange.baseArrayLayer = 0;
+        viewInfo.subresourceRange.layerCount = 1;
+
+        fixed (VkImageView* imageView = &data.DepthImageView ){
+            func.vkCreateImageView(data.VkDevice, &viewInfo, null, imageView).Check("failed to create image view!");
+        }
+       
+
+    }
+    
+    private static unsafe  VkFormat FindSupportedFormat(VkFormat[] candidates, VkImageTiling tiling, VkFormatFeatureFlagBits features) 
+     {
+        // for (VkFormat format : candidates) 
+        // {
+        //     VkFormatProperties props;
+        //     vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
+
+        //     if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
+        //         return format;
+        //     } else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
+        //         return format;
+        //     }
+        // }
+        foreach ( VkFormat format in candidates)
+        {
+            // TODO FindSupportFormat
+        }
+        return VkFormat.VK_FORMAT_A8B8G8R8_SRGB_PACK32;
+        //  throw std::runtime_error("failed to find supported format!");
+    }
+    
+    private static unsafe VkFormat FindDepthFormat() 
+    {
+        return FindSupportedFormat(
+            new VkFormat[] {VkFormat.VK_FORMAT_D32_SFLOAT, VkFormat.VK_FORMAT_D32_SFLOAT_S8_UINT, VkFormat.VK_FORMAT_D24_UNORM_S8_UINT},
+            VkImageTiling.VK_IMAGE_TILING_OPTIMAL,
+             VkFormatFeatureFlagBits.VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
+        );
+    }
+
+    private unsafe static void DisposeDepthResources(ref GraphicDeviceFunction func, ref GraphicDeviceData data)
+    {
+        func.vkDestroyImageView(data.VkDevice,data.DepthImageView, null);
+        func.vkDestroyImage(data.VkDevice, data.DepthImage, null);
+        func.vkFreeMemory(data.VkDevice, data.DepthImageMemory, null);
     }
 
     #endregion

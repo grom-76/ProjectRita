@@ -12,8 +12,6 @@ public struct GraphicDevicePhysical : IEquatable<GraphicDevicePhysical>
     public VkSurfaceFormatKHR[] Formats= null!;
     public VkPresentModeKHR[] PresentModes = null!;
     public VkPhysicalDeviceFeatures Features = new();
-    public VkPhysicalDeviceLimits Limits = new();
-    
     public VkPhysicalDevice VkPhysicalDevice = VkPhysicalDevice.Null;
     #endregion
     
@@ -24,19 +22,11 @@ public struct GraphicDevicePhysical : IEquatable<GraphicDevicePhysical>
    
     public GraphicDevicePhysical() 
     { 
-        // var sizeEmpty = Unsafe.SizeOf<GraphicDeviceCapabilities>();
-        // var size =  Marshal.SizeOf(this);
-        //  _address = AddressOfPtrThis( ) ;
-        // Log.Info($"Create Graphic Device Capabilities => size : {sizeEmpty}, {size } {_address:X} ");
-       
         PhysicalDeviceProperties.sparseProperties = new();
         PhysicalDeviceProperties.limits = new();
     }
     public void Release()
     {
-        // var sizeEmpty = Unsafe.SizeOf<GraphicDevicePhysical>();
-        // var size =  Marshal.SizeOf(this);
-        // Log.Info($"Release Graphic Device Capabilities => size : {sizeEmpty}, {size } {AddressOfPtrThis( ):X}");
         DeviceExtensions = null!;
         Formats= null!;
         PresentModes = null!;

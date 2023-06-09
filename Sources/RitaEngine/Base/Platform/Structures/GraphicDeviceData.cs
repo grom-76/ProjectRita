@@ -12,7 +12,7 @@ public struct GraphicDeviceData : IEquatable<GraphicDeviceData>
 
     public VkFramebuffer[] VkFramebuffers = new VkFramebuffer[3];//need for render => NEEDVALID SWAP CHAIN
     public VkCommandBuffer[] VkCommandBuffers = new VkCommandBuffer[3];// TODO same number than MAX FRAME FILGHT  TODO MAXFRAME FILGHT in settings ?  
-    public VkImage[] VkImages = new VkImage[3]; //for CreateImagesView and RecreateSwapChain ....
+    
     public VkImageView[] VkSwapChainImageViews = new VkImageView[3];
     public VkSemaphore[] ImageAvailableSemaphores = new VkSemaphore[2];
     public VkSemaphore[] RenderFinishedSemaphores = new VkSemaphore[2];
@@ -25,7 +25,10 @@ public struct GraphicDeviceData : IEquatable<GraphicDeviceData>
     public VkQueue VkGraphicQueue = VkQueue.Null;// used for draw
 
 
-    public VkSwapchainKHR VkSwapChain = VkSwapchainKHR.Null ;
+    // public VkSwapchainKHR VkSwapChain = VkSwapchainKHR.Null ;
+    // public VkExtent2D VkSurfaceArea = new();
+    // public VkFormat VkFormat = VkFormat.VK_FORMAT_UNDEFINED;
+    // public VkImage[] VkImages = new VkImage[3]; //for CreateImagesView and RecreateSwapChain ....
     
     public VkCommandPool VkCommandPool = VkCommandPool.Null;// not used for draw but importante??? only need to create command buffer 
     public VkPipelineLayout VkpipelineLayout = VkPipelineLayout.Null;
@@ -34,12 +37,11 @@ public struct GraphicDeviceData : IEquatable<GraphicDeviceData>
     public VkDescriptorSetLayout[] Layouts = new VkDescriptorSetLayout[2];
     public VkDescriptorSet[] DescriptorSets = new VkDescriptorSet[2]; 
     public VkDescriptorPool DescriptorPool = VkDescriptorPool.Null;
-    public VkExtent2D VkSurfaceArea = new();
+    
     public VkClearValue ClearColor = new();
     public VkOffset2D  RenderAreaOffset = new();
     public VkViewport Viewport  = new();
     public VkRect2D Scissor = new();
-    public VkFormat VkFormat = VkFormat.VK_FORMAT_UNDEFINED;
     public ulong tick_timeout = ulong.MaxValue;
     
     private nint _address = nint.Zero;
@@ -76,13 +78,12 @@ public struct GraphicDeviceData : IEquatable<GraphicDeviceData>
     {
         
         VkFramebuffers = null!;
-        VkImages = null!;
+        // VkImages = null!;
         VkSwapChainImageViews = null!;
         VkCommandBuffers = null!;
         ImageAvailableSemaphores = null!;
         RenderFinishedSemaphores = null!;
         InFlightFences = null!;
-        // Infos.Release();
     }
 
  
