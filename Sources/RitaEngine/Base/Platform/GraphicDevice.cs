@@ -500,9 +500,6 @@ public static class GraphicDeviceImplement
         if (data.Physical.Capabilities.maxImageCount > 0 && data.SwapChain.ImageCount > data.Physical.Capabilities.maxImageCount) {
             data.SwapChain.ImageCount = data.Physical.Capabilities.maxImageCount;
         }
-
-       
-
     }
 
     private unsafe static (uint graphicsFamily, uint presentFamily) FindQueueFamilies(ref GraphicInstanceFunction func,VkPhysicalDevice device, VkSurfaceKHR surface)
@@ -975,7 +972,6 @@ public static class GraphicDeviceImplement
             VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
             VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,ref data.uniformBuffers[i],ref data.uniformBuffersMemory[i]);
             
-            //TODO if void ** is oK ?
             fixed(void* p = &data.uniformBuffersMapped[i])
             {
                 func.DeviceFunction.vkMapMemory(data.VkDevice,data.uniformBuffersMemory[i], 0, bufferSize, 0, &p).Check("Map Memeory Unifommr pb");
@@ -999,11 +995,10 @@ public static class GraphicDeviceImplement
         // Marshal.StructureToPtr<Uniform_MVP>( data.ubo,ptr,false );
         int taille = (int)Marshal.SizeOf<Uniform_MVP>();
         int size = sizeof(float) * 16 *3 ;
-        nint uiform =   data.uniformBuffersMapped[CurrentFrame];
-        void* ubo = data.ubo.AddressOfPtrThis();
-
-        Unsafe.CopyBlock(uiform.ToPointer() , ubo ,(uint)size);
         
+        // void* ubo = data.ubo.AddressOfPtrThis();
+
+        Unsafe.CopyBlock(data.uniformBuffersMapped[CurrentFrame].ToPointer() , data.ubo.AddressOfPtrThis() ,(uint)size);
     }
 
     #endregion
@@ -1187,13 +1182,13 @@ public static class GraphicDeviceImplement
             ref stagingBuffer, 
             ref stagingBufferMemory);
         
-        void* vertexdata;
+        nint vertexdata = Marshal.AllocHGlobal((int)bufferSize) ;
 
-        func.DeviceFunction.vkMapMemory(data.VkDevice, stagingBufferMemory, 0, bufferSize, 0, &vertexdata);
+        func.DeviceFunction.vkMapMemory(data.VkDevice, stagingBufferMemory, 0, bufferSize, 0, (void**)(vertexdata) );
 
         fixed (void* p = &data.Vertices[0]){ 
             // memcpy(vertexdata, p,  bufferSize); 
-            Unsafe.CopyBlock(vertexdata , p ,(uint)bufferSize);    
+            Unsafe.CopyBlock(vertexdata.ToPointer() , p ,(uint)bufferSize);    
         }
         
         func.DeviceFunction.vkUnmapMemory(data.VkDevice, stagingBufferMemory);
@@ -1209,6 +1204,8 @@ public static class GraphicDeviceImplement
 
         func.DeviceFunction.vkDestroyBuffer(data.VkDevice, stagingBuffer, null);
         func.DeviceFunction.vkFreeMemory(data.VkDevice, stagingBufferMemory, null);
+
+        Marshal.FreeHGlobal( (nint)vertexdata);
     }
 
     private unsafe static void CreateIndexBuffer(ref GraphicDeviceFunctions func, ref GraphicDeviceData data   ) 
@@ -1225,12 +1222,14 @@ public static class GraphicDeviceImplement
             ref stagingBuffer, 
             ref stagingBufferMemory);
         
-        void* indicesdata;
-        func.DeviceFunction.vkMapMemory(data.VkDevice, stagingBufferMemory, 0, bufferSize, 0, &indicesdata);
+        // void* indicesdata;
+        nint indicesdata = Marshal.AllocHGlobal((int)bufferSize) ;
+
+        func.DeviceFunction.vkMapMemory(data.VkDevice, stagingBufferMemory, 0, bufferSize, 0, (void**)indicesdata);
         fixed (void* p = &data.Indices[0])
         {
             //  memcpy(indicesdata, p,  bufferSize); 
-             Unsafe.CopyBlock( indicesdata , p ,(uint)bufferSize);
+             Unsafe.CopyBlock( indicesdata.ToPointer() , p ,(uint)bufferSize);
         }  
         func.DeviceFunction.vkUnmapMemory(data.VkDevice, stagingBufferMemory);
 
@@ -1245,6 +1244,8 @@ public static class GraphicDeviceImplement
 
         func.DeviceFunction.vkDestroyBuffer(data.VkDevice, stagingBuffer, null);
         func.DeviceFunction.vkFreeMemory(data.VkDevice, stagingBufferMemory, null);
+
+        Marshal.FreeHGlobal( indicesdata);
     }
 
     private unsafe static void DisposeBuffers(in GraphicDeviceFunction func, ref GraphicDeviceData data)
@@ -1271,26 +1272,28 @@ public static class GraphicDeviceImplement
     private unsafe static void CreateStagingBuffer(ref GraphicDeviceFunctions func, ref GraphicDeviceData data ,VkDeviceSize size, VkBufferUsageFlagBits usage, 
         VkMemoryPropertyFlagBits  properties,ref VkBuffer buffer,ref VkDeviceMemory bufferMemory) 
     {
-        VkBufferCreateInfo bufferInfo =new();
+        VkBufferCreateInfo bufferInfo = default;
         bufferInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bufferInfo.size = size;
         bufferInfo.usage = (uint)usage;
         bufferInfo.sharingMode = VkSharingMode.VK_SHARING_MODE_EXCLUSIVE;
 
-        fixed(VkBuffer* buf =  &buffer){
+        fixed(VkBuffer* buf =  &buffer)
+        {
             func.DeviceFunction.vkCreateBuffer(data.VkDevice, &bufferInfo, null, buf).Check("failed to create vertex buffer!");
         }
         
-        VkMemoryRequirements memRequirements = new();
+        VkMemoryRequirements memRequirements = default;
         func.DeviceFunction.vkGetBufferMemoryRequirements(data.VkDevice, buffer, &memRequirements);
 
-        VkMemoryAllocateInfo allocInfo = new();
+        VkMemoryAllocateInfo allocInfo = default;
             allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
             allocInfo.allocationSize = memRequirements.size;
             allocInfo.memoryTypeIndex = FindMemoryType(ref func , ref data,memRequirements.memoryTypeBits, properties);
             allocInfo.pNext = null;
 
-        fixed(VkDeviceMemory* memory =  &bufferMemory) {
+        fixed(VkDeviceMemory* memory =  &bufferMemory) 
+        {
             func.DeviceFunction.vkAllocateMemory(data.VkDevice, &allocInfo, null, memory).Check("failed to allocate vertex buffer memory!");
         }
         
@@ -1299,28 +1302,28 @@ public static class GraphicDeviceImplement
 
     private unsafe static void CopyStagingBuffer(ref GraphicDeviceFunction func, ref GraphicDeviceData data, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
     {
-        VkCommandBufferAllocateInfo allocInfo = new();
+        VkCommandBufferAllocateInfo allocInfo = default;
             allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
             allocInfo.level = VkCommandBufferLevel.VK_COMMAND_BUFFER_LEVEL_PRIMARY;
             allocInfo.commandPool = data.VkCommandPool;
             allocInfo.commandBufferCount = 1;
 
-        VkCommandBuffer commandBuffer;
+        VkCommandBuffer commandBuffer = VkCommandBuffer.Null;
         func.vkAllocateCommandBuffers(data.VkDevice, &allocInfo, &commandBuffer);
 
-        VkCommandBufferBeginInfo beginInfo = new();
+        VkCommandBufferBeginInfo beginInfo = default;
             beginInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
             beginInfo.flags = (uint)VkCommandBufferUsageFlagBits.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
         func.vkBeginCommandBuffer(commandBuffer, &beginInfo);
 
-            VkBufferCopy copyRegion = new();
-            copyRegion.size = size;
-            func.vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+        VkBufferCopy copyRegion = new();
+        copyRegion.size = size;
+        func.vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
         func.vkEndCommandBuffer(commandBuffer);
 
-        VkSubmitInfo submitInfo = new();
+        VkSubmitInfo submitInfo = default;
         submitInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &commandBuffer;
@@ -1518,12 +1521,12 @@ public static class GraphicDeviceImplement
             ref stagingBufferMemory);
 
         
-        void* ptr;
-        func.DeviceFunction.vkMapMemory(data.VkDevice, stagingBufferMemory, 0, imageSize, 0, &ptr);
+        nint ptr = Marshal.AllocHGlobal( (int)imageSize);
+        func.DeviceFunction.vkMapMemory(data.VkDevice, stagingBufferMemory, 0, imageSize, 0, (void**)ptr);
         fixed (void* p = &result.Data[0] )
         { 
             // memcpy(ptr, p,  imageSize ); 
-             Unsafe.CopyBlock( ptr , p ,(uint)imageSize);
+             Unsafe.CopyBlock( ptr.ToPointer() , p ,(uint)imageSize);
         }  
         func.DeviceFunction.vkUnmapMemory(data.VkDevice, stagingBufferMemory);
 
@@ -1543,6 +1546,7 @@ public static class GraphicDeviceImplement
 
         func.DeviceFunction.vkDestroyBuffer(data.VkDevice, stagingBuffer, null);
         func.DeviceFunction.vkFreeMemory(data.VkDevice, stagingBufferMemory, null);
+        Marshal.FreeHGlobal( ptr);
     }
 
     private unsafe static void DisposeTextureImage(in GraphicDeviceFunction func, ref GraphicDeviceData data)
@@ -1560,7 +1564,7 @@ public static class GraphicDeviceImplement
     private unsafe static void CreateImage(ref GraphicDeviceFunctions func,ref GraphicDeviceData data, ref VkImage image,ref VkDeviceMemory imageMemory,  uint width, uint height, VkFormat format, VkImageTiling tiling,
          VkImageUsageFlagBits usage, VkMemoryPropertyFlagBits properties) 
     {
-        VkImageCreateInfo imageInfo = new();
+        VkImageCreateInfo imageInfo = default;
             imageInfo.sType =VkStructureType.VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
             imageInfo.imageType =VkImageType. VK_IMAGE_TYPE_2D;
             imageInfo.extent.width = width;
@@ -1575,7 +1579,8 @@ public static class GraphicDeviceImplement
             imageInfo.samples =VkSampleCountFlagBits.VK_SAMPLE_COUNT_1_BIT;
             imageInfo.sharingMode = VkSharingMode. VK_SHARING_MODE_EXCLUSIVE;
 
-        fixed( VkImage* img = &image) {
+        fixed( VkImage* img = &image)
+        {
             func.DeviceFunction.vkCreateImage(data.VkDevice, &imageInfo, null,img).Check("failed to create image!");
         }
         
@@ -1587,7 +1592,8 @@ public static class GraphicDeviceImplement
         allocInfo.allocationSize = memRequirements.size;
         allocInfo.memoryTypeIndex = FindMemoryType(ref func , ref data, memRequirements.memoryTypeBits, properties);
 
-        fixed (VkDeviceMemory* imgMem = &imageMemory  ){
+        fixed (VkDeviceMemory* imgMem = &imageMemory  )
+        {
             func.DeviceFunction.vkAllocateMemory(data.VkDevice, &allocInfo, null, imgMem).Check("failed to allocate image memory!");
         }
 
@@ -1678,7 +1684,7 @@ public static class GraphicDeviceImplement
 
         func.vkAllocateCommandBuffers(data.VkDevice, &allocInfo, &commandBuffer);
 
-        VkCommandBufferBeginInfo beginInfo = new();
+        VkCommandBufferBeginInfo beginInfo = default;
             beginInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
             beginInfo.flags =(uint) VkCommandBufferUsageFlagBits.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
@@ -1724,14 +1730,15 @@ public static class GraphicDeviceImplement
         samplerInfo.compareOp = VkCompareOp.VK_COMPARE_OP_ALWAYS;
         samplerInfo.mipmapMode = VkSamplerMipmapMode .VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
-        fixed(VkSampler* sampler  = &data.TextureSampler){
+        fixed(VkSampler* sampler  = &data.TextureSampler)
+        {
             func.vkCreateSampler(data.VkDevice, &samplerInfo, null, sampler).Check("failed to create texture sampler!");
         }        
     }
 
     private unsafe static void CreateTextureImageView(ref GraphicDeviceFunction func, ref GraphicDeviceData data)
     {
-         VkImageViewCreateInfo viewInfo = default;
+        VkImageViewCreateInfo viewInfo = default;
         viewInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         viewInfo.image = data.TextureImage;
         viewInfo.viewType = VkImageViewType. VK_IMAGE_VIEW_TYPE_2D;
@@ -1742,13 +1749,12 @@ public static class GraphicDeviceImplement
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = 1;
 
-        fixed (VkImageView* imageView = &data.TextureImageView ){
+        fixed (VkImageView* imageView = &data.TextureImageView )
+        {
             func.vkCreateImageView(data.VkDevice, &viewInfo, null, imageView).Check("failed to create image view!");
         }
        
     }
-
-  
 
     private unsafe static void DisposeTextureSampler(in GraphicDeviceFunction func, ref GraphicDeviceData data)
     {
@@ -1955,7 +1961,9 @@ public static class GraphicDeviceImplement
         {
             pipelineLayoutInfo.setLayoutCount = 1;            // Optionnel
             fixed (VkDescriptorSetLayout* layout = &data.DescriptorSetLayout )
-            {pipelineLayoutInfo.pSetLayouts = layout;}         // Optionnel
+            {
+                pipelineLayoutInfo.pSetLayouts = layout;
+            }         
             pipelineLayoutInfo.pushConstantRangeCount = 0;    // Optionnel
         }
             
