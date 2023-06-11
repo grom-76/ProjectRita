@@ -5,6 +5,9 @@ using RitaEngine.Base.Platform.API.Window;
 [ StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public readonly struct WindowFunction : IEquatable<WindowFunction>
 {
+    // public nint User32 = nint.Zero;
+    // public nint Kernel = nint.Zero;
+    // public nint Gdi = nint.Zero;
     public readonly unsafe delegate* unmanaged<WNDCLASSEXA, ushort> RegisterClassExA = null;
     public readonly unsafe delegate* unmanaged<byte*, void*,int> UnRegisterClassA = null;
     public readonly unsafe delegate* unmanaged<void*,int> DestroyWindow = null;

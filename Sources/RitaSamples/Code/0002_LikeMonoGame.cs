@@ -32,8 +32,8 @@ public static class Sample_0002
         {
             Clock.Config.FixedTimeStep = 0.033;
             Clock.Config.LoopMode = RitaEngine.Base.Platform.Config.ClockLoopMode.Default;
-            Window.Config.SetTitle("My Game");
-            Window.Config.SetResolution( WindowResolution.HD_720p_1920x720);
+            WinConfig.SetTitle("My Game");
+            WinConfig.SetResolution( WindowResolution.HD_720p_1920x720);
             Input.Config.ShowCursor = true;
             AudioDevice.Config.Category = AudioCategory.GameMedia;
             AudioDevice.Config.Channels = AudioChannels.stereo;

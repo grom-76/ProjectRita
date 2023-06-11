@@ -55,7 +55,7 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
     {    
         Init();
         clock.Init();
-        win.Init();
+        win.Init(WinConfig);
         graphic.Init(GraphicConfig, win );
         input.Init( win);
         audio.Init();
@@ -140,6 +140,7 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
     public ref RitaEngine.Base.Platform.GraphicDevice GraphicDevice => ref graphic;
     public RitaEngine.Base.Platform.Config.GraphicDeviceConfig GraphicConfig = new();
     public RitaEngine.Base.Platform.Config.GraphicRenderConfig RenderConfig = new();
+    public RitaEngine.Base.Platform.Config.WindowConfig WinConfig = new();
 
     #region [ Abstract to override ]
 

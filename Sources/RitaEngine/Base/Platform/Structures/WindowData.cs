@@ -28,6 +28,13 @@ public struct WindowData : IEquatable<WindowData>
 
     public WindowData() {   _address = AddressOfPtrThis( ) ;   }
 
+    public unsafe void Release()
+    {
+        Title = null!;
+        WndProc = null!;
+        Handle =null;
+        HInstance = null;
+    }
     public unsafe nint AddressOfPtrThis( ) { 
             #pragma warning disable CS8500
         fixed (void* pointer = &this )  { return((nint) pointer ) ; }  

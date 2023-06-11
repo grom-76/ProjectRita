@@ -3,30 +3,32 @@ namespace RitaEngine.Base.Platform ;
 using RitaEngine.Base.Platform.API.Window;
 using RitaEngine.Base.Platform.Structures;
 using RitaEngine.Base.Platform.Config;
+using static RitaEngine.Base.MemoryHelper;
 
 [ StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public struct Window : IEquatable<Window>
 {
-    
-    private WindowData _data;
+    private WindowData _data = new();
     private WindowFunction _funcs;
-    public  WindowConfig Config = new();
-    private nint _address = nint.Zero;
-
-    public Window(){   _address = AddressOfPtrThis();  }
-
-    public unsafe nint AddressOfPtrThis( )
-    { 
-        #pragma warning disable CS8500
-        fixed (void* pointer = &this )  { return((nint) pointer ) ; }  
-        #pragma warning restore
-    }
-
+    // public  WindowConfig Config = new();
+    
+    public Window(){  }
     public unsafe void* GetWindowHandle() => _data.Handle ;
     public unsafe void* GetWindowHInstance() => _data.HInstance ;
     public unsafe int GetWindowWidth() => _data.Width ;
     public unsafe int GetWindowheight() => _data.Height ;
     public byte[] GetWindowName() => _data.Title ;
+
+    public void ChangeTitleBarCaption(string title) 
+        => UpdateCaptionTitleBar( ref _data , ref _funcs , title);
+
+    private unsafe static void UpdateCaptionTitleBar(ref WindowData data ,ref WindowFunction funcs, string title)
+    {
+        var bytes = Encoding.UTF8.GetBytes(title).AsSpan();
+        // byte* title = RitaEngine.Base.MemoryHelper.AsPointer<byte[]>(ref bytes);
+        int result = funcs.SetWindowTextA(data.Handle , bytes.GetPointer() );
+        Log.WarnWhenConditionIsFalse( result !=0 ,$"Change caption title to {title}");
+    }
 
     public void GetFrameBuffer(ref uint width , ref uint height)
     {
@@ -39,78 +41,50 @@ public struct Window : IEquatable<Window>
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public unsafe void Init()
+    public unsafe void Init(in WindowConfig Config)
     {
-        //Guard if Title = empty if User32 empty UserPtr = null ....
-        
-        //LOAD DLL ....
-        _data = new();
         _data.User32 =Libraries.Load( Config.System_User32DllName );
         _data.Kernel = Libraries.Load( Config.System_KernelDllName );
         _data.Gdi =  Libraries.Load( Config.System_Gdi32DllName );
         _funcs = new(Libraries.GetUnsafeSymbol, _data.User32 , _data.Kernel, _data.Gdi);
         _data.WndProc = this.WndProc2;
-        // _data.Style =  Constants.WS_CAPTION | Constants.WS_SYSMENU /*| Constants.WS_VISIBLE */| Constants.WS_THICKFRAME;
+        (_data.Width, _data.Height) =  WindowConfig.GetResolution( Config.Rsolution);
+        _data.Left = Constants.CW_USEDEFAULT;
+        _data.Top = Constants.CW_USEDEFAULT;
+        _data.Style= Constants.WS_CAPTION | Constants.WS_SYSMENU | /*Constants.WS_VISIBLE |*/ Constants.WS_THICKFRAME;
+        _data.ExStyle = Constants.WS_EX_APPWINDOW | Constants.WS_EX_WINDOWEDGE;
+        _data.HInstance = _funcs.GetModuleHandleA(null);// Marshal.GetHINSTANCE(typeof(WindowData).Module).ToPointer(); 
+        _data.Title =Encoding.UTF8.GetBytes(Config.Title);
+
         MonitorsInfo( ref _data , ref _funcs);
         
+        AdjustSize(ref _data ,ref _funcs);
+        
         Create(ref _data, ref _funcs , Config);
-        //Logically Here Dispose COnfig don''t need anywhere 
-
-        Config.Dispose();
     }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool IsForeGround() {return Focused; } 
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Show() => Show(ref _data , ref _funcs);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void DispatchPending() => Update(ref _data , ref _funcs);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool ShouldClose() => ShouldClose(ref _data , ref _funcs);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool ShouldClose() => ShouldClose(ref _data );
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void RequestClose() =>RequestClose(ref _data , ref _funcs);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Release() => Release(ref _data , ref _funcs);
     
-private static bool Focused = false;
+    private static bool Focused = false;
 
     #region STATIC IMPLEMENT
-    // [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    // private unsafe nint WndProc( void* hWnd, uint message,  nuint wParam,  nint lParam)
-    // {
-    //     #if WIN64
-    //     switch (message)
-    //     {
-    //         // case Constants.WM_PAINT:
-    //         //     return (_funcs.DefWindowProcA(hWnd, message, wParam, lParam));
-    //         case Constants.WM_DESTROY:
-    //             return 0;
-    //         case Constants.WM_QUIT:
-    //             return 0;
-    //         case Constants.WM_CLOSE :
-    //             _funcs.PostQuitMessage(0);
-    //             _data.IsRun = false;
-    //             return 0;
-    //         // case Constants.WM_SIZE :
-    //         //     // Config.GraphicDevice.Surface.Height =  Utils.HIWORD(lParam);
-    //         //     // Config.GraphicDevice.Surface.Width =Utils.LOWORD(lParam);
-    //         //     // REGraphicDevice.ReCreateSwapChain( ref _data.GraphicDevice,(uint)Utils.LOWORD(lParam),(uint)Utils.HIWORD(lParam));
-    //         //      return (_funcs.DefWindowProcA(hWnd, message, wParam, lParam));
-    //         case Constants.WM_SETFOCUS :
-    //             Focused =true;
-    //              return (_funcs.DefWindowProcA(hWnd, message, wParam, lParam));
-    //         case Constants.WM_KILLFOCUS :
-    //             Focused = false;
-    //              return (_funcs.DefWindowProcA(hWnd, message, wParam, lParam));
-    //         default:
-    //             return (_funcs.DefWindowProcA(hWnd, message, wParam, lParam));
-    //     }
-    //     #elif LINUX64
-
-    //     #endif
-
-    // } 
-
+    
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private unsafe nint WndProc2( void* hWnd, uint message,  nuint wParam,  nint lParam)
 		=>  message switch {
@@ -141,6 +115,7 @@ private static bool Focused = false;
 		// OnInput(wParam,lParam);
 		return _funcs.DefWindowProcA(hWnd, message, wParam, lParam);
 	}
+
 	private  unsafe nint Win32OnKeyPress(void* hWnd, uint message, nuint wParam, nint lParam)
 	{
 		// OnKeyPress(wParam,lParam);
@@ -200,17 +175,10 @@ private static bool Focused = false;
     private unsafe static int Create(ref WindowData data ,ref WindowFunction funcs,  in Config.WindowConfig config)
     {
         #if WIN64
-        (data.Width, data.Height) =  WindowConfig.GetResolution( config.Rsolution);
-        data.Left = Constants.CW_USEDEFAULT;
-        data.Top = Constants.CW_USEDEFAULT;
-        data.Style= Constants.WS_CAPTION | Constants.WS_SYSMENU | /*Constants.WS_VISIBLE |*/ Constants.WS_THICKFRAME;
-        data.ExStyle = Constants.WS_EX_APPWINDOW | Constants.WS_EX_WINDOWEDGE;
-        data.HInstance =funcs.GetModuleHandleA(null);// Marshal.GetHINSTANCE(typeof(WindowData).Module).ToPointer(); 
+
         var EngineNameChars = Encoding.UTF8.GetBytes(RitaEngine.Base.BaseHelper.ENGINE_NAME);
-        data.Title =Encoding.UTF8.GetBytes(config.Title);
-
-        AdjustSize(ref data ,ref funcs);
-
+       
+        
         WNDCLASSEXA wcex = new ();
         wcex.cbSize = (uint)Marshal.SizeOf( wcex) ;
         wcex.style = Constants.CS_OWNDC  | Constants.CS_HREDRAW | Constants.CS_VREDRAW ;//CS_HREDRAW | CS_VREDRAW | CS_OWNDC
@@ -225,7 +193,8 @@ private static bool Focused = false;
         wcex.hInstance =  data.HInstance;
         fixed( byte* ptr = &EngineNameChars[0]) { wcex.lpszClassName =ptr;  }
         
-        _ = funcs.RegisterClassExA(wcex);
+        ushort err = funcs.RegisterClassExA(wcex);
+        Log.WarnWhenConditionIsFalse(err !=0 , "Register Class" );
     
         fixed( byte* ptr = &EngineNameChars[0] , app = &data.Title[0] ) 
         {
@@ -235,7 +204,7 @@ private static bool Focused = false;
             data.Left, data.Top,  data.Width,  data.Height,
             null, null,data.HInstance, null );
         }
-
+        Log.Info($"Create Window :  {(int)data.Handle:X}");
         #else
 
         #endif
@@ -245,10 +214,6 @@ private static bool Focused = false;
 
     private unsafe static void MonitorsInfo(ref WindowData data ,ref WindowFunction funcs)
     {
-        // GetMONITOR INFO 
-        // ChangeDisplaySettingsExW MonitorFromPoint GetMonitorInfo
-
-
         MONITORINFOEX target;
         target.Size = MONITORINFOEX.MonitorInfoSize;
 
@@ -269,20 +234,21 @@ private static bool Focused = false;
         //  This setting is the screen DPI, or dots per inch.
         // 
         //  GET SCALING FACTOR 
-            var hdc =  funcs.GetDC(null) ;   
-            int LogicalScreenHeight = funcs.GetDeviceCaps( hdc, (int)DEVICE_CAP.VERTRES  ) ;
-            int PhysicalScreenHeight = funcs.GetDeviceCaps( hdc, (int)DEVICE_CAP.DESKTOPVERTRES  ); 
-            int LogicalScreenWidth = funcs.GetDeviceCaps( hdc, (int)DEVICE_CAP.HORZRES  ) ;
-            int PhysicalScreenWidth = funcs.GetDeviceCaps( hdc, (int)DEVICE_CAP.DESKTOPHORZRES  ); 
-            
-            float ScreenScalingFactor = (float)PhysicalScreenHeight / (float)LogicalScreenHeight;
-            int Xdpi = funcs.GetDeviceCaps(hdc, (int)DEVICE_CAP.LOGPIXELSX );
-            int Ydpi = funcs.GetDeviceCaps(hdc, (int)DEVICE_CAP.LOGPIXELSY );    
+        var hdc =  funcs.GetDC(null) ;   
+        int LogicalScreenHeight = funcs.GetDeviceCaps( hdc, (int)DEVICE_CAP.VERTRES  ) ;
+        int PhysicalScreenHeight = funcs.GetDeviceCaps( hdc, (int)DEVICE_CAP.DESKTOPVERTRES  ); 
+        int LogicalScreenWidth = funcs.GetDeviceCaps( hdc, (int)DEVICE_CAP.HORZRES  ) ;
+        int PhysicalScreenWidth = funcs.GetDeviceCaps( hdc, (int)DEVICE_CAP.DESKTOPHORZRES  ); 
         
-            funcs.ReleaseDC(null, hdc);
+        float ScreenScalingFactor = (float)PhysicalScreenHeight / (float)LogicalScreenHeight;
+        int Xdpi = funcs.GetDeviceCaps(hdc, (int)DEVICE_CAP.LOGPIXELSX );
+        int Ydpi = funcs.GetDeviceCaps(hdc, (int)DEVICE_CAP.LOGPIXELSY );    
+    
+        funcs.ReleaseDC(null, hdc);
             // ScreenScalingFactor; // 1.25 = 125%
             
     }
+    
     private unsafe  static void AdjustSize(ref WindowData data ,ref WindowFunction funcs)
     {
     #if WIN64
@@ -299,7 +265,8 @@ private static bool Focused = false;
     
     #endif        
     }
-  //     /// <summary>
+ 
+    // /// <summary>
     // /// 
     // /// </summary>
     // /// <param name="hwnd"></param>       
@@ -317,7 +284,6 @@ private static bool Focused = false;
     //     // log.Test(SetProcessDpiAwarenessContext(ptr  ), "For Windows 10set DPI Awarness context" , Hwnd.ArgOf("Handle"));
     //         SetProcessDpiAwarenessContext(ptr -4 );
     // }
-
  
     // /// <summary>
     // /// Get active screen Dimension 
@@ -445,8 +411,6 @@ if (uMsg == m_ShowStageMessage) {
                 _=funcs.TranslateMessage(msg);
                 _=funcs.DispatchMessageA(msg);
             }
-            // data.IsRun = funcs.GetMessageA(msg, null, 0,  0)>0;
-            // data.IsRun = msg.Message == WM.QUIT;
             
         } 
 
@@ -463,16 +427,16 @@ if (uMsg == m_ShowStageMessage) {
         if (  data.Handle != null)
         {
             int err = funcs.DestroyWindow(data.Handle);//If the function fails, the return value is zero.
-            // Log.WarnWhenConditionIsFalse(err !=0, $" Destroy Window If the function succeeds, the return value is nonzero => {err} whith HWND {new IntPtr(data.Handle)}");
+            Log.WarnWhenConditionIsFalse(err !=0, $" Destroy Window If the function succeeds, the return value is nonzero => {err} whith HWND {new IntPtr(data.Handle)}");
             
             var EngineNameChars =Encoding.UTF8.GetBytes(RitaEngine.Base.BaseHelper.ENGINE_NAME);
             fixed( byte* ptr = &EngineNameChars[0]){ err = funcs.UnRegisterClassA(ptr, null );}
-            // Log.WarnWhenConditionIsFalse(err !=0 ,  $" Unregister Window If the function succeeds, the return value is nonzero.=> {err}");
+            Log.WarnWhenConditionIsFalse(err !=0 ,  $" Unregister Window If the function succeeds, the return value is nonzero.=> {err}");
         }  
     
         Libraries.Unload( data.User32 );
         Libraries.Unload( data.Kernel );
-        // data.Dispose();
+        data.Release();
         //func.Dispose();
         #else
 
@@ -501,7 +465,7 @@ if (uMsg == m_ShowStageMessage) {
         #endif
     }
 
-    private static bool ShouldClose(ref WindowData data ,ref WindowFunction funcs) =>  data.IsRun;
+    private static bool ShouldClose(ref WindowData data ) =>  data.IsRun;
 
     private unsafe static void RequestClose(ref WindowData data ,ref WindowFunction funcs )
     {   

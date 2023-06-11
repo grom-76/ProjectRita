@@ -22,6 +22,7 @@ public static class Sample_0001
         RitaEngine.Base.Platform.GraphicDevice graphic = new();
         RitaEngine.Base.Platform.Config.GraphicDeviceConfig graphicConfig = new();
         RitaEngine.Base.Platform.Config.GraphicRenderConfig renderConfig = new();
+        RitaEngine.Base.Platform.Config.WindowConfig windowConfig = new();
         
         RitaEngine.Base.Audio.PlayerSound2D snd = new( );
         try
@@ -30,9 +31,9 @@ public static class Sample_0001
             clock.Config.LoopMode = RitaEngine.Base.Platform.Config.ClockLoopMode.Default;
             clock.Init();
 
-            win.Config.SetTitle("My Game");
-            win.Config.SetResolution( WindowResolution.HD_720p_1920x720);
-            win.Init();
+            windowConfig.SetTitle("My Game");
+            windowConfig.SetResolution( WindowResolution.HD_720p_1920x720);
+            win.Init(windowConfig);
 
             input.Config.ShowCursor = true;
             input.Init( win);
@@ -89,6 +90,7 @@ public static class Sample_0001
             win.Release();
             clock.Release();
             Log.Release();
+            // graphicConfig.Dispose();
         }
         
     }
