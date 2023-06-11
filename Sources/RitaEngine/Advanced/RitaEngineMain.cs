@@ -67,9 +67,7 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
     private void InternalLoad()
     {
         Load();   
-        // USe Resource MAnager Here in Release Mode
-        // graphic.BuildRender();
-       
+      
     }
 
     private void InternalWarmUp()
@@ -139,7 +137,7 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
     public ref readonly RitaEngine.Base.Platform.Window Window => ref win;
     public ref readonly RitaEngine.Base.Platform.Inputs Input => ref input;
     public ref readonly RitaEngine.Base.Platform.AudioDevice AudioDevice => ref  audio;
-    public ref readonly RitaEngine.Base.Platform.GraphicDevice GraphicDevice => ref graphic;
+    public ref RitaEngine.Base.Platform.GraphicDevice GraphicDevice => ref graphic;
     public RitaEngine.Base.Platform.Config.GraphicDeviceConfig GraphicConfig = new();
     public RitaEngine.Base.Platform.Config.GraphicRenderConfig RenderConfig = new();
 

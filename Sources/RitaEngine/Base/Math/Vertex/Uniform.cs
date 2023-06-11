@@ -6,7 +6,9 @@ public struct Uniform_MVP
     public Matrix View;
     public Matrix Projection;
 
+    #pragma warning disable CS8500
     public unsafe void* AddressOfPtrThis( ){fixed (void* pointer = &this)  { return( pointer ) ; }  }
+    #pragma warning restore
 
     public Uniform_MVP(Matrix model , Matrix view , Matrix projection)
         => (Model, View,Projection )=(model,view,projection);
