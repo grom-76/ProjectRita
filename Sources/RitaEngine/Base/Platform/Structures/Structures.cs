@@ -20,7 +20,7 @@ namespace RitaEngine.Base.Platform.Structures ;// OS SYSTEMS// LAUNCHER CONTEXT 
    
 
     // public struct GraphicDeviceInfo{}
-    // public struct GraphicDeviceData{}
+    // public struct GraphicDeviceResults{}
     // public struct GraphicDeviceFunction
     // {
     //     #if WIN64

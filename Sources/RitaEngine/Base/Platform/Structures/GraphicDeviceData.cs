@@ -4,7 +4,7 @@ using RitaEngine.Base.Math.Vertex;
 using RitaEngine.Base.Platform.API.Vulkan;
 
 [StructLayout(LayoutKind.Sequential, Pack = RitaEngine.Base.BaseHelper.FORCE_ALIGNEMENT), SkipLocalsInit]
-public struct GraphicDeviceData : IEquatable<GraphicDeviceData>
+public struct GraphicDeviceResults : IEquatable<GraphicDeviceResults>
 {
     public delegate void PFN_GetFrameBuffer( ref uint x , ref uint y);
 
@@ -83,7 +83,7 @@ public struct GraphicDeviceData : IEquatable<GraphicDeviceData>
     public string VertexEntryPoint="";
     public Uniform_MVP ubo = new();
      public string TextureName ="";
-    public GraphicDeviceData()   {  }
+    public GraphicDeviceResults()   {  }
     
     public void Release()
     {
@@ -109,10 +109,10 @@ public struct GraphicDeviceData : IEquatable<GraphicDeviceData>
     #region OVERRIDE    
     public override string ToString() => string.Format($"Graphic Device Data" );
     public override int GetHashCode() => (int)0;
-    public override bool Equals(object? obj) => obj is GraphicDeviceData data && this.Equals(data) ;
-    public bool Equals(GraphicDeviceData other)=>  false;
-    public static bool operator ==(GraphicDeviceData left, GraphicDeviceData right) => left.Equals(right);
-    public static bool operator !=(GraphicDeviceData left, GraphicDeviceData  right) => !left.Equals(right);
+    public override bool Equals(object? obj) => obj is GraphicDeviceResults data && this.Equals(data) ;
+    public bool Equals(GraphicDeviceResults other)=>  false;
+    public static bool operator ==(GraphicDeviceResults left, GraphicDeviceResults right) => left.Equals(right);
+    public static bool operator !=(GraphicDeviceResults left, GraphicDeviceResults  right) => !left.Equals(right);
     #endregion
 }
 
