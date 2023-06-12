@@ -23,7 +23,7 @@ public sealed class GraphicRenderConfig
     public bool VertexOutsideShader = false;
     public uint AttributeDescription = 2;
 
-    public Position2f_Color3f[] traingle = new Position2f_Color3f[] { new( 0.5f,-0.5f,1.0f,0.0f,0.0f),new(0.5f,0.5f,0.0f,1.0f,0.0f),new(-0.5f,0.5f,0.0f,0.0f,1.0f) }  ;
+    // public Position2f_Color3f[] traingle = new Position2f_Color3f[] { new( 0.5f,-0.5f,1.0f,0.0f,0.0f),new(0.5f,0.5f,0.0f,1.0f,0.0f),new(-0.5f,0.5f,0.0f,0.0f,1.0f) }  ;
 
     public Position3f_Color3f_UV2f[] Vertices = new Position3f_Color3f_UV2f[] 
     {

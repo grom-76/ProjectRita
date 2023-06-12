@@ -50,7 +50,10 @@ public static class Sample_0002
             RenderConfig.FragmentShaderFileNameSPV = path + "shader_depth_frag.spv";
             RenderConfig.VertexShaderFileNameSPV = path + "shader_depth_vert.spv";
             RenderConfig.TextureName = path+"wood.png";
-
+            RenderConfig.ubo.Model = RitaEngine.Base.Math.Matrix.Identite;
+            RenderConfig.ubo.Projection = RitaEngine.Base.Math.Matrix.Perspective( 45.0f,1280,720,0.1f,100.0f);
+            RenderConfig.ubo.View = RitaEngine.Base.Math.Matrix.LookAt( new(2.0f,2.0f,2.0f), new(0.0f,0.0f,0.0f), new(0.0f,0.0f,1.0f));
+        
            GraphicDevice.BuildRender( RenderConfig);
         }
 
@@ -85,10 +88,7 @@ public static class Sample_0002
         // auto currentTime = std::chrono::high_resolution_clock::now();
         // float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-            // RenderConfig.ubo.Model = RitaEngine.Base.Math.Matrix.Identite;
-            // RenderConfig.ubo.Projection = RitaEngine.Base.Math.Matrix.Perspective( 45.0f,1280,720,0.1f,100.0f);
-            // RenderConfig.ubo.View = RitaEngine.Base.Math.Matrix.LookAt( new(2.0f,2.0f,2.0f), new(0.0f,0.0f,0.0f), new(0.0f,0.0f,1.0f));
-        
+         
             // GraphicDevice.UpdateRender(RenderConfig);
         }
 

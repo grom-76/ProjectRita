@@ -45,6 +45,9 @@ public struct GraphicDeviceHandles: IEquatable<GraphicDeviceHandles>
     public VkDescriptorPool DescriptorPool = VkDescriptorPool.Null;
     public VkPipelineLayout PipelineLayout = VkPipelineLayout.Null;
     public VkPipeline Pipeline = VkPipeline.Null;
+    public VkBuffer VertexBuffer = VkBuffer.Null;
+    public VkBuffer IndicesBuffer = VkBuffer.Null;
+    public uint IndicesSize = 0;
     public VkImage[] Images = null!;// new VkImage[3]; //for CreateImagesView and RecreateSwapChain ....
     public VkImageView[] SwapChainImageViews = null!;//new VkImageView[3];
     public VkFramebuffer[] Framebuffers = null!;// new VkFramebuffer[3];//need for render => NEEDVALID SWAP CHAIN
@@ -53,6 +56,7 @@ public struct GraphicDeviceHandles: IEquatable<GraphicDeviceHandles>
     public VkSemaphore[] ImageAvailableSemaphores = null!;//new VkSemaphore[2];
     public VkSemaphore[] RenderFinishedSemaphores = null!;//new VkSemaphore[2];
     public VkFence[] InFlightFences =null!;// new VkFence[2];
+
 
     public GraphicDeviceHandles()
     {
@@ -116,18 +120,18 @@ public struct GraphicDeviceInfo : IEquatable<GraphicDeviceInfo>
     public uint ImageCount =3;
     public int MAX_FRAMES_IN_FLIGHT =2;
     public VkClearValue ClearColor = new();
+    public VkClearValue ClearColor2 = new();
     public VkOffset2D  RenderAreaOffset = new();
     public VkViewport Viewport  = new();
     public VkRect2D Scissor = new();
+    public VkRect2D RenderArea = new();
     public ulong tick_timeout = ulong.MaxValue;
-    public VkBuffer VertexBuffer = VkBuffer.Null;
-    public VkBuffer IndicesBuffer = VkBuffer.Null;
-    public uint IndicesSize = 0;
+   
     public VkDeviceMemory VertexBufferMemory = VkDeviceMemory.Null;
     public VkDeviceMemory IndicesBufferMemory = VkDeviceMemory.Null;
-    public VkBuffer[] uniformBuffers = new VkBuffer[2];
-    public VkDeviceMemory[] uniformBuffersMemory= new VkDeviceMemory[2];
-    public nint[] uniformBuffersMapped = new nint[2];
+    public VkBuffer[] UniformBuffers = null!;
+    public VkDeviceMemory[] UniformBuffersMemory = null!;
+    public nint[] UniformBuffersMapped = null!;
     public VkImage TextureImage = VkImage.Null;
     public VkDeviceMemory TextureImageMemory = VkDeviceMemory.Null;
     public VkImageView TextureImageView = VkImageView.Null; //25 sampler
@@ -135,13 +139,16 @@ public struct GraphicDeviceInfo : IEquatable<GraphicDeviceInfo>
     public VkImage DepthImage = VkImage.Null; //27 depth buffering
     public VkDeviceMemory DepthImageMemory = VkDeviceMemory.Null;
     public VkImageView DepthImageView = VkImageView.Null;
+
+    
     public Position3f_Color3f_UV2f[] Vertices = null!;
     public short[] Indices = null!;
     public string VertexShaderFileNameSPV ="";
     public string FragmentShaderFileNameSPV ="";
     public string FragmentEntryPoint ="";
     public string VertexEntryPoint="";
-    public Uniform_MVP ubo = new();
+    
+    public float[] UniformBufferArray = null!;
     public string TextureName ="";
 
     public GraphicDeviceInfo()
@@ -152,11 +159,18 @@ public struct GraphicDeviceInfo : IEquatable<GraphicDeviceInfo>
 
     public void Release()
     {
-        uniformBuffers = null!;
-        uniformBuffersMemory= null!;
-        foreach( var ptr in uniformBuffersMapped)
+       
+
+        UniformBufferArray = null!;
+        UniformBuffers = null!;
+        UniformBuffersMemory= null!;
+        if( UniformBuffersMapped != null )
+        {
+            foreach( var ptr in UniformBuffersMapped)
             Marshal.FreeHGlobal(ptr);
-        uniformBuffersMapped = null!;
+        }
+        
+        UniformBuffersMapped = null!;
         DeviceExtensions = null!;
         Formats= null!;
         PresentModes = null!;

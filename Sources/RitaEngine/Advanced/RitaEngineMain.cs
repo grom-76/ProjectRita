@@ -138,6 +138,7 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
     public ref readonly RitaEngine.Base.Platform.Inputs Input => ref input;
     public ref readonly RitaEngine.Base.Platform.AudioDevice AudioDevice => ref  audio;
     public ref RitaEngine.Base.Platform.GraphicDevice GraphicDevice => ref graphic;
+    
     public RitaEngine.Base.Platform.Config.GraphicDeviceConfig GraphicConfig = new();
     public RitaEngine.Base.Platform.Config.GraphicRenderConfig RenderConfig = new();
     public RitaEngine.Base.Platform.Config.WindowConfig WinConfig = new();
