@@ -16,6 +16,8 @@ public struct Uniform_MVP
     public Uniform_MVP() { Model = new() ; View = new(); Projection = new(); }
 }
 
+//called PRIMITIVE
+
 public struct Position2f_Color3f
 {
     public Vector2 Position;

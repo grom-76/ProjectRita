@@ -24,8 +24,8 @@ public static class Sample_0002
         public MyGame()
         {
             RitaEngine.Base.Log.Config(Log.Display.OnConsole);
-            RitaEngine.Base.Resources.Shaders. CreateSPIRV(path, "shader_depth.vert","shader_depth_vert.spv", RitaEngine.Base.Resources.Shaders.ShaderType.VertexShader , "main");
-            RitaEngine.Base.Resources.Shaders. CreateSPIRV(path, "shader_depth.frag","shader_depth_frag.spv", RitaEngine.Base.Resources.Shaders.ShaderType.FragmentShader , "main");
+            RitaEngine.Base.Resources.Shaders. CreateSPIRV(path, "shader_vertexbuf.vert","shader_vertexbuf_vert.spv", RitaEngine.Base.Resources.Shaders.ShaderType.VertexShader , "main");
+            RitaEngine.Base.Resources.Shaders. CreateSPIRV(path, "shader_vertexbuf.frag","shader_vertexbuf_frag.spv", RitaEngine.Base.Resources.Shaders.ShaderType.FragmentShader , "main");
         }
 
         protected override void Init()
@@ -47,8 +47,8 @@ public static class Sample_0002
             RenderConfig.BackColorARGB = RitaEngine.Base.Math.Color.Palette.BlanchedAlmond;
             RenderConfig.FragmentEntryPoint ="main";
             RenderConfig.VertexEntryPoint ="main";
-            RenderConfig.FragmentShaderFileNameSPV = path + "shader_depth_frag.spv";
-            RenderConfig.VertexShaderFileNameSPV = path + "shader_depth_vert.spv";
+            RenderConfig.FragmentShaderFileNameSPV = path + "shader_vertexbuf_frag.spv";
+            RenderConfig.VertexShaderFileNameSPV = path + "shader_vertexbuf_vert.spv";
             RenderConfig.TextureName = path+"wood.png";
             RenderConfig.ubo.Model = RitaEngine.Base.Math.Matrix.Identite;
             RenderConfig.ubo.Projection = RitaEngine.Base.Math.Matrix.Perspective( 45.0f,1280,720,0.1f,100.0f);

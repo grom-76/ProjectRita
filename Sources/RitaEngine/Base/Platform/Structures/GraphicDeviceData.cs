@@ -141,7 +141,7 @@ public struct GraphicDeviceInfo : IEquatable<GraphicDeviceInfo>
     public VkImageView DepthImageView = VkImageView.Null;
 
     
-    public Position3f_Color3f_UV2f[] Vertices = null!;
+    // public Position3f_Color3f_UV2f[] Vertices = null!;
     public short[] Indices = null!;
     public string VertexShaderFileNameSPV ="";
     public string FragmentShaderFileNameSPV ="";
@@ -149,6 +149,8 @@ public struct GraphicDeviceInfo : IEquatable<GraphicDeviceInfo>
     public string VertexEntryPoint="";
     
     public float[] UniformBufferArray = null!;
+    public float[] Vertices = null!;
+
     public string TextureName ="";
 
     public GraphicDeviceInfo()
@@ -159,17 +161,11 @@ public struct GraphicDeviceInfo : IEquatable<GraphicDeviceInfo>
 
     public void Release()
     {
-       
+       Vertices = null!;
 
         UniformBufferArray = null!;
         UniformBuffers = null!;
         UniformBuffersMemory= null!;
-        if( UniformBuffersMapped != null )
-        {
-            foreach( var ptr in UniformBuffersMapped)
-            Marshal.FreeHGlobal(ptr);
-        }
-        
         UniformBuffersMapped = null!;
         DeviceExtensions = null!;
         Formats= null!;
