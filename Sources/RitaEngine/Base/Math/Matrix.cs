@@ -2116,7 +2116,7 @@ using static RitaEngine.Base.Math.Helper;
 
             float rad =ToRadians( fovdegree ) ;
             float h = Cos(  0.5f * rad) / Sin( 0.5f * rad);
-            float w = h * height / width; //todo max(width , Height) / min(width , Height)?
+            float w = h *height/ width;
 
             return new(  w ,    0.0f,   0.0f,                                0.0f,
                         0.0f,   h,      0.0f,                                0.0f,
@@ -2124,26 +2124,26 @@ using static RitaEngine.Base.Math.Helper;
                         0.0f,   0.0f,- (2.0f * zFar * zNear) / (zFar - zNear),0.0f        );
         }
 
-         public static Matrix LookAtTo( Vector3 eye, Vector3 center, Vector3 up)
-    {
-        Vector3 f = Vector3.Normalize( center - eye  );
-        Vector3 s = Vector3.Normalize( Vector3.Cross(ref f, ref up   ));
-        Vector3 u = Vector3.Cross( ref s , ref f);
-        Matrix Result = new(1.0f);
-        Result[0,0] = s.X;
-        Result[1,0] = s.Y;
-        Result[2,0] = s.Z;
-        Result[0,1] = u.X;
-        Result[1,1] = u.Y;
-        Result[2,1] = u.Z;
-        Result[0,2] =-f.X;
-        Result[1,2] =-f.Y;
-        Result[2,2] =-f.Z;
-        Result[3,0] =- Vector3.Dot(ref s,ref eye);
-        Result[3,1] =- Vector3.Dot(ref u,ref eye);
-        Result[3,2] =  Vector3.Dot(ref f,ref eye);
-        return Result;
-    }
+        public static Matrix LookAtTo( Vector3 eye, Vector3 center, Vector3 up)
+        {
+            Vector3 f = Vector3.Normalize( center - eye  );
+            Vector3 s = Vector3.Normalize( Vector3.Cross(ref f, ref up   ));
+            Vector3 u = Vector3.Cross( ref s , ref f);
+            Matrix Result = new(1.0f);
+            Result[0,0] = s.X;
+            Result[1,0] = s.Y;
+            Result[2,0] = s.Z;
+            Result[0,1] = u.X;
+            Result[1,1] = u.Y;
+            Result[2,1] = u.Z;
+            Result[0,2] =-f.X;
+            Result[1,2] =-f.Y;
+            Result[2,2] =-f.Z;
+            Result[3,0] =- Vector3.Dot(ref s,ref eye);
+            Result[3,1] =- Vector3.Dot(ref u,ref eye);
+            Result[3,2] =  Vector3.Dot(ref f,ref eye);
+            return Result;
+        }
 
         /// <summary>
         /// Creates a left-handed, customized orthographic projection matrix.

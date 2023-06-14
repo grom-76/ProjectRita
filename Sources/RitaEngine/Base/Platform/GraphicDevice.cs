@@ -67,7 +67,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
     private static void TransfertToRender(in GraphicRenderConfig pipeline, in GraphicDeviceFunctions functions, ref GraphicDeviceData data)
     {
-        data.Info.UniformBufferArray = new float[ 16 * 3 ];
+        data.Info.UniformBufferArray = pipeline.ubo.ToArray; 
         data.Info.RenderAreaOffset.x =0;
         data.Info.RenderAreaOffset.y =0;       
         data.Info.ClearColor = new(ColorHelper.ToRGBA( (uint)pipeline.BackColorARGB),1.0f,0);
@@ -85,7 +85,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
                 data.Info.Vertices[start + y] = pipeline.Vertices[i].ToArray[y];
             }
         }
-        // data.Info.Vertices = pipeline.Vertices;
+
         data.Handles.IndicesSize =(uint) pipeline.Indices.Length;
         data.Info.TextureName =  pipeline.TextureName;
         data.Info.MAX_FRAMES_IN_FLIGHT = pipeline.MAX_FRAMES_IN_FLIGHT;
@@ -97,16 +97,11 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         data.Info.RenderArea.extent = data.Info.VkSurfaceArea;
         data.Info.RenderArea.offset = data.Info.RenderAreaOffset;
 
-        for ( int i =0 ; i<  pipeline.ubo.Model.ToArray().Length ; i++)
-            data.Info.UniformBufferArray[i] = pipeline.ubo.Model.ToArray()[i];
-        for ( int i =0 ; i<  pipeline.ubo.Projection.ToArray().Length ; i++)
-            data.Info.UniformBufferArray[16+ i] = pipeline.ubo.Projection.ToArray()[i];            
-        for ( int i = 0 ; i<  pipeline.ubo.View.ToArray().Length ; i++)
-            data.Info.UniformBufferArray[32+i] = pipeline.ubo.View.ToArray()[i];
     }   
 
     public void UpdateRender(in GraphicRenderConfig config)
     {
+        _data.Info.UniformBufferArray = config.ubo.ToArray;
         // TransfertToRender(in config, in _functions , ref _data);
         // GraphicDeviceImplement.UpdateUniformBuffer(_functions,ref _data);
     }
@@ -1630,10 +1625,13 @@ public static class GraphicDeviceImplement
     private unsafe static void CreateUniformBuffers(ref GraphicDeviceFunctions func, ref GraphicDeviceData data   ) 
     {
         ulong uboAlignment  = data.Info.PhysicalDeviceProperties.limits.minUniformBufferOffsetAlignment;
-        ulong uboSize = (sizeof(float) * 3 * 16 );
+        ulong uboSize = (ulong)data.Info.UniformBufferArray.Length * sizeof(float);
         var align = (((ulong)uboSize / uboAlignment) * uboAlignment + (((ulong)uboSize % uboAlignment) > 0 ? uboAlignment : 0));
+        
         VkDeviceSize bufferSize = (uint)align;
+        
         data.Info.UboSize = (ulong) bufferSize;
+        
         data.Info.UniformBuffers = new VkBuffer[ data.Info.MAX_FRAMES_IN_FLIGHT];
         data.Info.UniformBuffersMemory = new VkDeviceMemory[data.Info.MAX_FRAMES_IN_FLIGHT];
         data.Info.UboMapped = new void* [ data.Info.MAX_FRAMES_IN_FLIGHT] ;
@@ -1650,7 +1648,7 @@ public static class GraphicDeviceImplement
             func.vkMapMemory(data.Handles.Device,data.Info.UniformBuffersMemory[i], 0, bufferSize, 0, &ptr ).Check("Map Memeory Unifommr pb");
             Guard.ThrowWhenConditionIsTrue( ptr == null);
             data.Info.UboMapped[i] = ptr;
-           UpdateUniformBuffer (func,ref  data );
+          
             Log.Info($"-[{i}] Create Uniform Buffer : {data.Info.UniformBuffers[i]} Mem {data.Info.UniformBuffersMemory[i]}");
            
         }   
@@ -1661,6 +1659,7 @@ public static class GraphicDeviceImplement
     {
         for (nint i = 0; i < data.Info.MAX_FRAMES_IN_FLIGHT; i++) 
         {
+           
             if ( data.Info.UniformBuffers != null! && !data.Info.UniformBuffers[i].IsNull )
             {
                 Log.Info($"-[{i}] Destroy Uniform Buffer : {data.Info.UniformBuffers[i]}");
@@ -1668,13 +1667,12 @@ public static class GraphicDeviceImplement
             }
             if( data.Info.UniformBuffersMemory != null! &&!data.Info.UniformBuffersMemory[i].IsNull)
             {
+                func.vkUnmapMemory(data.Handles.Device, data.Info.UniformBuffersMemory[i] );
                 Log.Info($"-[{i}] Destroy Uniform Buffer Memory : {data.Info.UniformBuffersMemory[i]}");
                 func.vkFreeMemory(data.Handles.Device, data.Info.UniformBuffersMemory[i], null);
             } 
-            if ( data.Info.UboMapped != null)
+            if ( data.Info.UboMapped != null )
             {
-                // func.vkUnmapMemory(data.Handles.Device, data.Info.UboMapped[i]);
-                
                 Log.Info($"-[{i}] Destroy Uniform Buffer Memory Mapped: { new IntPtr(data.Info.UboMapped[i]) }");
                 data.Info.UboMapped[i] = null!;
             }
@@ -1684,7 +1682,8 @@ public static class GraphicDeviceImplement
 
     public unsafe static void UpdateUniformBuffer(in GraphicDeviceFunctions  func,ref GraphicDeviceData data )
     {
-        fixed( void* local  = &data.Info.UniformBufferArray[0] ){
+        fixed( void* local  = &data.Info.UniformBufferArray[0] )
+        {
             Unsafe.CopyBlock( data.Info.UboMapped[CurrentFrame] , local ,(uint) data.Info.UboSize);
         }
     }
@@ -2175,8 +2174,8 @@ public static class GraphicDeviceImplement
         data.Info.Viewport.y = 0.0f;
         data.Info.Viewport.width = (float) data.Info.VkSurfaceArea.width;
         data.Info.Viewport.height = (float) data.Info.VkSurfaceArea.height;
-        data.Info.Viewport.minDepth = 0.0f;
-        data.Info.Viewport.maxDepth = 1.0f;
+        data.Info.Viewport.minDepth = 01.0f;
+        data.Info.Viewport.maxDepth = 100.0f;
 
         VkOffset2D offset = default;
         offset.x = 0;

@@ -143,7 +143,7 @@ public struct GraphicDeviceInfo : IEquatable<GraphicDeviceInfo>
     public VkImageView DepthImageView = VkImageView.Null;
 
     
-    // public Position3f_Color3f_UV2f[] Vertices = null!;
+    
     public short[] Indices = null!;
     public string VertexShaderFileNameSPV ="";
     public string FragmentShaderFileNameSPV ="";
@@ -152,7 +152,6 @@ public struct GraphicDeviceInfo : IEquatable<GraphicDeviceInfo>
     
     public float[] UniformBufferArray = null!;
     public float[] Vertices = null!;
-
     public string TextureName ="";
 
     public GraphicDeviceInfo()
