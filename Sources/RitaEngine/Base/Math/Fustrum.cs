@@ -32,7 +32,7 @@ public class Fustrum
     /// Update fustrum culling with matrix view ( place function inside game loop update)
     /// </summary>
     /// <param name="matrix"></param>
-    public void Update(Matrix matrix)
+    public void Update(Matrix4 matrix)
     {
             planes[Side.LEFT].X = matrix[0].W + matrix[0].X;
 			planes[Side.LEFT].Y = matrix[1].W + matrix[1].X;

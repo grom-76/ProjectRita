@@ -97,12 +97,12 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         data.Info.RenderArea.extent = data.Info.VkSurfaceArea;
         data.Info.RenderArea.offset = data.Info.RenderAreaOffset;
 
-        for ( int i =0 ; i<  pipeline.ubo.Model.ToArray.Length ; i++)
-            data.Info.UniformBufferArray[i] = pipeline.ubo.Model.ToArray[i];
-        for ( int i =0 ; i<  pipeline.ubo.Projection.ToArray.Length ; i++)
-            data.Info.UniformBufferArray[16+ i] = pipeline.ubo.Projection.ToArray[i];            
-        for ( int i = 0 ; i<  pipeline.ubo.View.ToArray.Length ; i++)
-            data.Info.UniformBufferArray[32+i] = pipeline.ubo.View.ToArray[i];
+        for ( int i =0 ; i<  pipeline.ubo.Model.ToArray().Length ; i++)
+            data.Info.UniformBufferArray[i] = pipeline.ubo.Model.ToArray()[i];
+        for ( int i =0 ; i<  pipeline.ubo.Projection.ToArray().Length ; i++)
+            data.Info.UniformBufferArray[16+ i] = pipeline.ubo.Projection.ToArray()[i];            
+        for ( int i = 0 ; i<  pipeline.ubo.View.ToArray().Length ; i++)
+            data.Info.UniformBufferArray[32+i] = pipeline.ubo.View.ToArray()[i];
     }   
 
     public void UpdateRender(in GraphicRenderConfig config)
@@ -1650,7 +1650,7 @@ public static class GraphicDeviceImplement
             func.vkMapMemory(data.Handles.Device,data.Info.UniformBuffersMemory[i], 0, bufferSize, 0, &ptr ).Check("Map Memeory Unifommr pb");
             Guard.ThrowWhenConditionIsTrue( ptr == null);
             data.Info.UboMapped[i] = ptr;
-        //    UpdateUniformBuffer (func,ref  data );
+           UpdateUniformBuffer (func,ref  data );
             Log.Info($"-[{i}] Create Uniform Buffer : {data.Info.UniformBuffers[i]} Mem {data.Info.UniformBuffersMemory[i]}");
            
         }   
@@ -1684,10 +1684,8 @@ public static class GraphicDeviceImplement
 
     public unsafe static void UpdateUniformBuffer(in GraphicDeviceFunctions  func,ref GraphicDeviceData data )
     {
-        ulong size =data.Info.UboSize ;
-
         fixed( void* local  = &data.Info.UniformBufferArray[0] ){
-            Unsafe.CopyBlock( data.Info.UboMapped[CurrentFrame] , local ,(uint) size);
+            Unsafe.CopyBlock( data.Info.UboMapped[CurrentFrame] , local ,(uint) data.Info.UboSize);
         }
     }
 

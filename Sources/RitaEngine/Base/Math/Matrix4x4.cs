@@ -14,11 +14,11 @@ using static RitaEngine.Base.Math.Helper;
 /// https://github.com/dwmkerr/glmnet/blob/master/source/GlmNet/
 /// </summary>
 [SkipLocalsInit,StructLayout(LayoutKind.Sequential)]
-public struct Matrix //: IDsposable, IEquatable<Matrix>
+public struct Matrix4 //: IDsposable, IEquatable<Matrix>
 {
 #region Private + Attributs
     private Vector4[] _cols;
-    private static Matrix identity = new(1.0f);
+    private static Matrix4 identity = new(1.0f);
     private float[] ToArrayColumn()
     {
         float[] array = {
@@ -28,7 +28,7 @@ public struct Matrix //: IDsposable, IEquatable<Matrix>
         _cols[3].X , _cols[3].Y , _cols[3].Z , _cols[3].W ,  };
         return array;
     }
-    private static Matrix AllocNew(float m11=1.0f, float m12=0.0f, float m13=0.0f, float m14=0.0f,
+    private static Matrix4 AllocNew(float m11=1.0f, float m12=0.0f, float m13=0.0f, float m14=0.0f,
                             float m21=0.0f, float m22=1.0f, float m23=0.0f, float m24=0.0f,
                             float m31=0.0f, float m32=0.0f, float m33=1.0f, float m34=0.0f,
                             float m41=0.0f, float m42=0.0f, float m43=0.0f, float m44=1.0f)
@@ -49,7 +49,7 @@ public struct Matrix //: IDsposable, IEquatable<Matrix>
     /// sinon mettre 0.0f pour inisialiser toutes les valeurs a zéro
     /// </summary>
     /// <param name="value"></param>
-    public Matrix(float value =1.0f )
+    public Matrix4(float value =1.0f )
         =>  _cols = ( new Vector4[4]{ new Vector4(value, 0.0f,0.0f,0.0f ) ,
                                         new Vector4(0.0f, value,0.0f,0.0f ) ,
                                         new Vector4(0.0f, 0.0f,value,0.0f ) ,
@@ -58,7 +58,7 @@ public struct Matrix //: IDsposable, IEquatable<Matrix>
     /// comme constructeur de copie
     /// </summary>
     /// <param name="m"></param>
-    public Matrix( Matrix m)
+    public Matrix4( Matrix4 m)
         => _cols = (new Vector4[4]{ m[0],m[1],m[2],m[3] });
     /// <summary>
     /// .
@@ -67,7 +67,7 @@ public struct Matrix //: IDsposable, IEquatable<Matrix>
     /// <param name="col1"></param>
     /// <param name="col2"></param>
     /// <param name="col3"></param>
-    public Matrix ( Vector4 col0 , Vector4 col1 , Vector4 col2 , Vector4 col3 )
+    public Matrix4 ( Vector4 col0 , Vector4 col1 , Vector4 col2 , Vector4 col3 )
         =>  _cols =(new Vector4[4]{ col0,col1,col2,col3  } ) ;
 
     /// <summary>
@@ -89,7 +89,7 @@ public struct Matrix //: IDsposable, IEquatable<Matrix>
     /// <param name="m42"></param>
     /// <param name="m43"></param>
     /// <param name="m44"></param>
-    public Matrix( float m11=1.0f, float m12=0.0f, float m13=0.0f, float m14=0.0f,
+    public Matrix4( float m11=1.0f, float m12=0.0f, float m13=0.0f, float m14=0.0f,
                     float m21=0.0f, float m22=1.0f, float m23=0.0f, float m24=0.0f,
                     float m31=0.0f, float m32=0.0f, float m33=1.0f, float m34=0.0f,
                     float m41=0.0f, float m42=0.0f, float m43=0.0f, float m44=1.0f)
@@ -114,7 +114,7 @@ public struct Matrix //: IDsposable, IEquatable<Matrix>
     /// modifie toutes les valeur ( perte ) pour devenir une matrice identité
     /// retourne une nouvelle matrice
     /// </summary>
-    public static Matrix Identite => identity;
+    public static Matrix4 Identite => identity;
     /// <summary>
     /// modifie toutes les valeur ( perte ) pour devenir une matrice identité
     /// </summary>
@@ -156,7 +156,7 @@ public struct Matrix //: IDsposable, IEquatable<Matrix>
     /// Retreive se translation vector 3 column in matrix
     /// </summary>
     /// <returns></returns>
-    public Vector3 Translation => Vector3.Alloc( this[3,0] , this[3,1], this[3,2]);
+    public Vector3 Translation => new( this[3,0] , this[3,1], this[3,2]);
 
 #endregion        
 #region OPerateur binaire
@@ -176,7 +176,7 @@ AVOID GIMBAL LOCK WHITOUT QUATERNION
     /// <param name="lhs"></param>
     /// <param name="rhs"></param>
     /// <returns></returns>
-    public static Matrix operator * ( Matrix lhs, Matrix rhs)
+    public static Matrix4 operator * ( Matrix4 lhs, Matrix4 rhs)
         => new(
             (rhs[0][0] * lhs[0]) + (rhs[0][1] * lhs[1]) + (rhs[0][2] * lhs[2]) + (rhs[0][3] * lhs[3]),
             (rhs[1][0] * lhs[0]) + (rhs[1][1] * lhs[1]) + (rhs[1][2] * lhs[2]) + (rhs[1][3] * lhs[3]),
@@ -189,7 +189,7 @@ AVOID GIMBAL LOCK WHITOUT QUATERNION
     /// <param name="lhs"></param>
     /// <param name="s"></param>
     /// <returns></returns>
-    public static Matrix operator * ( Matrix lhs , float s)
+    public static Matrix4 operator * ( Matrix4 lhs , float s)
         => new( lhs[0]*s ,lhs[1]*s ,lhs[2]*s ,lhs[3]*s );
 
     /// <summary>
@@ -198,7 +198,7 @@ AVOID GIMBAL LOCK WHITOUT QUATERNION
     /// <param name="lhs">The LHS matrix.</param>
     /// <param name="rhs">The RHS vector.</param>
     /// <returns>The product of <paramref name="lhs"/> and <paramref name="rhs"/>.</returns>
-    public static Vector4 operator *(Matrix lhs, Vector4 rhs)
+    public static Vector4 operator *(Matrix4 lhs, Vector4 rhs)
         =>new (
             (lhs[0, 0] * rhs[0]) + (lhs[1, 0] * rhs[1]) + (lhs[2, 0] * rhs[2]) + (lhs[3, 0] * rhs[3]),
             (lhs[0, 1] * rhs[0]) + (lhs[1, 1] * rhs[1]) + (lhs[2, 1] * rhs[2]) + (lhs[3, 1] * rhs[3]),
@@ -222,7 +222,7 @@ AVOID GIMBAL LOCK WHITOUT QUATERNION
     /// <param name="m"></param>
     /// <param name="v"></param>
     /// <returns></returns>
-    public static Matrix Translate(Matrix m, Vector3 v)
+    public static Matrix4 Translate(Matrix4 m, Vector3 v)
         => new( m[0], m[1] , m[2],( m[0] * v[0]) + (m[1] * v[1]) +( m[2] * v[2]) + m[3] );
 
     /// <summary>
@@ -232,7 +232,7 @@ AVOID GIMBAL LOCK WHITOUT QUATERNION
     /// <param name="angle">In radians </param>
     /// <param name="v"></param>
     /// <returns></returns>
-    public static Matrix Rotate(Matrix m,in float angle,Vector3 v)
+    public static Matrix4 Rotate(Matrix4 m,in float angle,Vector3 v)
     {
         var c = Cos(  angle  );
         var s = Sin(  angle  );
@@ -253,7 +253,7 @@ AVOID GIMBAL LOCK WHITOUT QUATERNION
     /// <param name="m"></param>
     /// <param name="v"></param>
     /// <returns></returns>
-    public static Matrix Scale(Matrix m , Vector3 v)
+    public static Matrix4 Scale(Matrix4 m , Vector3 v)
         => new (m[0] * v[0] ,m[1] * v[1] ,m[2] * v[2] , m[3]  );
 
 #endregion
@@ -268,9 +268,9 @@ AVOID GIMBAL LOCK WHITOUT QUATERNION
     /// <param name="nearVal">The near val.</param>
     /// <param name="farVal">The far val.</param>
     /// <returns></returns>
-    public static Matrix Frustum(float left, float right, float bottom, float top, float nearVal, float farVal)
+    public static Matrix4 Frustum(float left, float right, float bottom, float top, float nearVal, float farVal)
     {
-        Matrix result = new(1.0f);//identity
+        Matrix4 result = new(1.0f);//identity
         result[0, 0] = (2.0f * nearVal) / (right - left);
         result[1, 1] = (2.0f * nearVal) / (top - bottom);
         result[2, 0] = (right + left) / (right - left);
@@ -287,7 +287,7 @@ AVOID GIMBAL LOCK WHITOUT QUATERNION
     /// <param name="aspect">The aspect.</param>
     /// <param name="zNear">The z near.</param>
     /// <returns></returns>
-    public static Matrix InfinitePerspective(float fovy, float aspect, float zNear)
+    public static Matrix4 InfinitePerspective(float fovy, float aspect, float zNear)
     {
         float range = Tan(fovy / 2.0f) * zNear;
 
@@ -296,7 +296,7 @@ AVOID GIMBAL LOCK WHITOUT QUATERNION
         float bottom = -range;
         float top = range;
 
-        Matrix result = new(0.0f);
+        Matrix4 result = new(0.0f);
         result[0, 0] = 2.0f * zNear / (right - left);
         result[1, 1] = 2.0f * zNear / (top - bottom);
         result[2, 2] = -1.0f;
@@ -319,12 +319,12 @@ AVOID GIMBAL LOCK WHITOUT QUATERNION
     /// <param name="zNear"></param>
     /// <param name="zFar"></param>
     /// <returns></returns>
-    public static Matrix Perspective(float fovdegree,float width,float height,float zNear,float zFar )
+    public static Matrix4 Perspective(float fovdegree,float width,float height,float zNear,float zFar )
     {
         float aspect = width / height;
         float tanHalfFovy = Tan( ToRadians(fovdegree) / 2.0f);
 
-        Matrix Result = new(1.0f);
+        Matrix4 Result = new(1.0f);
         Result[0,0] = 1.0f / (aspect * tanHalfFovy);
         Result[1,1] = 1.0f / tanHalfFovy;
         Result[2,2] = - (zFar + zNear) / (zFar - zNear);
@@ -350,7 +350,7 @@ AVOID GIMBAL LOCK WHITOUT QUATERNION
     /// <param name="zFar"></param>
     /// <returns></returns>
     /// <exception cref="ArgumentOutOfRangeException"></exception>
-    public static Matrix PerspectiveFOV(float fovdegree,float width,float height,float zNear,float zFar )
+    public static Matrix4 PerspectiveFOV(float fovdegree,float width,float height,float zNear,float zFar )
     {
         if (width <= 0 || height <= 0 || fovdegree <= 0) throw new ArgumentOutOfRangeException("");
 
@@ -377,9 +377,9 @@ AVOID GIMBAL LOCK WHITOUT QUATERNION
     /// <param name="zNear"></param>
     /// <param name="zFar"></param>
     /// <returns></returns>
-    public static Matrix Ortho(float left,float right,float top,float bottom,float zNear,float zFar )
+    public static Matrix4 Ortho(float left,float right,float top,float bottom,float zNear,float zFar )
     {
-        Matrix Result = new(1.0f);
+        Matrix4 Result = new(1.0f);
         Result[0,0] = 2.0f / (right - left);
         Result[1,1] = 2.0f / (top - bottom);
         Result[2,2] = - 2.0f / (zFar - zNear);
@@ -397,9 +397,9 @@ AVOID GIMBAL LOCK WHITOUT QUATERNION
     /// <param name="bottom">The bottom.</param>
     /// <param name="top">The top.</param>
     /// <returns></returns>
-    public static Matrix Ortho2D(float left, float right, float bottom, float top)
+    public static Matrix4 Ortho2D(float left, float right, float bottom, float top)
     {
-        Matrix result = new(1.0f);
+        Matrix4 result = new(1.0f);
         result[0, 0] = (2f) / (right - left);
         result[1, 1] = (2f) / (top - bottom);
         result[2, 2] = -(1f);
@@ -416,7 +416,7 @@ AVOID GIMBAL LOCK WHITOUT QUATERNION
     /// <param name="aspect">The aspect.</param>
     /// <param name="zNear">The z near.</param>
     /// <returns></returns>
-    public static Matrix TweakedInfinitePerspective(float fovy, float aspect, float zNear)
+    public static Matrix4 TweakedInfinitePerspective(float fovy, float aspect, float zNear)
     {
         float range = Tan(fovy / (2)) * zNear;
         float left = -range * aspect;
@@ -424,7 +424,7 @@ AVOID GIMBAL LOCK WHITOUT QUATERNION
         float bottom = -range;
         float top = range;
 
-        Matrix Result = new(0.0f);
+        Matrix4 Result = new(0.0f);
         Result[0, 0] = 2.0f * zNear / (right - left);
         Result[1, 1] = 2.0f * zNear / (top - bottom);
         Result[2, 2] = 0.0001f - 1.0f;
@@ -441,11 +441,11 @@ AVOID GIMBAL LOCK WHITOUT QUATERNION
     /// <param name="viewport">The viewport.</param>
     /// <returns></returns>
     /// <exception cref="System.ArgumentOutOfRangeException"></exception>
-    public static Matrix PickMatrix(Vector2 center, Vector2 delta, Vector4 viewport)
+    public static Matrix4 PickMatrix(Vector2 center, Vector2 delta, Vector4 viewport)
     {
         if (delta.X <= 0 || delta.Y <= 0)
             throw new ArgumentOutOfRangeException();
-        var Result = new Matrix(1.0f);
+        var Result = new Matrix4(1.0f);
 
         if (!(delta.X > (0f) && delta.Y > (0f)))
             return Result; // Error
@@ -456,8 +456,8 @@ AVOID GIMBAL LOCK WHITOUT QUATERNION
             (0f));
 
         // Translate and scale the picked region to the entire window
-        Result = Matrix.Translate(Result, Temp);
-        return  Matrix.Scale(Result, new((viewport[2]) / delta.X, (viewport[3]) / delta.Y, (1)));
+        Result = Matrix4.Translate(Result, Temp);
+        return  Matrix4.Scale(Result, new((viewport[2]) / delta.X, (viewport[3]) / delta.Y, (1)));
     }
 
     /// <summary>
@@ -468,7 +468,7 @@ AVOID GIMBAL LOCK WHITOUT QUATERNION
     /// <param name="proj">The proj.</param>
     /// <param name="viewport">The viewport.</param>
     /// <returns></returns>
-    public static Vector3 Project(Vector3 obj, Matrix model, Matrix proj, Vector4 viewport)
+    public static Vector3 Project(Vector3 obj, Matrix4 model, Matrix4 proj, Vector4 viewport)
     {
         Vector4 tmp = new(obj.X,obj.Y,obj.Z, 1.0f);
         tmp = model * tmp;
@@ -487,11 +487,11 @@ AVOID GIMBAL LOCK WHITOUT QUATERNION
     /// @see <a href="https://www.khronos.org/registry/OpenGL-Refpages/gl2.1/xhtml/gluUnProject.xml">gluUnProject man page</a>
     /// </summary>
     /// <param name="win">The win.win Specify the window coordinates to be mapped.</param>
-    /// <param name="model">The model.model Specifies the modelview matrix </param>
-    /// <param name="proj">The proj.proj Specifies the projection matrix</param>
+    /// <param name="model">The model.model Specifies the modelview Matrix4 </param>
+    /// <param name="proj">The proj.proj Specifies the projection Matrix4</param>
     /// <param name="viewport">The viewport. viewport Specifies the viewport</param>
     /// <returns> the computed object coordinates. 0.0f in Z</returns>
-    public static Vector3 UnProject(Vector3 win, Matrix model, Matrix proj , Vector4 viewport)
+    public static Vector3 UnProject(Vector3 win, Matrix4 model, Matrix4 proj , Vector4 viewport)
     {
         // var tmp = (new Vector4( (win.X - viewport[0]) / viewport[2] ,
         //                         ((viewport[3] - win.Y) - viewport[1]) / viewport[3]  ,
@@ -502,7 +502,7 @@ AVOID GIMBAL LOCK WHITOUT QUATERNION
         tmp.Z = 2.0f* win.Z -1.0f ;
         tmp.W = 1.0f;
 
-        Vector4 obj =  Matrix.Inverse(proj * model) * tmp ;
+        Vector4 obj =  Matrix4.Inverse(proj * model) * tmp ;
         obj.W = 1.0f / obj.W;
         obj.X *= obj.W;
         obj.Y *= obj.W;
@@ -536,9 +536,9 @@ AVOID GIMBAL LOCK WHITOUT QUATERNION
     //     https://computergraphics.stackexchange.com/questions/4503/screen-to-world-coordinates-glmunproject
     //     You can calculate the world position of the pixel on near plane quite easily by first defining Normalized Device Coordinates (NDC) for the point and then transforming the NDC back to the world space. You can calculate NDC for your point as follows:
     //     v=[2∗(x+0.5)/width−1,1−2∗(y+0.5)/height,0,1]
-    //     I'm using 0 here for the z-component assuming near-plane in NDC is 0, but it could be something else as well, so check with your projection matrix what values comes out at the near-plane. This vector must be then transformed to clip-space by multiplying by near-plane distance:
+    //     I'm using 0 here for the z-component assuming near-plane in NDC is 0, but it could be something else as well, so check with your projection Matrix4 what values comes out at the near-plane. This vector must be then transformed to clip-space by multiplying by near-plane distance:
     //     v′=np∗v
-    //     Now that you have clip-space coordinates, you just need to transform this back to world space with the standard clip→world transformation matrix:
+    //     Now that you have clip-space coordinates, you just need to transform this back to world space with the standard clip→world transformation Matrix4:
     //     v′′=M∗v′
     //     */
     // }
@@ -551,12 +551,12 @@ AVOID GIMBAL LOCK WHITOUT QUATERNION
     /// <param name="center"> target/ front</param>
     /// <param name="up"> toujours vers le haut</param>
     /// <returns></returns>
-    public static Matrix LookAt( Vector3 eye, Vector3 center, Vector3 up)
+    public static Matrix4 LookAt( Vector3 eye, Vector3 center, Vector3 up)
     {
         Vector3 f = Vector3.Normalize( center - eye  );
         Vector3 s = Vector3.Normalize( Vector3.Cross(ref f, ref up   ));
         Vector3 u = Vector3.Cross( ref s , ref f);
-        Matrix Result = new(1.0f);
+        Matrix4 Result = new(1.0f);
         Result[0,0] = s.X;
         Result[1,0] = s.Y;
         Result[2,0] = s.Z;
@@ -579,7 +579,7 @@ AVOID GIMBAL LOCK WHITOUT QUATERNION
     /// </summary>
     /// <param name="m"> matrice a calculer l'inverse </param>
     /// <returns></returns>
-    public static Matrix Inverse(Matrix m)
+    public static Matrix4 Inverse(Matrix4 m)
     {
         float Coef00 = m[2][2] * m[3][3] - m[3][2] * m[2][3];
         float Coef02 = m[1][2] * m[3][3] - m[3][2] * m[1][3];
@@ -624,7 +624,7 @@ AVOID GIMBAL LOCK WHITOUT QUATERNION
 
         Vector4 SignA = new(+1, -1, +1, -1);
         Vector4 SignB = new(-1, +1, -1, +1);
-        Matrix Inverse = new(Inv0 * SignA, Inv1 * SignB, Inv2 * SignA, Inv3 * SignB);
+        Matrix4 Inverse = new(Inv0 * SignA, Inv1 * SignB, Inv2 * SignA, Inv3 * SignB);
 
         Vector4 Row0 = new(Inverse[0][0], Inverse[1][0], Inverse[2][0], Inverse[3][0]);
 
@@ -643,15 +643,15 @@ AVOID GIMBAL LOCK WHITOUT QUATERNION
     /// <inheritdoc />
     public override int GetHashCode() => this.ToArray.GetHashCode() ;
     /// <inheritdoc />
-    public override bool Equals(object? obj) => obj is Matrix mat && this.Equals(mat)  ;
+    public override bool Equals(object? obj) => obj is Matrix4 mat && this.Equals(mat)  ;
     /// <inheritdoc />
-    public bool Equals(Matrix other)
+    public bool Equals(Matrix4 other)
         => this._cols[0].Equals( other._cols[0]) && this._cols[1].Equals( other._cols[1]) &&this._cols[2].Equals( other._cols[2]) &&this._cols[3].Equals( other._cols[3]) ;
         // => (Maths.Abs(M11 - other.M11) <=  Maths.ZeroTolerance) && (Maths.Abs(M12 - other.M13) <= Maths.ZeroTolerance) && (Maths.Abs(M13 - other.M13) <= Maths.ZeroTolerance) && (Maths.Abs(M14 - other.M14) <= Maths.ZeroTolerance);
     /// <inheritdoc />
-    public static bool operator ==(Matrix left, Matrix right) => left.Equals(right);
+    public static bool operator ==(Matrix4 left, Matrix4 right) => left.Equals(right);
    /// <inheritdoc />
-    public static bool operator !=(Matrix left, Matrix right) => !(left.Equals(right));
+    public static bool operator !=(Matrix4 left, Matrix4 right) => !(left.Equals(right));
 #endregion
     /// <summary>
     /// https://stackoverflow.com/questions/42256657/glmunproject-doesnt-work-and-incorrect-ray-position-on-screen
@@ -661,19 +661,19 @@ AVOID GIMBAL LOCK WHITOUT QUATERNION
     /// <param name="viewport"></param>
     /// <param name="posx"></param>
     /// <param name="posy"></param>
-    public static (Vector3,Vector3) Ray(Matrix view, Matrix projection,Vector4 viewport, int posx, int posy )
+    public static (Vector3,Vector3) Ray(Matrix4 view, Matrix4 projection,Vector4 viewport, int posx, int posy )
     {
-        Matrix mvp = view * projection ;
+        Matrix4 mvp = view * projection ;
         var x = posx;
         var y = viewport[3] - 1.0f - posy;
 
         Vector4 localNear = new( x,  y,0.0f, 1.0f );
         Vector4 localFar = new( x, y, 1.0f, 1.0f );
 
-        Vector4 wsn = Matrix.Inverse(mvp) * localNear;
+        Vector4 wsn = Matrix4.Inverse(mvp) * localNear;
         Vector3 worldSpaceNear = new(wsn.X, wsn.Y, wsn.Z);
 
-        Vector4 wsf = Matrix.Inverse(mvp) * localFar;
+        Vector4 wsf = Matrix4.Inverse(mvp) * localFar;
         Vector3 worldSpaceFar = new(wsf.X, wsf.Y, wsf.Z);
 
         return new( worldSpaceNear, worldSpaceFar);
@@ -685,7 +685,7 @@ AVOID GIMBAL LOCK WHITOUT QUATERNION
     /// <param name="v"></param>
     /// <param name="mat"></param>
     /// <returns></returns>
-    public static Vector4 Vector4Transform( Vector4 v , Matrix mat)
+    public static Vector4 Vector4Transform( Vector4 v , Matrix4 mat)
     {
         Vector4 result =default;
 

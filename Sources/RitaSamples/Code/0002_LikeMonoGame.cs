@@ -1,6 +1,8 @@
 namespace RitaSamples;
 
+
 using RitaEngine.Base;
+using RitaEngine.Base.Math;
 using RitaEngine.Base.Platform.Config;
 
 
@@ -15,12 +17,14 @@ public static class Sample_0002
        game.Run();
    
     }
+    
 
     public class MyGame : RitaEngine.Advanced.RitaEngineMain
     {
         string path = @"C:\Users\Administrator\Documents\ProjectRita\Assets\";
         RitaEngine.Base.Audio.PlayerSound2D snd = new();
-        
+        Vector3 scale =new(1.0f);
+
         public MyGame()
         {
             RitaEngine.Base.Log.Config(Log.Display.OnConsole);
@@ -50,12 +54,11 @@ public static class Sample_0002
             RenderConfig.FragmentShaderFileNameSPV = path + "shader_depth_frag.spv";
             RenderConfig.VertexShaderFileNameSPV = path   + "shader_depth_vert.spv";
             RenderConfig.TextureName = path+"wood.png";
-            RenderConfig.ubo.Model = RitaEngine.Base.Math.Matrix.Identite;
-            RenderConfig.ubo.View =  RitaEngine.Base.Math.Matrix.Identite;//RitaEngine.Base.Math.Matrix.LookAt( new(2.0f,2.0f,2.0f), new(0.0f,0.0f,0.0f), new(0.0f,0.0f,1.0f));
-            RenderConfig.ubo.Projection =RitaEngine.Base.Math.Matrix.Identite; //RitaEngine.Base.Math.Matrix.Perspective( 45.0f,1280,720,0.1f,100.0f);
-            // RenderConfig.ubo.Projection[1,1] *= -1;
-            
-        
+            RenderConfig.ubo.Model = RitaEngine.Base.Math.Matrix.Identity;
+            RenderConfig.ubo.View =  Matrix.LookAtTo( new( 0.0f,0.0f,-5.0f) , new(0.0f,0.0f,0.0f) , new(0.0f,1.0f,0.0f));
+            RenderConfig.ubo.Projection = Matrix.PerspectiveFOV(45.0f,1280.0f,720.0f, 0.1f,100.0f);
+
+    
            GraphicDevice.BuildRender( RenderConfig);
         }
 
@@ -80,16 +83,21 @@ public static class Sample_0002
             {
                 snd.PlaySource();
             }
- 
+
+            if ( Input.IsKeyDown( RitaEngine.Base.Platform.InputKeys.Up ))
+            {
+                scale.X +=0.1f;scale.Y +=0.1f;
+            }
+            if ( Input.IsKeyDown( RitaEngine.Base.Platform.InputKeys.Down))
+            {
+                scale.X -=0.1f;scale.Y -=0.1f;
+            }
         }
 
         protected override void UpdatePhysics()
         {
-           // static auto startTime = std::chrono::high_resolution_clock::now();
-
-        // auto currentTime = std::chrono::high_resolution_clock::now();
-        // float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
+           
+            // RenderConfig.ubo.Model= RitaEngine.Base.Math.Matrix.Scaling(scale);
          
             // GraphicDevice.UpdateRender(RenderConfig);
         }
