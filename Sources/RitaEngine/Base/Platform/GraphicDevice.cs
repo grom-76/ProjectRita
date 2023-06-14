@@ -96,7 +96,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
         data.Info.RenderArea.extent = data.Info.VkSurfaceArea;
         data.Info.RenderArea.offset = data.Info.RenderAreaOffset;
-        
+
         for ( int i =0 ; i<  pipeline.ubo.Model.ToArray.Length ; i++)
             data.Info.UniformBufferArray[i] = pipeline.ubo.Model.ToArray[i];
         for ( int i =0 ; i<  pipeline.ubo.Projection.ToArray.Length ; i++)
@@ -802,7 +802,7 @@ public static class GraphicDeviceImplement
         // SWWAP CHAIN IMAGES  ----------------------------------------------------------------------
 
         func.vkGetSwapchainImagesKHR(data.Handles.Device, data.Handles.SwapChain, &imageCount, null);
-
+        data.Info.ImageCount = imageCount;
         data.Handles.Images = new VkImage[imageCount];
 
         fixed (VkImage* swapchainImagesPtr = data.Handles.Images){
@@ -1372,13 +1372,17 @@ public static class GraphicDeviceImplement
 
     #region Texture
 
+    
+
     private unsafe static void CreateTextureImage(ref GraphicDeviceFunctions func,ref GraphicDeviceData data )
     {
+        VkFormat format = VkFormat.VK_FORMAT_UNDEFINED;
         uint texWidth=512, texHeight=512;
         uint texChannels=4;
         //TODO CreateTextureImage  File.ReadAllBytes( data.Info.TextureName) do this outside 
         var file = File.ReadAllBytes( data.Info.TextureName);
-        ImageResult result = ImageResult.FromMemory(file );
+        StbImage.stbi__vertically_flip_on_load_set = 1;
+        ImageResult result = ImageResult.FromMemory(file , ColorComponents.RedGreenBlueAlpha);
         texWidth = (uint)result.Width;
         texHeight = (uint)result.Height;
         texChannels = (uint)result.Comp;
@@ -1395,32 +1399,61 @@ public static class GraphicDeviceImplement
             ref stagingBuffer, 
             ref stagingBufferMemory);
 
-        void* imgPtr = null;
-        func.vkMapMemory(data.Handles.Device, stagingBufferMemory, 0, imageSize, 0, &imgPtr).Check("Impossible to map memory for texture");
+        byte* imgPtr = null;
+        func.vkMapMemory(data.Handles.Device, stagingBufferMemory, 0, imageSize, 0, (void**)&imgPtr).Check("Impossible to map memory for texture");
        
-            void* ptr = Unsafe.AsPointer( ref  result.Data[0]);
-            Unsafe.CopyBlock(imgPtr  , ptr ,(uint)imageSize);
+            // void* ptr = Unsafe.AsPointer( ref  result.Data[0]);
+        fixed( byte* tex2D = &result.Data[0])
+        {
+            Unsafe.CopyBlock(imgPtr  ,tex2D ,(uint)imageSize);
+        }
+
           
         func.vkUnmapMemory(data.Handles.Device, stagingBufferMemory);
 
-        file = null!;
-        result.Data = null!;
+        if (result.Comp == ColorComponents.RedGreenBlue  )
+            format = VkFormat.VK_FORMAT_R8G8B8_SRGB;
+        else if (result.Comp == ColorComponents.RedGreenBlueAlpha )    
+            format = VkFormat.VK_FORMAT_R8G8B8A8_SRGB;
 
         CreateImage(ref func , ref data, ref data.Info.TextureImage, ref data.Info.TextureImageMemory, texWidth, texHeight, 
-            VkFormat.VK_FORMAT_R8G8B8A8_SRGB, 
+            format,//VkFormat.VK_FORMAT_R8G8B8A8_SRGB, 
             VkImageTiling.VK_IMAGE_TILING_OPTIMAL, 
             VkImageUsageFlagBits.VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits.VK_IMAGE_USAGE_SAMPLED_BIT, 
             VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT   );
 
-        TransitionImageLayout(ref func , ref data,  VkFormat.VK_FORMAT_R8G8B8A8_SRGB, VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED, VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        TransitionImageLayout(ref func , ref data, format, VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED, VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
             CopyBufferToImage(ref  func,ref  data,stagingBuffer, (texWidth), (texHeight));
-        TransitionImageLayout(ref func , ref data, VkFormat.VK_FORMAT_R8G8B8A8_SRGB, VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VkImageLayout.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        TransitionImageLayout(ref func , ref data,format, VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VkImageLayout.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
         func.vkDestroyBuffer(data.Handles.Device, stagingBuffer, null);
         func.vkFreeMemory(data.Handles.Device, stagingBufferMemory, null);
-
+        
+        file = null!;
+        result.Data = null!;
+        
         Log.Info($"Create Texture Image {data.Info.TextureImage} ");
         Log.Info($"Create Texture Image Memory {data.Info.TextureImageMemory} ");
+    }
+
+    private unsafe static void CreateTextureImageView(ref GraphicDeviceFunctions  func, ref GraphicDeviceData data)
+    {
+        VkImageViewCreateInfo viewInfo = default;
+        viewInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        viewInfo.image = data.Info.TextureImage;
+        viewInfo.viewType = VkImageViewType. VK_IMAGE_VIEW_TYPE_2D;
+        viewInfo.format = VkFormat. VK_FORMAT_R8G8B8A8_SRGB;
+        viewInfo.subresourceRange.aspectMask =  (uint)VkImageAspectFlagBits. VK_IMAGE_ASPECT_COLOR_BIT;
+        viewInfo.subresourceRange.baseMipLevel = 0;
+        viewInfo.subresourceRange.levelCount = 1;
+        viewInfo.subresourceRange.baseArrayLayer = 0;
+        viewInfo.subresourceRange.layerCount = 1;
+
+        fixed (VkImageView* imageView = &data.Info.TextureImageView )
+        {
+            func.vkCreateImageView(data.Handles.Device, &viewInfo, null, imageView).Check("failed to create image view!");
+        }
+        Log.Info($"Create Texture Image View {data.Info.TextureImageView}");
     }
 
     private unsafe static void DisposeTextureImage(in GraphicDeviceFunctions  func, ref GraphicDeviceData data)
@@ -1435,7 +1468,11 @@ public static class GraphicDeviceImplement
             Log.Info($"Create Texture Image Memory {data.Info.TextureImageMemory} ");
             func.vkFreeMemory(data.Handles.Device, data.Info.TextureImageMemory, null);
         }
-        
+        if( !data.Info.TextureImageView.IsNull)
+        {
+            Log.Info($"Destroy Texture Image View {data.Info.TextureImageView}");
+            func.vkDestroyImageView(data.Handles.Device, data.Info.TextureImageView, null);
+        }
     }
     
     private unsafe static void CreateImage(ref GraphicDeviceFunctions func,ref GraphicDeviceData data,
@@ -1592,25 +1629,32 @@ public static class GraphicDeviceImplement
 
     private unsafe static void CreateUniformBuffers(ref GraphicDeviceFunctions func, ref GraphicDeviceData data   ) 
     {
-        VkDeviceSize bufferSize = (uint)(sizeof(float) * 3 * 16 );
-
+        ulong uboAlignment  = data.Info.PhysicalDeviceProperties.limits.minUniformBufferOffsetAlignment;
+        ulong uboSize = (sizeof(float) * 3 * 16 );
+        var align = (((ulong)uboSize / uboAlignment) * uboAlignment + (((ulong)uboSize % uboAlignment) > 0 ? uboAlignment : 0));
+        VkDeviceSize bufferSize = (uint)align;
+        data.Info.UboSize = (ulong) bufferSize;
         data.Info.UniformBuffers = new VkBuffer[ data.Info.MAX_FRAMES_IN_FLIGHT];
         data.Info.UniformBuffersMemory = new VkDeviceMemory[data.Info.MAX_FRAMES_IN_FLIGHT];
-        data.Info.UniformBuffersMapped = new nint[ data.Info.MAX_FRAMES_IN_FLIGHT] ;
+        data.Info.UboMapped = new void* [ data.Info.MAX_FRAMES_IN_FLIGHT] ;
         
         for (int i = 0; i < data.Info.MAX_FRAMES_IN_FLIGHT; i++) 
         {
             CreateStagingBuffer(ref func, ref data, bufferSize, 
             VkBufferUsageFlagBits.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
             VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
-            VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,ref data.Info.UniformBuffers[i],ref data.Info.UniformBuffersMemory[i]);
+            VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            ref data.Info.UniformBuffers[i],ref data.Info.UniformBuffersMemory[i]);
 
             void* ptr = null;
             func.vkMapMemory(data.Handles.Device,data.Info.UniformBuffersMemory[i], 0, bufferSize, 0, &ptr ).Check("Map Memeory Unifommr pb");
-            data.Info.UniformBuffersMapped[i] = (nint)ptr;
-
+            Guard.ThrowWhenConditionIsTrue( ptr == null);
+            data.Info.UboMapped[i] = ptr;
+        //    UpdateUniformBuffer (func,ref  data );
             Log.Info($"-[{i}] Create Uniform Buffer : {data.Info.UniformBuffers[i]} Mem {data.Info.UniformBuffersMemory[i]}");
+           
         }   
+       
     }
 
     private unsafe static void DisposeUniformBuffers(in GraphicDeviceFunctions  func, ref GraphicDeviceData data ) 
@@ -1627,11 +1671,12 @@ public static class GraphicDeviceImplement
                 Log.Info($"-[{i}] Destroy Uniform Buffer Memory : {data.Info.UniformBuffersMemory[i]}");
                 func.vkFreeMemory(data.Handles.Device, data.Info.UniformBuffersMemory[i], null);
             } 
-            if ( data.Info.UniformBuffersMapped != null)
+            if ( data.Info.UboMapped != null)
             {
-                // Marshal.FreeHGlobal( data.Info.UniformBuffersMapped[i]);
-                data.Info.UniformBuffersMapped[i] = nint.Zero;
-                Log.Info($"-[{i}] Destroy Uniform Buffer Memory Mapped: {data.Info.UniformBuffersMapped[i]}");
+                // func.vkUnmapMemory(data.Handles.Device, data.Info.UboMapped[i]);
+                
+                Log.Info($"-[{i}] Destroy Uniform Buffer Memory Mapped: { new IntPtr(data.Info.UboMapped[i]) }");
+                data.Info.UboMapped[i] = null!;
             }
             
         }
@@ -1639,12 +1684,11 @@ public static class GraphicDeviceImplement
 
     public unsafe static void UpdateUniformBuffer(in GraphicDeviceFunctions  func,ref GraphicDeviceData data )
     {
-        int size = sizeof(float) * 16 * 3 ;
+        ulong size =data.Info.UboSize ;
 
-        void* valuePtr = Unsafe.AsPointer(ref data.Info.UniformBufferArray[0]);
-     
-        Unsafe.CopyBlock(data.Info.UniformBuffersMapped[CurrentFrame].ToPointer() , valuePtr,(uint)size);
-
+        fixed( void* local  = &data.Info.UniformBufferArray[0] ){
+            Unsafe.CopyBlock( data.Info.UboMapped[CurrentFrame] , local ,(uint) size);
+        }
     }
 
     #endregion
@@ -1674,25 +1718,7 @@ public static class GraphicDeviceImplement
         Log.Info($"Create Texture sampler {data.Info.TextureSampler}");
     }
 
-    private unsafe static void CreateTextureImageView(ref GraphicDeviceFunctions  func, ref GraphicDeviceData data)
-    {
-        VkImageViewCreateInfo viewInfo = default;
-        viewInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        viewInfo.image = data.Info.TextureImage;
-        viewInfo.viewType = VkImageViewType. VK_IMAGE_VIEW_TYPE_2D;
-        viewInfo.format = VkFormat. VK_FORMAT_R8G8B8A8_SRGB;
-        viewInfo.subresourceRange.aspectMask =  (uint)VkImageAspectFlagBits. VK_IMAGE_ASPECT_COLOR_BIT;
-        viewInfo.subresourceRange.baseMipLevel = 0;
-        viewInfo.subresourceRange.levelCount = 1;
-        viewInfo.subresourceRange.baseArrayLayer = 0;
-        viewInfo.subresourceRange.layerCount = 1;
-
-        fixed (VkImageView* imageView = &data.Info.TextureImageView )
-        {
-            func.vkCreateImageView(data.Handles.Device, &viewInfo, null, imageView).Check("failed to create image view!");
-        }
-        Log.Info($"Create Texture Image View {data.Info.TextureImageView}");
-    }
+   
 
     private unsafe static void DisposeTextureSampler(in GraphicDeviceFunctions  func, ref GraphicDeviceData data)
     {
@@ -1701,11 +1727,7 @@ public static class GraphicDeviceImplement
             Log.Info($"Destroy Texture sampler {data.Info.TextureSampler}");
             func.vkDestroySampler(data.Handles.Device,data.Info.TextureSampler, null);
         }
-        if( !data.Info.TextureImageView.IsNull)
-        {
-            Log.Info($"Destroy Texture Image View {data.Info.TextureImageView}");
-            func.vkDestroyImageView(data.Handles.Device, data.Info.TextureImageView, null);
-        }
+      
     }
 
     #endregion      

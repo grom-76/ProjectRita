@@ -131,7 +131,9 @@ public struct GraphicDeviceInfo : IEquatable<GraphicDeviceInfo>
     public VkDeviceMemory IndicesBufferMemory = VkDeviceMemory.Null;
     public VkBuffer[] UniformBuffers = null!;
     public VkDeviceMemory[] UniformBuffersMemory = null!;
-    public nint[] UniformBuffersMapped = null!;
+    // public nint[] UniformBuffersMapped = null!;
+    public unsafe void*[] UboMapped = null!;
+    public ulong UboSize = 0;
     public VkImage TextureImage = VkImage.Null;
     public VkDeviceMemory TextureImageMemory = VkDeviceMemory.Null;
     public VkImageView TextureImageView = VkImageView.Null; //25 sampler
@@ -159,14 +161,15 @@ public struct GraphicDeviceInfo : IEquatable<GraphicDeviceInfo>
         PhysicalDeviceProperties.limits = new();
     }
 
-    public void Release()
+    public unsafe void Release()
     {
        Vertices = null!;
 
         UniformBufferArray = null!;
         UniformBuffers = null!;
         UniformBuffersMemory= null!;
-        UniformBuffersMapped = null!;
+        // UniformBuffersMapped = null!;
+        UboMapped = null!;
         DeviceExtensions = null!;
         Formats= null!;
         PresentModes = null!;

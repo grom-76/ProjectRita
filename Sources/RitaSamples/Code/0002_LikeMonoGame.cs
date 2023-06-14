@@ -51,9 +51,10 @@ public static class Sample_0002
             RenderConfig.VertexShaderFileNameSPV = path   + "shader_depth_vert.spv";
             RenderConfig.TextureName = path+"wood.png";
             RenderConfig.ubo.Model = RitaEngine.Base.Math.Matrix.Identite;
-            RenderConfig.ubo.Projection = RitaEngine.Base.Math.Matrix.Perspective( 45.0f,1280,720,0.1f,100.0f);
-            RenderConfig.ubo.Projection[1,1] *= -1;
-            RenderConfig.ubo.View = RitaEngine.Base.Math.Matrix.LookAt( new(2.0f,2.0f,2.0f), new(0.0f,0.0f,0.0f), new(0.0f,0.0f,1.0f));
+            RenderConfig.ubo.View =  RitaEngine.Base.Math.Matrix.Identite;//RitaEngine.Base.Math.Matrix.LookAt( new(2.0f,2.0f,2.0f), new(0.0f,0.0f,0.0f), new(0.0f,0.0f,1.0f));
+            RenderConfig.ubo.Projection =RitaEngine.Base.Math.Matrix.Identite; //RitaEngine.Base.Math.Matrix.Perspective( 45.0f,1280,720,0.1f,100.0f);
+            // RenderConfig.ubo.Projection[1,1] *= -1;
+            
         
            GraphicDevice.BuildRender( RenderConfig);
         }
