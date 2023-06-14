@@ -27,7 +27,7 @@ public static class Sample_0002
         Vector3 eye =new(0.0f,0.0f,5.0f);
         Vector3 target =new(0.0f,0.0f,-1.0f);
         Vector3 up =new(0.0f,1.0f,0.0f);
-        float fovDegree = 45.0f;
+        
         public MyGame()
         {
             RitaEngine.Base.Log.Config(Log.Display.OnConsole);

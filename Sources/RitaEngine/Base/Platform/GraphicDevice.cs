@@ -521,6 +521,18 @@ public static class GraphicDeviceImplement
         }
     }
 
+    struct QueueFamilyIndices 
+    {
+        public uint? graphicsFamily = null!;
+        public uint? presentFamily = null!;
+
+        public QueueFamilyIndices() { }
+
+        public bool IsComplete() => graphicsFamily.HasValue && presentFamily.HasValue;
+    }
+
+
+
     private unsafe static (uint graphicsFamily, uint presentFamily) FindQueueFamilies(ref GraphicDeviceFunctions func,VkPhysicalDevice device, VkSurfaceKHR surface)
     {
         uint queueFamilyPropertyCount = 0;
@@ -531,37 +543,32 @@ public static class GraphicDeviceImplement
         fixed (VkQueueFamilyProperties* queueFamilyPropertiesPtr = queueFamilyProperties){
             func.vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyPropertyCount, queueFamilyPropertiesPtr);
         }
-
-        uint graphicsFamily = VK.VK_QUEUE_FAMILY_IGNORED;
-        uint presentFamily = VK.VK_QUEUE_FAMILY_IGNORED;
-        uint i = 0;
-
-        foreach (VkQueueFamilyProperties queueFamily in queueFamilyProperties)
+        QueueFamilyIndices indices =default;
+        
+        for( uint i = 0 ; i <queueFamilyProperties.Length ; i++ )
         {
             
-            if ((queueFamily.queueFlags & VkQueueFlagBits.VK_QUEUE_GRAPHICS_BIT) != 0)
+            if ( (queueFamilyProperties[(int)i].queueFlags & VkQueueFlagBits.VK_QUEUE_GRAPHICS_BIT) != 0)
             {
-                graphicsFamily = i;
+                indices.graphicsFamily = i;
             }
             uint presentSupport =0;
             //Querying for WSI Support
             func.vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+            
             if (presentSupport==VK.VK_TRUE)
             {
-                presentFamily = i;
+                indices.presentFamily = i;
             }
-            Log.Info($" Flag : {  queueFamily.queueFlags  }  count = {queueFamily.queueCount }  granularity [{queueFamily.minImageTransferGranularity.width};{queueFamily.minImageTransferGranularity.height} ]  Present Support count = {presentSupport } "); 
-            if (graphicsFamily != VK.VK_QUEUE_FAMILY_IGNORED
-                && presentFamily != VK.VK_QUEUE_FAMILY_IGNORED)
-            {
-                break;
-            }
-            i++;
+            
+            if (indices.IsComplete())  {  break; }
+            
         }
         #if WIN64
         // vkGetPhysicalDeviceWin32PresentationSupportKHR
         #endif
-        return (graphicsFamily, presentFamily);
+
+        return ((uint)indices.graphicsFamily! , (uint)indices.presentFamily! );
         
     }
 
