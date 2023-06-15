@@ -54,10 +54,8 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         _functions.Release();
     }
 
-    public void Pause()
-    {
-        GraphicDeviceImplement.Pause( _functions , ref _data);
-    }
+    public void Pause() =>  GraphicDeviceImplement.Pause( _functions , ref _data);
+    
 
     public void BuildRender(in GraphicRenderConfig config)
     {
@@ -67,7 +65,8 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
     private static void TransfertToRender(in GraphicRenderConfig pipeline, in GraphicDeviceFunctions functions, ref GraphicDeviceData data)
     {
-        data.Info.UniformBufferArray = pipeline.ubo.ToArray; 
+        pipeline.Camera.BuildCamera();
+        data.Info.UniformBufferArray =  pipeline.Camera.ToArray; 
         data.Info.RenderAreaOffset.x =0;
         data.Info.RenderAreaOffset.y =0;       
         data.Info.ClearColor = new(ColorHelper.ToRGBA( (uint)pipeline.BackColorARGB),1.0f,0);
@@ -101,10 +100,13 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
     public void UpdateRender(in GraphicRenderConfig config)
     {
-        _data.Info.UniformBufferArray = config.ubo.ToArray;
+        
+        _data.Info.UniformBufferArray = config.Camera.ToArray;
         // TransfertToRender(in config, in _functions , ref _data);
         // GraphicDeviceImplement.UpdateUniformBuffer(_functions,ref _data);
     }
+
+
     /// <summary>
     /// Don't forget to Do Update Before Draw 
     /// </summary>

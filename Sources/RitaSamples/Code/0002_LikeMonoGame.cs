@@ -24,9 +24,7 @@ public static class Sample_0002
         string path = @"C:\Users\Administrator\Documents\ProjectRita\Assets\";
         RitaEngine.Base.Audio.PlayerSound2D snd = new();
         Vector3 scale =new(1.0f);
-        Vector3 eye =new(0.0f,0.0f,5.0f);
-        Vector3 target =new(0.0f,0.0f,-1.0f);
-        Vector3 up =new(0.0f,1.0f,0.0f);
+     
         
         public MyGame()
         {
@@ -57,11 +55,9 @@ public static class Sample_0002
             RenderConfig.FragmentShaderFileNameSPV = path + "shader_depth_frag.spv";
             RenderConfig.VertexShaderFileNameSPV = path   + "shader_depth_vert.spv";
             RenderConfig.TextureName = path+"wood.png";
-            RenderConfig.ubo.Model =  RitaEngine.Base.Math.Matrix.Identity;
-            RenderConfig.ubo.View =  Matrix.LookAtTo(eye,target,up);// Matrix.LookAt( eye,  target ,  up ); 
-            RenderConfig.ubo.Projection = Matrix.PerspectiveFOV(45.0f,1280.0f,720.0f,0.1f,100.0f ) ; //Matrix.PerspectiveFov(Helper.ToRadians( fovDegree) ,1.0f,0.1f,100.0f )  ;
-            // RenderConfig.ubo.Projection[1,1] *= -1;
-    
+            RenderConfig.Camera.FieldOfViewInDegree = 45.0f;
+            RenderConfig.Camera.Eye = new( 0.0f,2.0f,5.0f);
+
            GraphicDevice.BuildRender( RenderConfig);
         }
 
@@ -100,7 +96,7 @@ public static class Sample_0002
         protected override void UpdatePhysics()
         {
            
-            RenderConfig.ubo.Model= RitaEngine.Base.Math.Matrix.Scaling(scale);
+            RenderConfig.Camera.ScalingWorld( scale);
          
             GraphicDevice.UpdateRender(RenderConfig);
         }

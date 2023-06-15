@@ -3,6 +3,7 @@ namespace RitaEngine.Base.Platform.Config; //https://github.com/Syncaidius/Molte
 using System.Collections.Generic;
 using RitaEngine.Base.Math.Color;
 using RitaEngine.Base.Math.Vertex;
+using RitaEngine.Base.Graphic;
 using RitaEngine.Base.Platform.API.Vulkan;
 
 /// <summary>
@@ -34,10 +35,12 @@ public sealed class GraphicRenderConfig
     };
     public short[] Indices = new short[] { 0, 1, 2, 2, 3, 0};
 
-    public Uniform_MVP ubo = new();
+   
     public int VerticeSize =0;// = Vertices.Length * Vertices.Size ;
     public bool IsStaging = true;
     public string TextureName ="";
+
+    public Camera Camera = new();
 
     public GraphicRenderConfig() {}
 

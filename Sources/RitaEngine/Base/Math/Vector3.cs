@@ -63,26 +63,32 @@ public struct Vector3 : IEquatable<Vector3>
 
 #region OPERATION BINAIRE
 
-    public static Vector3 operator *(Vector3 left, Vector3 right)
-        => new(left.X * right.X, left.Y * right.Y, left.Z* right.Z);
+    
 
-    public static void MultiplyVec4ByVec4(ref Vector3 result, ref Vector3 left, ref Vector3 right)
+    public static void Multiply(ref Vector3 result, ref Vector3 left, ref Vector3 right)
     => ( result.X,result.Y,result.Z )=(left.X * right.X, left.Y * right.Y, left.Z* right.Z);
+    
+    public static void Multiply( ref Vector3 result, ref Vector3 value , float scalar)
+        => (result.X, result.Y, result.Z) = (value.X*scalar, value.Y*scalar, value.Z*scalar);
 
     public static Vector3 operator *(float scale, Vector3 value)
         => new(value.X * scale, value.Y * scale, value.Z *scale);
 
     public static Vector3 operator *(Vector3 value, float scale)
         => new(value.X * scale, value.Y * scale, value.Z *scale);
+    
+    public static Vector3 operator *(Vector3 left, Vector3 right)
+        => new(left.X * right.X, left.Y * right.Y, left.Z* right.Z);
 
-    public static void MultiplyVector3ByScalar( ref Vector3 result, ref Vector3 value , float scalar)
-        => (result.X, result.Y, result.Z) = (value.X*scalar, value.Y*scalar, value.Z*scalar);
-
+    
+    public static void Add(ref Vector3 result, ref Vector3 left, ref Vector3 right)
+        => ( result.X,result.Y,result.Z)=(left.X + right.X, left.Y + right.Y, left.Z + right.Z);
+    
+    public static void Add(ref Vector3 result, ref Vector3 left, float scalar)
+        => ( result.X,result.Y,result.Z)=(left.X + scalar, left.Y + scalar, left.Z + scalar);
+    
     public static Vector3 operator +(Vector3 left, Vector3 right)
         => new(left.X + right.X, left.Y + right.Y , left.Z+right.Z);
-
-    public static void AddVec4WithVec4(ref Vector3 result, ref Vector3 left, ref Vector3 right)
-        => ( result.X,result.Y,result.Z)=(left.X + right.X, left.Y + right.Y, left.Z + right.Z);
 
     public static Vector3 operator +(Vector3 value, float scalar)
         => new(value.X + scalar, value.Y + scalar , value.Z + scalar) ;
@@ -90,8 +96,17 @@ public struct Vector3 : IEquatable<Vector3>
     public static Vector3 operator +(float scalar, Vector3 value)
         => new(scalar + value.X, scalar + value.Y, scalar + value.Z);
 
+     public static void Divide(ref Vector3 result, ref Vector3 left, ref Vector3 right)
+        => ( result.X,result.Y,result.Z)=(left.X/ right.X, left.Y / right.Y, left.Z / right.Z);
+    
+    public static void Divide(ref Vector3 result, ref Vector3 left, float scalar)
+        => ( result.X,result.Y,result.Z)=(left.X / scalar, left.Y / scalar, left.Z / scalar);
+
     public static Vector3 operator /(Vector3 value, float scale)
         => new( value.X/scale , value.Y/ scale , value.Z/scale  );
+    
+    public static Vector3 operator /(Vector3 left,Vector3 right)
+        => new( left.X/ right.X , left.Y / right.Y , left.Z / right.Z  );
 
     public static Vector3 operator -(Vector3 value, float scalar)
         => new(value.X - scalar, value.Y - scalar, value.Z - scalar);
@@ -104,9 +119,7 @@ public struct Vector3 : IEquatable<Vector3>
 
     public static Vector3 operator - (Vector3 value)
     {
-        value.X = -value.X;
-        value.Y = - value.Y;
-        value.Z = - value.Z;
+        value.Negate();
         return value;
     }
 #endregion
@@ -200,8 +213,10 @@ public struct Vector3 : IEquatable<Vector3>
     public Vector3(float scalar)
         =>(X, Y, Z) = ( scalar,scalar,scalar);
 
-    public Vector3( Vector3 vec4)
-        => (X, Y, Z) = ( vec4.X,vec4.Y,vec4.Z);
+    public Vector3( Vector3 vec3)
+        => (X, Y, Z) = ( vec3.X,vec3.Y,vec3.Z);
+    
+    
     /// <summary>
     /// Normalize un vecteur
     /// </summary>
@@ -236,7 +251,7 @@ public struct Vector3 : IEquatable<Vector3>
     /// retourn Vector3 sous forme de tableu de reel float[4] sans utiliser new
     /// </summary>
     /// <returns></returns>
-    public float[] ToArrayStaticnew()
+    public float[] ToArrayStackAlloc()
     {
         float[] r ={ X, Y, Z }; 
         return r;
