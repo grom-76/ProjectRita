@@ -21,7 +21,7 @@ public static class Sample_0002
 
     public class MyGame : RitaEngine.Advanced.RitaEngineMain
     {
-        string path = @"C:\Users\Administrator\Documents\ProjectRita\Assets\";
+        string path = @"C:\Users\Administrator\Documents\Repos\ProjectRita\Assets\";
         RitaEngine.Base.Audio.PlayerSound2D snd = new();
         Vector3 scale =new(1.0f);
      

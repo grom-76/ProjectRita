@@ -58,7 +58,7 @@ public static class PlatformHelper
 	public unsafe static int GET_X_LPARAM(nint lp) => (int)(short)LOWORD(lp);
 	public unsafe static int GET_Y_LPARAM(nint lp) => (int)(short)HIWORD(lp)   ;
     public static int MakeLong (short lowPart, short highPart) => (int)(((ushort)lowPart) | (uint)(highPart << 16));
-
+    public static int MakeWord (short lowPart, short highPart) => (int)(((ushort)lowPart) | (uint)(highPart << 16));
 
     public static void Init( )
     {   

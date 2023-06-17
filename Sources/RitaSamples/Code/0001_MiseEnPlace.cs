@@ -12,7 +12,7 @@ public static class Sample_0001
     public static void Run()
     {   
         RitaEngine.Base.Log.Config(Log.Display.OnConsole);
-        string path = @"C:\Users\Administrator\Documents\ProjectRita\Assets\";
+        string path = @"C:\Users\Administrator\Documents\Repos\ProjectRita\Assets\";
 
         //ALL CODE TO CREATE INITIALIZE PLATFORM SYSTEM
         RitaEngine.Base.Platform.Clock clock = new();
