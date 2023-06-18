@@ -15,9 +15,9 @@ public struct Camera
     /// Called too Position
     /// </summary>
     /// <returns></returns>
-    public Vector3 Eye =new(0.0f,0.0f,5.0f);
-    public Vector3 Target =new(0.0f,0.0f,0.0f);
-    public Vector3 Up =new(0.0f,1.0f,0.0f);
+    public Vector3 Eye =new(0.0f,0.0f,25.0f);
+    public Vector3 Target =new(0.10f,0.10f,0.10f);
+    public Vector3 Up =new(0.0f,1.0f,1.0f);
     public float FieldOfViewInDegree = 45.0f;
 
     
@@ -31,9 +31,9 @@ public struct Camera
     public void BuildCamera( )
     {
         Model =  RitaEngine.Base.Math.Matrix.Identity;
-        View =  Matrix.LookAtTo(Eye,Target,Up); //Matrix.LookAt( Eye,  Target ,  Up );
-        Projection =   Matrix.PerspectiveFOV(45.0f,1280.0f,720.0f,0.1f,100.0f ) ; //Matrix.PerspectiveFov(Helper.ToRadians( 90.0f ) ,1.0f,0.0f,1000.0f )  ; 
-        Projection[1,1] *= -1;
+        View =  Matrix.LookAt( Eye,  Target ,  Up ); //Matrix.LookAtTo(Eye,Target,Up);
+        Projection = Matrix.PerspectiveFov(Helper.ToRadians( FieldOfViewInDegree) ,16.0f/9.0f,1.0f,1000.0f )  ;   //Matrix.PerspectiveFOV(FieldOfViewInDegree,1280.0f,720.0f,0.1f,1000.0f ) ; 
+        // Projection[1,1] *= -1;
     }
 
     public void ScalingWorld( Vector3 scale)

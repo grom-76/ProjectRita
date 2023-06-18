@@ -871,7 +871,7 @@ public static class GraphicDeviceImplement
         colorAttachment.initialLayout = VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED;
         colorAttachment.finalLayout = VkImageLayout.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
         colorAttachment.flags =0;
-        colorAttachment.finalLayout = VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED;
+        // colorAttachment.finalLayout = VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED;
 
         //ONLY IF DEPTH RESOURCE
         VkAttachmentDescription depthAttachment =new();
@@ -882,7 +882,7 @@ public static class GraphicDeviceImplement
         depthAttachment.stencilLoadOp = VkAttachmentLoadOp.VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         depthAttachment.stencilStoreOp =VkAttachmentStoreOp. VK_ATTACHMENT_STORE_OP_DONT_CARE;
         depthAttachment.initialLayout = VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED;
-        depthAttachment.finalLayout = VkImageLayout.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        // depthAttachment.finalLayout = VkImageLayout.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
         depthAttachment.flags =0;
         depthAttachment.finalLayout = VkImageLayout.VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         
@@ -903,11 +903,11 @@ public static class GraphicDeviceImplement
         subpass.colorAttachmentCount = 1;
         subpass.pColorAttachments = &colorAttachmentRef;
         subpass.pDepthStencilAttachment =&depthAttachmentRef;
-        // subpass.flags =0;
-        // subpass.inputAttachmentCount=0;
-        // subpass.pInputAttachments = null;
-        // subpass.pPreserveAttachments = null;
-        // subpass.preserveAttachmentCount=0;
+        subpass.flags =0;
+        subpass.inputAttachmentCount=0;
+        subpass.pInputAttachments = null;
+        subpass.pPreserveAttachments = null;
+        subpass.preserveAttachmentCount=0;
 
         VkSubpassDependency dependency =new();
         dependency.srcSubpass = VK.VK_SUBPASS_EXTERNAL;
@@ -2230,8 +2230,8 @@ public static class GraphicDeviceImplement
         
         #region DEPTh & STENCIL
            //not used 
-        // VkPipelineTessellationStateCreateInfo tessellationStateCreateInfo = new();
-        // tessellationStateCreateInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
+        VkPipelineTessellationStateCreateInfo tessellationStateCreateInfo = new();
+        tessellationStateCreateInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
 
         VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo = new();
         depthStencilStateCreateInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
@@ -2276,7 +2276,7 @@ public static class GraphicDeviceImplement
         pipelineInfo.pRasterizationState = &rasterizer;
         pipelineInfo.pMultisampleState = &multisampling;
         pipelineInfo.layout = data.Handles.PipelineLayout;
-        // pipelineInfo.pTessellationState = &tessellationStateCreateInfo;
+        pipelineInfo.pTessellationState = &tessellationStateCreateInfo;
         pipelineInfo.pDepthStencilState = &depthStencilStateCreateInfo;
         pipelineInfo.pDynamicState = &dynamicStateCreateInfo;
         pipelineInfo.pNext = null;
@@ -2317,8 +2317,11 @@ public static class GraphicDeviceImplement
             renderPassInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO; 
             renderPassInfo.renderPass = data.Handles.RenderPass;
             renderPassInfo.framebuffer = data.Handles.Framebuffers[imageIndex];
-            renderPassInfo.clearValueCount = 2;
-            renderPassInfo.pClearValues = clearValues;
+            renderPassInfo.clearValueCount = 1;
+            // renderPassInfo.pClearValues = clearValues;
+            fixed(  VkClearValue* clearValue = &data.Info.ClearColor){
+                 renderPassInfo.pClearValues = clearValue;
+            }
             renderPassInfo.pNext = null;
             renderPassInfo.renderArea =data.Info.RenderArea;
             
