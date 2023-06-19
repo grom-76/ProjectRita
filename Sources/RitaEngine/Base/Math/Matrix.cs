@@ -2012,17 +2012,30 @@ using static RitaEngine.Base.Math.Helper;
             var xScale = yScale / aspectRatio;
             var negFarRange = float.IsPositiveInfinity(farPlaneDistance) ? -1.0f : farPlaneDistance / (nearPlaneDistance - farPlaneDistance);
 
-            result.M11 = xScale;
-            result.M12 = result.M13 = result.M14 = 0.0f;
-            result.M22 = yScale;
-            result.M21 = result.M23 = result.M24 = 0.0f;
-            result.M31 = result.M32 = 0.0f;            
-            result.M33 = negFarRange;
-            result.M34 = -1.0f;
-            result.M41 = result.M42 = result.M44 = 0.0f;
-            result.M43 = nearPlaneDistance * negFarRange;
+            result.M11 = xScale;  result.M12 = 0.0f;    result.M13 = 0.0f;      result.M14 = 0.0f;
+            
+            result.M21 = 0.0f;    result.M22 = yScale;  result.M23 = 0.0f;      result.M24 = 0.0f;
+            
+            result.M31 = 0.0f;    result.M32 = 0.0f;    result.M33 = negFarRange; result.M34 = -1.0f;
+            
+            result.M41 = 0.0f;    result.M42 = 0.0f;    result.M44 = 0.0f;      result.M43 = nearPlaneDistance * negFarRange;
         }
 
+
+        public static void MakeProjectionMatrixWithoutFlipYAxis(float fovy_rads, float s, float near, float far, out Matrix result )
+        {
+            float g = 1.0f / Helper.Tan (fovy_rads * 0.5f);
+            float k = far / (far - near);
+
+          
+            result.M11 = g / s;  result.M12 = 0.0f;    result.M13 = 0.0f;      result.M14 = 0.0f;
+            
+            result.M21 = 0.0f;    result.M22 = g;  result.M23 = 0.0f;      result.M24 = 0.0f;
+            
+            result.M31 = 0.0f;    result.M32 = 0.0f;    result.M33 = k; result.M34 = -near * k;
+            
+            result.M41 = 0.0f;    result.M42 = 0.0f;    result.M44 = 1.0f;      result.M43 =0.0f;
+        }
         /// <summary>
         /// Creates a left-handed, perspective projection matrix.
         /// </summary>

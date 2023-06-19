@@ -29,6 +29,8 @@ public struct Camera
         Matrix.CreateLookAt( ref Eye ,ref Target, ref Up, out View);
         Matrix.CreatePerspectiveFieldOfView( Helper.ToRadians( FieldOfViewInDegree) ,(1280.0f/720.0f), 0.1f,100.0f,out Projection );
         Projection.M22 *= -1;
+        //https://computergraphics.stackexchange.com/questions/12448/vulkan-perspective-matrix-vs-opengl-perspective-matrix
+        // Matrix.MakeProjectionMatrixWithoutFlipYAxis( Helper.ToRadians( FieldOfViewInDegree) ,(1280.0f/720.0f), 0.1f,100.0f,out Projection );
     }
 
     public void ScalingWorld( Vector3 scale)
