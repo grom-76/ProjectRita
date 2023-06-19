@@ -1,6 +1,7 @@
 namespace RitaEngine.Base.Math;
 
 using System.Globalization;
+using RitaEngine.Base.Debug;
 using static RitaEngine.Base.Math.Helper;
 
  public struct Matrix : IEquatable<Matrix>, IFormattable
@@ -1977,188 +1978,49 @@ using static RitaEngine.Base.Math.Helper;
             result.M44 = 1.0f;
         }
 
-        /// <summary>
-        /// Creates a left-handed spherical billboard that rotates around a specified object position.
-        /// </summary>
-        /// <param name="objectPosition">The position of the object around which the billboard will rotate.</param>
-        /// <param name="cameraPosition">The position of the camera.</param>
-        /// <param name="cameraUpFloat">The up vector of the camera.</param>
-        /// <param name="cameraForwardFloat">The forward vector of the camera.</param>
-        /// <returns>The created billboard matrix.</returns>
-        public static Matrix Billboard(Vector3 objectPosition, Vector3 cameraPosition, Vector3 cameraUpFloat, Vector3 cameraForwardFloat)
+
+        public static void CreateLookAt(ref Vector3 cameraPosition, ref Vector3 cameraTarget, ref Vector3 cameraUpVector, out Matrix result)
         {
-            Billboard(ref objectPosition, ref cameraPosition, ref cameraUpFloat, ref cameraForwardFloat, out var result);
-            return result;
+            var vector = Vector3.Normalize(cameraPosition - cameraTarget);
+            var vector2 = Vector3.Normalize(Vector3.Cross(ref cameraUpVector,ref vector));
+            var vector3 = Vector3.Cross( ref vector, ref vector2);
+		    result.M11 = vector2.X;
+		    result.M12 = vector3.X;
+		    result.M13 = vector.X;
+		    result.M14 = 0f;
+		    result.M21 = vector2.Y;
+		    result.M22 = vector3.Y;
+		    result.M23 = vector.Y;
+		    result.M24 = 0f;
+		    result.M31 = vector2.Z;
+		    result.M32 = vector3.Z;
+		    result.M33 = vector.Z;
+		    result.M34 = 0f;
+		    result.M41 = -Vector3.Dot(ref vector2, ref  cameraPosition);
+		    result.M42 = -Vector3.Dot(ref vector3, ref  cameraPosition);
+		    result.M43 = -Vector3.Dot(ref vector,  ref cameraPosition);
+		    result.M44 = 1f;
         }
 
-        /// <summary>
-        /// Creates a left-handed, look-at matrix.
-        /// </summary>
-        /// <param name="eye">The position of the viewer's eye.</param>
-        /// <param name="target">The camera look-at target.</param>
-        /// <param name="up">The camera's up vector.</param>
-        /// <param name="result">When the method completes, contains the created look-at matrix.</param>
-        public static void LookAt(ref Vector3 eye, ref Vector3 target, ref Vector3 up, out Matrix result)
+        public static void CreatePerspectiveFieldOfView(float fieldOfView, float aspectRatio, float nearPlaneDistance, float farPlaneDistance, out Matrix result)
         {
-            // Vector3.Subtract(ref target, ref eye, out var zaxis);
-            var zaxis = target - eye ;
-            zaxis.Normalize();
-            var xaxis = Vector3.Cross(ref up, ref zaxis);
-            xaxis.Normalize();
-            var yaxis = Vector3.Cross(ref zaxis, ref xaxis );
+            Guard.Assert((fieldOfView <= 0f) || (fieldOfView >= 3.141593f), "fieldOfView <= 0 or >= PI");
+            Guard.Assert((farPlaneDistance <= 0f), "nearPlaneDistance <= 0");
+            Guard.Assert((nearPlaneDistance >= farPlaneDistance), "nearPlaneDistance >= farPlaneDistance");
+    
+            var yScale = 1.0f / (float)Helper.Tan(fieldOfView * 0.5f);
+            var xScale = yScale / aspectRatio;
+            var negFarRange = float.IsPositiveInfinity(farPlaneDistance) ? -1.0f : farPlaneDistance / (nearPlaneDistance - farPlaneDistance);
 
-            result = Identity;
-            result.M11 = xaxis.X;
-            result.M21 = xaxis.Y;
-            result.M31 = xaxis.Z;
-            result.M12 = yaxis.X;
-            result.M22 = yaxis.Y;
-            result.M32 = yaxis.Z;
-            result.M13 = zaxis.X;
-            result.M23 = zaxis.Y;
-            result.M33 = zaxis.Z;
-
-            result.M41 = Vector3.Dot(ref xaxis, ref eye );
-            result.M42 = Vector3.Dot(ref yaxis, ref eye );
-            result.M43 = Vector3.Dot(ref zaxis, ref eye );
-
-            result.M41 = -result.M41;
-            result.M42 = -result.M42;
-            result.M43 = -result.M43;
-
-
-        //       Vector3 f = Vector3.Normalize( center - eye  );
-        // Vector3 s = Vector3.Normalize( Vector3.Cross(ref f, ref up   ));
-        // Vector3 u = Vector3.Cross( ref s , ref f);
-        // Matrix4 Result = new(1.0f);
-        // Result[0,0] = s.X;
-        // Result[1,0] = s.Y;
-        // Result[2,0] = s.Z;
-        // Result[0,1] = u.X;
-        // Result[1,1] = u.Y;
-        // Result[2,1] = u.Z;
-        // Result[0,2] =-f.X;
-        // Result[1,2] =-f.Y;
-        // Result[2,2] =-f.Z;
-        // Result[3,0] =- Vector3.Dot(ref s,ref eye);
-        // Result[3,1] =- Vector3.Dot(ref u,ref eye);
-        // Result[3,2] =  Vector3.Dot(ref f,ref eye);
-        // return Result;
-        }
-
-        /// <summary>
-        /// Creates a left-handed, look-at matrix.
-        /// </summary>
-        /// <param name="eye">The position of the viewer's eye.</param>
-        /// <param name="target">The camera look-at target.</param>
-        /// <param name="up">The camera's up vector.</param>
-        /// <returns>The created look-at matrix.</returns>
-        public static Matrix LookAt(Vector3 eye, Vector3 target, Vector3 up)
-        {
-            LookAt(ref eye, ref target, ref up, out var result);
-            return result;
-        }
-
-        /// <summary>
-        /// Creates a left-handed, orthographic projection matrix.
-        /// </summary>
-        /// <param name="width">Width of the viewing volume.</param>
-        /// <param name="height">Height of the viewing volume.</param>
-        /// <param name="znear">Minimum z-value of the viewing volume.</param>
-        /// <param name="zfar">Maximum z-value of the viewing volume.</param>
-        /// <param name="result">When the method completes, contains the created projection matrix.</param>
-        public static void Ortho(float width, float height, float znear, float zfar, out Matrix result)
-        {
-            float halfWidth = width * 0.5f;
-            float halfHeight = height * 0.5f;
-            OrthoOffCenter(-halfWidth, halfWidth, -halfHeight, halfHeight, znear, zfar, out result);
-        }
-
-        /// <summary>
-        /// Creates a left-handed, orthographic projection matrix.
-        /// </summary>
-        /// <param name="width">Width of the viewing volume.</param>
-        /// <param name="height">Height of the viewing volume.</param>
-        /// <param name="znear">Minimum z-value of the viewing volume.</param>
-        /// <param name="zfar">Maximum z-value of the viewing volume.</param>
-        /// <returns>The created projection matrix.</returns>
-        public static Matrix Ortho(float width, float height, float znear, float zfar)
-        {
-            Ortho(width, height, znear, zfar, out var result);
-            return result;
-        }
-
-        /// <summary>
-        /// Creates a left-handed, customized orthographic projection matrix.
-        /// </summary>
-        /// <param name="left">Minimum x-value of the viewing volume.</param>
-        /// <param name="right">Maximum x-value of the viewing volume.</param>
-        /// <param name="bottom">Minimum y-value of the viewing volume.</param>
-        /// <param name="top">Maximum y-value of the viewing volume.</param>
-        /// <param name="znear">Minimum z-value of the viewing volume.</param>
-        /// <param name="zfar">Maximum z-value of the viewing volume.</param>
-        /// <param name="result">When the method completes, contains the created projection matrix.</param>
-        public static void OrthoOffCenter(float left, float right, float bottom, float top, float znear, float zfar, out Matrix result)
-        {
-            float zRange = 1.0f / (zfar - znear);
-            result = Identity;
-            result.M11 = 2.0f / (right - left);
-            result.M22 = 2.0f / (top - bottom);
-            result.M33 = zRange;
-            result.M41 = (left + right) / (left - right);
-            result.M42 = (top + bottom) / (bottom - top);
-            result.M43 = -znear * zRange;
-        }
-
-        public static Matrix PerspectiveFOV(float fovdegree,float width,float height,float zNear,float zFar )
-        {
-            if (width <= 0 || height <= 0 || fovdegree <= 0) throw new ArgumentOutOfRangeException("");
-
-            float rad =ToRadians( fovdegree ) ;
-            float h = Cos(  0.5f * rad) / Sin( 0.5f * rad);
-            float w = h *height/ width;
-
-            return new(  w ,    0.0f,   0.0f,                                0.0f,
-                        0.0f,   h,      0.0f,                                0.0f,
-                        0.0f,   0.0f,- (zFar + zNear) / (zFar - zNear) ,    -1.0f,
-                        0.0f,   0.0f,- (2.0f * zFar * zNear) / (zFar - zNear),0.0f        );
-        }
-
-        public static Matrix LookAtTo( Vector3 eye, Vector3 center, Vector3 up)
-        {
-            Vector3 f = Vector3.Normalize( center - eye  );
-            Vector3 s = Vector3.Normalize( Vector3.Cross(ref f, ref up   ));
-            Vector3 u = Vector3.Cross( ref s , ref f);
-            Matrix Result = new(1.0f);
-            Result[0,0] = s.X;
-            Result[1,0] = s.Y;
-            Result[2,0] = s.Z;
-            Result[0,1] = u.X;
-            Result[1,1] = u.Y;
-            Result[2,1] = u.Z;
-            Result[0,2] =-f.X;
-            Result[1,2] =-f.Y;
-            Result[2,2] =-f.Z;
-            Result[3,0] =- Vector3.Dot(ref s,ref eye);
-            Result[3,1] =- Vector3.Dot(ref u,ref eye);
-            Result[3,2] =  Vector3.Dot(ref f,ref eye);
-            return Result;
-        }
-
-        /// <summary>
-        /// Creates a left-handed, customized orthographic projection matrix.
-        /// </summary>
-        /// <param name="left">Minimum x-value of the viewing volume.</param>
-        /// <param name="right">Maximum x-value of the viewing volume.</param>
-        /// <param name="bottom">Minimum y-value of the viewing volume.</param>
-        /// <param name="top">Maximum y-value of the viewing volume.</param>
-        /// <param name="znear">Minimum z-value of the viewing volume.</param>
-        /// <param name="zfar">Maximum z-value of the viewing volume.</param>
-        /// <returns>The created projection matrix.</returns>
-        public static Matrix OrthoOffCenter(float left, float right, float bottom, float top, float znear, float zfar)
-        {
-            OrthoOffCenter(left, right, bottom, top, znear, zfar, out var result);
-            return result;
+            result.M11 = xScale;
+            result.M12 = result.M13 = result.M14 = 0.0f;
+            result.M22 = yScale;
+            result.M21 = result.M23 = result.M24 = 0.0f;
+            result.M31 = result.M32 = 0.0f;            
+            result.M33 = negFarRange;
+            result.M34 = -1.0f;
+            result.M41 = result.M42 = result.M44 = 0.0f;
+            result.M43 = nearPlaneDistance * negFarRange;
         }
 
         /// <summary>

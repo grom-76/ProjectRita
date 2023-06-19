@@ -55,8 +55,8 @@ public static class Sample_0002
             RenderConfig.FragmentShaderFileNameSPV = path + "shader_depth_frag.spv";
             RenderConfig.VertexShaderFileNameSPV = path   + "shader_depth_vert.spv";
             RenderConfig.TextureName = path+"wood.png";
-            RenderConfig.Camera.FieldOfViewInDegree = 45.0f;
-            RenderConfig.Camera.Eye = new( 0.0f,2.0f,5.0f);
+            // RenderConfig.Camera.FieldOfViewInDegree = 45.0f;
+            // RenderConfig.Camera.Eye = new( 0.0f,2.0f,5.0f);
 
            GraphicDevice.BuildRender( RenderConfig);
         }

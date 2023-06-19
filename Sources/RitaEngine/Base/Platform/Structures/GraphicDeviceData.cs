@@ -57,7 +57,8 @@ public struct GraphicDeviceHandles: IEquatable<GraphicDeviceHandles>
     public VkSemaphore[] RenderFinishedSemaphores = null!;//new VkSemaphore[2];
     public VkFence[] InFlightFences =null!;// new VkFence[2];
 
-
+    // public VkPrimitiveTopology DynamicStatee_PolygonTopology = VkPrimitiveTopology.VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    public float DynamicStatee_LineWidth= 1.0f;
     public GraphicDeviceHandles()
     {
 

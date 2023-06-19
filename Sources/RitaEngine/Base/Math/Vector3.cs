@@ -142,19 +142,34 @@ public struct Vector3 : IEquatable<Vector3>
     /// <param name="v1"></param>
     /// <param name="v2"></param>
     /// <returns></returns>
-    public static Vector3 Cross(ref Vector3 v1,ref Vector3 v2)
-        => new( (v1.Y * v2.Z) - (v1.Z * v2.Y),
-                (v1.Z * v2.X) - (v1.X * v2.Z),
-                (v1.X * v2.Y) - (v1.Y * v2.X));
-    /// <summary>
-    /// Produit de 2 vecteur  cross product pour trouver la perpendiculaire a 2 vecteur ( normale)
-    /// </summary>
-    public static void Cross(ref Vector3 result , ref Vector3 v1,ref  Vector3 v2)
-        => ( result.X,result.Y,result.Z ) = (
-            (v1.Y * v2.Z) - (v1.Z * v2.Y),
-            (v1.Z * v2.X) - (v1.X * v2.Z),
-            (v1.X * v2.Y) - (v1.Y * v2.X));
-
+    public static Vector3 Cross(ref Vector3 left,ref Vector3 right) 
+        => new (left.Y * right.Z - left.Z * right.Y, 
+                left.Z * right.X - left.X * right.Z, 
+                left.X * right.Y - left.Y * right.X);
+    
+//code source from :         https://github.com/Philip-Trettner/GlmSharp/blob/master/GlmSharp/GlmSharp/Vec3/vec3.cs
+        /// <summary>
+        /// Calculate the reflection direction for an incident vector (N should be normalized in order to achieve the desired result).
+        /// </summary>
+        public static Vector3 Reflect(ref Vector3 I,ref Vector3 N) => I - 2 * Dot(ref N,ref I) * N;
+        
+        /// <summary>
+        /// Calculate the refraction direction for an incident vector (The input parameters I and N should be normalized in order to achieve the desired result).
+        /// </summary>
+        public static Vector3 Refract(ref Vector3 I,ref Vector3 N, float eta)
+        {
+            var dNI = Dot(ref N,ref I);
+            var k = 1 - eta * eta * (1 - dNI * dNI);
+            if (k < 0) return Zero;
+            return eta * I - (eta * dNI + (float)Helper.Sqrt(k)) * N;
+        }
+        
+        /// <summary>
+        /// Returns a vector pointing in the same direction as another (faceforward orients a vector to point away from a surface as defined by its normal. If dot(Nref, I) is negative faceforward returns N, otherwise it returns -N).
+        /// </summary>
+        public static Vector3 FaceForward(ref Vector3 N,ref Vector3 I,ref Vector3 Nref) => Dot(ref Nref,ref I) < 0 ? N : -N;
+        
+   
     /// <summary>
     /// dot product cosinus de l'angle entre les deux vecteurs
     /// The dot product of two vectors is equal to the scalar product of their lengths times the cosine of the angle between them.
@@ -164,8 +179,8 @@ public struct Vector3 : IEquatable<Vector3>
     /// <param name="v2"></param>
     /// <returns></returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static float Dot(ref Vector3  v1,ref Vector3  v2)
-        => (v1.X * v2.X) + (v1.Y * v2.Y) + (v1.Z * v2.Z);
+    public static float Dot(ref Vector3  left,ref Vector3  right)
+        => (left.X * right.X) + (left.Y * right.Y) + (left.Z * right.Z);
 
     /// <summary>
     /// Distance entre deux vecteur 

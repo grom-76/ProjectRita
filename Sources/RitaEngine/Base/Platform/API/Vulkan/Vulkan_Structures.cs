@@ -1361,7 +1361,7 @@ public unsafe  struct VkBufferImageCopy {
 [StructLayout(LayoutKind.Sequential)]
 public unsafe  struct VkClearDepthStencilValue {
 	public  float  depth;
-	public  UInt32  stencil;
+	public  uint  stencil;
 	public VkClearDepthStencilValue() {depth =1.0f; stencil =0;}
 	public VkClearDepthStencilValue(float pdepth , uint pstencil) {depth =pdepth; stencil = pstencil;}
 	

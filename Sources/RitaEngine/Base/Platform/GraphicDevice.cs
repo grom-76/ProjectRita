@@ -71,7 +71,8 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         data.Info.RenderAreaOffset.x =0;
         data.Info.RenderAreaOffset.y =0;       
         data.Info.ClearColor = new(ColorHelper.ToRGBA( (uint)pipeline.BackColorARGB),1.0f,0);
-        data.Info.ClearColor2 = new(ColorHelper.ToRGBA(0) ,1.0f,0);
+        data.Info.ClearColor2 = new( r:0.0f,g:0.0f,b:0.0f,a:1.0f ,depth:0.0f,stencil:0);
+
         
         data.Info.Indices = pipeline.Indices;
 
@@ -870,8 +871,7 @@ public static class GraphicDeviceImplement
         colorAttachment.stencilStoreOp =VkAttachmentStoreOp. VK_ATTACHMENT_STORE_OP_DONT_CARE;
         colorAttachment.initialLayout = VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED;
         colorAttachment.finalLayout = VkImageLayout.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-        colorAttachment.flags =0;
-        // colorAttachment.finalLayout = VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED;
+        colorAttachment.flags = (uint)VkAttachmentDescriptionFlagBits.VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT;
 
         //ONLY IF DEPTH RESOURCE
         VkAttachmentDescription depthAttachment =new();
@@ -882,9 +882,9 @@ public static class GraphicDeviceImplement
         depthAttachment.stencilLoadOp = VkAttachmentLoadOp.VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         depthAttachment.stencilStoreOp =VkAttachmentStoreOp. VK_ATTACHMENT_STORE_OP_DONT_CARE;
         depthAttachment.initialLayout = VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED;
-        // depthAttachment.finalLayout = VkImageLayout.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-        depthAttachment.flags =0;
         depthAttachment.finalLayout = VkImageLayout.VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        depthAttachment.flags = (uint)VkAttachmentDescriptionFlagBits.VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT;
+
         
 
         // SUBPASS  -> COLOR POST PROCESSING       
@@ -919,13 +919,12 @@ public static class GraphicDeviceImplement
         dependency.dependencyFlags =0;
 
         //RENDER PASS 
-        // VkAttachmentDescription[] attachmentDescriptionArray = new VkAttachmentDescription[] { colorAttachment,depthAttachment};
         VkAttachmentDescription* attachments = stackalloc VkAttachmentDescription[] { colorAttachment, depthAttachment };
 
         VkRenderPassCreateInfo renderPassInfo = new();
         renderPassInfo.sType = VkStructureType. VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        renderPassInfo.attachmentCount = 2 ;//(uint)attachmentDescriptionArray.Length;
-        renderPassInfo.pAttachments = attachments ;//(VkAttachmentDescription*)Unsafe.AsPointer(ref attachmentDescriptionArray[0]);
+        renderPassInfo.attachmentCount = 2 ;
+        renderPassInfo.pAttachments = attachments ;
         renderPassInfo.subpassCount = 1;
         renderPassInfo.pSubpasses = &subpass;
         renderPassInfo.dependencyCount = 1;
@@ -2212,7 +2211,6 @@ public static class GraphicDeviceImplement
         rasterizer.depthBiasClamp =0.0f;
         rasterizer.depthBiasConstantFactor =1.0f;
         rasterizer.depthBiasSlopeFactor =1.0f;
-        rasterizer.flags =0;
         #endregion
 
         #region MULTISAMPLING
@@ -2240,23 +2238,25 @@ public static class GraphicDeviceImplement
         depthStencilStateCreateInfo.depthCompareOp = VkCompareOp.VK_COMPARE_OP_LESS;
         depthStencilStateCreateInfo.depthBoundsTestEnable = VK.VK_FALSE;
         depthStencilStateCreateInfo.stencilTestEnable = VK.VK_FALSE;
+        depthStencilStateCreateInfo.maxDepthBounds = 1.0f;
+        depthStencilStateCreateInfo.minDepthBounds = 0.0f;
         #endregion
         
         #region DYNAMIC STATES
 
-        VkDynamicState* dynamicStates = stackalloc VkDynamicState[2] 
+        VkDynamicState* dynamicStates = stackalloc VkDynamicState[3] 
         {
             VkDynamicState.VK_DYNAMIC_STATE_VIEWPORT,
             VkDynamicState.VK_DYNAMIC_STATE_SCISSOR,
-            //     VkDynamicState.VK_DYNAMIC_STATE_LINE_WIDTH,
-            //     VkDynamicState.VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY,
+            VkDynamicState.VK_DYNAMIC_STATE_LINE_WIDTH,
+            // VkDynamicState.VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY,
             //     VkDynamicState.VK_DYNAMIC_STATE_CULL_MODE,
             //     VkDynamicState.VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT,
         };
         
         VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo =  new();
         dynamicStateCreateInfo.sType = VkStructureType. VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-        dynamicStateCreateInfo.dynamicStateCount = 2;
+        dynamicStateCreateInfo.dynamicStateCount = 3;
         dynamicStateCreateInfo.pDynamicStates = dynamicStates;
         
         #endregion
@@ -2303,7 +2303,7 @@ public static class GraphicDeviceImplement
     {
         func.vkResetCommandBuffer(commandBuffer, (uint)VkCommandBufferResetFlagBits.VK_COMMAND_BUFFER_RESET_RELEASE_NONE);
 
-        VkCommandBufferBeginInfo beginInfo =new();
+        VkCommandBufferBeginInfo beginInfo = default;
         beginInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO; 
         beginInfo.pNext =null;
         beginInfo.flags =(uint)VkCommandBufferUsageFlagBits.VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
@@ -2312,16 +2312,13 @@ public static class GraphicDeviceImplement
         func.vkBeginCommandBuffer(commandBuffer, &beginInfo).Check("Failed to Begin command buffer");
 
             VkClearValue* clearValues = stackalloc VkClearValue[2] {data.Info.ClearColor,data.Info.ClearColor2 };
-            VkRenderPassBeginInfo renderPassInfo = new();
 
+            VkRenderPassBeginInfo renderPassInfo = default;
             renderPassInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO; 
             renderPassInfo.renderPass = data.Handles.RenderPass;
             renderPassInfo.framebuffer = data.Handles.Framebuffers[imageIndex];
-            renderPassInfo.clearValueCount = 1;
-            // renderPassInfo.pClearValues = clearValues;
-            fixed(  VkClearValue* clearValue = &data.Info.ClearColor){
-                 renderPassInfo.pClearValues = clearValue;
-            }
+            renderPassInfo.clearValueCount = 2;
+            renderPassInfo.pClearValues = clearValues;
             renderPassInfo.pNext = null;
             renderPassInfo.renderArea =data.Info.RenderArea;
             
@@ -2329,21 +2326,19 @@ public static class GraphicDeviceImplement
         
                 // USE SHADER 
                 func.vkCmdBindPipeline(commandBuffer, VkPipelineBindPoint.VK_PIPELINE_BIND_POINT_GRAPHICS, data.Handles.Pipeline);
-
-                // SET DYNAMIC STATES
-                fixed(VkViewport* viewport = &data.Info.Viewport )
-                { 
-                    func.vkCmdSetViewport(commandBuffer, 0, 1,viewport);  
-                }
-                fixed( VkRect2D* scissor = &data.Info.Scissor)
-                { 
-                    func.vkCmdSetScissor(commandBuffer, 0, 1, scissor); 
-                }
+                
                 // SEND DATA To SHADER
                 fixed(VkDescriptorSet* desc =  &data.Handles.DescriptorSets[CurrentFrame] )
                 {
                     func.vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint.VK_PIPELINE_BIND_POINT_GRAPHICS, data.Handles.PipelineLayout, 0, 1, desc, 0, null);
                 }
+                
+                // SET DYNAMIC STATES
+                fixed(VkViewport* viewport = &data.Info.Viewport ){ func.vkCmdSetViewport(commandBuffer, 0, 1,viewport); }
+                fixed( VkRect2D* scissor = &data.Info.Scissor) { func.vkCmdSetScissor(commandBuffer, 0, 1, scissor); }
+                func.vkCmdSetLineWidth( commandBuffer,data.Handles.DynamicStatee_LineWidth);
+               
+
                 // BIND VERTEX AND INDICES
                 VkDeviceSize* offsets = stackalloc VkDeviceSize[]{0};
                 VkBuffer* vertexBuffers = stackalloc VkBuffer[] { data.Handles.VertexBuffer};
@@ -2394,7 +2389,7 @@ public static class GraphicDeviceImplement
  
         RecordCommandBuffer(  func,ref data, in  commandBuffer, imageIndex);
 
-        VkSubmitInfo submitInfo = new();
+        VkSubmitInfo submitInfo = default;
         submitInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = waitSemaphores;
@@ -2406,7 +2401,7 @@ public static class GraphicDeviceImplement
         
         func.vkQueueSubmit(data.Handles.GraphicQueue, 1, &submitInfo,  CurrentinFlightFence ).Check("failed to submit draw command buffer!");
         
-        VkPresentInfoKHR presentInfo = new();
+        VkPresentInfoKHR presentInfo =  default;
         presentInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PRESENT_INFO_KHR; 
         presentInfo.waitSemaphoreCount = 1;
         presentInfo.pWaitSemaphores = signalSemaphores;
