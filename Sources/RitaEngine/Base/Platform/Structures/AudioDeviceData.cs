@@ -1,6 +1,7 @@
 namespace RitaEngine.Base.Platform.Structures;
 
 using RitaEngine.Base.Platform.API.DirectX.XAudio;
+using RitaEngine.Base.Platform.Config;
 
 [ StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public struct AudioDeviceData: IEquatable<AudioDeviceData>
@@ -8,20 +9,20 @@ public struct AudioDeviceData: IEquatable<AudioDeviceData>
     public XAUDIO2_PERFORMANCE_DATA Performance;
     public IXAudio2 Instance;
     public IXAudio2MasteringVoice MasterVoice;
-    public nint xaudioModule = nint.Zero;
-    private nint _address = nint.Zero;
     public uint InputChannels = 2;
     public AUDIO_STREAM_CATEGORY Categorie= AUDIO_STREAM_CATEGORY.AudioCategory_GameMedia;
 
-    public AudioDeviceData()  { _address = AddressOfPtrThis( ) ;  }
-    public unsafe nint AddressOfPtrThis( ) { 
-            #pragma warning disable CS8500
-        fixed (void* pointer = &this )  { return((nint) pointer ) ; }  
-        #pragma warning restore
-    }
+    #if WIN64
+    public AudioDeviceBackEnd BackEnd = AudioDeviceBackEnd.Xaudio;
+    #else
+    public AudioDeviceBackEnd BackEnd = AudioDeviceBackEnd.None;
+    #endif
+    
 
+    public AudioDeviceData()  {   }
+  
      #region OVERRIDE    
-    public override string ToString() => string.Format($"Data Input " );
+    public override string ToString() => string.Format($"Audio Device Data" );
     public unsafe override int GetHashCode() => HashCode.Combine( 0);
     public override bool Equals(object? obj) => obj is AudioDeviceData window && this.Equals(window) ;
     public unsafe bool Equals(AudioDeviceData other)=>  false;

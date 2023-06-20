@@ -11,58 +11,63 @@ public static class Sample_0001
     /// </summary>
     public static void Run()
     {   
-        RitaEngine.Base.Log.Config(Log.Display.OnConsole);
-        string path = @"C:\Users\Administrator\Documents\Repos\ProjectRita\Assets\";
+        
+        
 
         //ALL CODE TO CREATE INITIALIZE PLATFORM SYSTEM
+        RitaEngine.Base.PlatformConfig config = new();
+        RitaEngine.Base.Platform.GraphicRenderConfig renderConfig = new();
+        
         RitaEngine.Base.Platform.Clock clock = new();
-        RitaEngine.Base.Platform.Window win = new();
+        RitaEngine.Base.Platform.Window window = new();
         RitaEngine.Base.Platform.Inputs input = new();
         RitaEngine.Base.Platform.AudioDevice audio = new();
         RitaEngine.Base.Platform.GraphicDevice graphic = new();
-        RitaEngine.Base.Platform.Config.GraphicDeviceConfig graphicConfig = new();
-        RitaEngine.Base.Platform.Config.GraphicRenderConfig renderConfig = new();
-        RitaEngine.Base.Platform.Config.WindowConfig windowConfig = new();
-        
+     
+
         RitaEngine.Base.Audio.PlayerSound2D snd = new( );
         try
         {
-            clock.Config.FixedTimeStep = 0.033;
-            clock.Config.LoopMode = RitaEngine.Base.Platform.Config.ClockLoopMode.Default;
-            clock.Init();
+            config.AssetPath( @"C:\Users\Administrator\Documents\Repos\ProjectRita\Assets\" );
+            config.LogConfig(Log.Display.OnConsole);
+            
+            
+            config.Clock_FixedTimeStep = 0.033;
+            config.Clock_LoopMode = RitaEngine.Base.Platform.Config.ClockLoopMode.Default;
+            clock.Init(config);
 
-            windowConfig.SetTitle("My Game");
-            windowConfig.SetResolution( WindowResolution.HD_720p_1920x720);
-            win.Init(windowConfig);
+            config.Game_Title = "My Game";
+            config.Window_Resolution =  WindowResolution.HD_720p_1920x720;
+            window.Init(config);
 
-            input.Config.ShowCursor = true;
-            input.Init( win);
+            config.Input_ShowCursor = true;
+            input.Init(config, window);
 
-            audio.Config.Category = AudioCategory.GameMedia;
-            audio.Config.Channels = AudioChannels.stereo;
-            audio.Init();
+            config.Audio_Category = AudioCategory.GameMedia;
+            config.Audio_Channels = AudioChannels.stereo;
+            audio.Init(config);
 
-            graphicConfig.EnableDebugMode = true;
-            graphic.Init( graphicConfig, win);
+            config.GraphicDevice_EnableDebugMode = true;
+            graphic.Init( config, window);
             // END INITIALIZE SYSTEM
 
             
-            snd.Init( audio, path+  "demo.wav");
+            snd.Init( audio,  "demo.wav");
 
             renderConfig.BackColorARGB = RitaEngine.Base.Math.Color.Palette.Lavender ;
             renderConfig.FragmentEntryPoint ="main";
             renderConfig.VertexEntryPoint ="main";
-            renderConfig.FragmentShaderFileNameSPV = path + "fragment_base.spv";
-            renderConfig.VertexShaderFileNameSPV = path + "vertex_base.spv";
+            renderConfig.FragmentShaderFileNameSPV =  "fragment_base.spv";
+            renderConfig.VertexShaderFileNameSPV = "vertex_base.spv";
             graphic.BuildRender(renderConfig);
             // BEGIN LOOP
-            win.Show();
+            window.Show();
 
-            while(win.ShouldClose())
+            while(window.ShouldClose())
             {
                 if ( input.IsKeyPressed( RitaEngine.Base.Platform.InputKeys.Escape ))
                 {
-                    win.RequestClose();
+                    window.RequestClose();
                 }
 
                 if (input.IsKeyPressed( RitaEngine.Base.Platform.InputKeys.Space ))
@@ -72,7 +77,7 @@ public static class Sample_0001
 
                 graphic.DrawRender();
 
-                win.DispatchPending();
+                window.DispatchPending();
                 input.Update();
                 clock.Update();
             }
@@ -87,9 +92,9 @@ public static class Sample_0001
             graphic.Release();
             audio.Release();
             input.Release();
-            win.Release();
+            window.Release();
             clock.Release();
-            Log.Release();
+            
             // graphicConfig.Dispose();
         }
         

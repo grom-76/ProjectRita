@@ -2,7 +2,6 @@ namespace RitaEngine.Base.Platform ;
 
 using RitaEngine.Base.Platform.API.Window;
 using RitaEngine.Base.Platform.Structures;
-using RitaEngine.Base.Platform.Config;
 using static RitaEngine.Base.MemoryHelper;
 
 [ StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
@@ -10,22 +9,33 @@ public struct Window : IEquatable<Window>
 {
     private WindowData _data = new();
     private WindowFunction _funcs;
-    // public  WindowConfig Config = new();
+  
     
     public Window(){  }
+
     public unsafe void* GetWindowHandle() => _data.Handle ;
     public unsafe void* GetWindowHInstance() => _data.HInstance ;
     public unsafe int GetWindowWidth() => _data.Width ;
     public unsafe int GetWindowheight() => _data.Height ;
     public byte[] GetWindowName() => _data.Title ;
+           
+     // // #define LOBYTE(w)              ((BYTE)((DWORD_PTR)(w) & 0xFF))
+// // #define HIBYTE(w)              ((BYTE)((DWORD_PTR)(w) >> 8))
+// // #define MAKEWORD(low,high)     ((WORD)(((BYTE)((DWORD_PTR)(low) & 0xFF)) | ((WORD)((BYTE)((DWORD_PTR)(high) & 0xFF))) << 8))
+// // #define MAKELONG(low,high)     ((LONG)(((WORD)((DWORD_PTR)(low) & 0xFFFF)) | ((DWORD)((WORD)((DWORD_PTR)(high) & 0xFFFF))) << 16))
+    public unsafe static int LOWORD( nint lParam ) =>  (int)((nint)lParam & 0xFFFF);
+	public unsafe static int HIWORD( nint lParam ) =>  (int)((nint)lParam >> 16);
+	public unsafe static int GET_X_LPARAM(nint lp) => (int)(short)LOWORD(lp);
+	public unsafe static int GET_Y_LPARAM(nint lp) => (int)(short)HIWORD(lp)   ;
+    public static int MakeLong (short lowPart, short highPart) => (int)(((ushort)lowPart) | (uint)(highPart << 16));
+    public static int MakeWord (short lowPart, short highPart) => (int)(((ushort)lowPart) | (uint)(highPart << 16));
 
     public void ChangeTitleBarCaption(string title) 
         => UpdateCaptionTitleBar( ref _data , ref _funcs , title);
 
     private unsafe static void UpdateCaptionTitleBar(ref WindowData data ,ref WindowFunction funcs, string title)
     {
-        var bytes = Encoding.UTF8.GetBytes(title).AsSpan();
-        // byte* title = RitaEngine.Base.MemoryHelper.AsPointer<byte[]>(ref bytes);
+        var bytes = Encoding.UTF8.GetBytes(title).AsSpan();// byte* title = RitaEngine.Base.MemoryHelper.AsPointer<byte[]>(ref bytes);
         int result = funcs.SetWindowTextA(data.Handle , bytes.GetPointer() );
         Log.WarnWhenConditionIsFalse( result !=0 ,$"Change caption title to {title}");
     }
@@ -41,26 +51,26 @@ public struct Window : IEquatable<Window>
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public unsafe void Init(in WindowConfig Config)
+    public unsafe void Init(in PlatformConfig config)
     {
-        _data.User32 =Libraries.Load( Config.System_User32DllName );
-        _data.Kernel = Libraries.Load( Config.System_KernelDllName );
-        _data.Gdi =  Libraries.Load( Config.System_Gdi32DllName );
+        _data.User32 =Libraries.Load( config.LibraryName_Window_User32 );
+        _data.Kernel = Libraries.Load( config.LibraryName_Window_Kernel );
+        _data.Gdi =  Libraries.Load( config.LibraryName_Window_Gdi );
         _funcs = new(Libraries.GetUnsafeSymbol, _data.User32 , _data.Kernel, _data.Gdi);
         _data.WndProc = this.WndProc2;
-        (_data.Width, _data.Height) =  WindowConfig.GetResolution( Config.Rsolution);
+        (_data.Width, _data.Height) =  PlatformConfig.GetResolution( config.Window_Resolution);
         _data.Left = Constants.CW_USEDEFAULT;
         _data.Top = Constants.CW_USEDEFAULT;
         _data.Style= Constants.WS_CAPTION | Constants.WS_SYSMENU | /*Constants.WS_VISIBLE |*/ Constants.WS_THICKFRAME;
         _data.ExStyle = Constants.WS_EX_APPWINDOW | Constants.WS_EX_WINDOWEDGE;
         _data.HInstance = _funcs.GetModuleHandleA(null);// Marshal.GetHINSTANCE(typeof(WindowData).Module).ToPointer(); 
-        _data.Title =Encoding.UTF8.GetBytes(Config.Title);
+        _data.Title =Encoding.UTF8.GetBytes(config.Game_Title);
 
         MonitorsInfo( ref _data , ref _funcs);
         
         AdjustSize(ref _data ,ref _funcs);
         
-        Create(ref _data, ref _funcs , Config);
+        Create(ref _data, ref _funcs );
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -172,7 +182,7 @@ public struct Window : IEquatable<Window>
 		return nint.Zero;
 	}
 
-    private unsafe static int Create(ref WindowData data ,ref WindowFunction funcs,  in Config.WindowConfig config)
+    private unsafe static int Create(ref WindowData data ,ref WindowFunction funcs)
     {
         #if WIN64
 

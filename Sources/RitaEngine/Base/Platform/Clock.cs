@@ -9,7 +9,7 @@ public struct Clock: IEquatable<Clock>
 {
     private ClockData _data;
     private ClockFunctions _funcs;
-    public  ClockConfig Config=new();
+    // public  ClockConfig Config=new();
     private nint _address = nint.Zero;
 
     public Clock()
@@ -23,15 +23,13 @@ public struct Clock: IEquatable<Clock>
         #pragma warning restore
     }
 
-
     // <summary> Universal Time,  Tick & Frequence </summary>
     // https://github.com/Syncaidius/MoltenEngine/blob/master/Molten.Utility/Timing.cs
 
-    public void Init()
+    public void Init( PlatformConfig config)
     {
-        InitClock(ref _data , ref _funcs , in Config);
+        InitClock(ref _data , ref _funcs , in config);
 
-        Config.Dispose();
     }
 
     public void Pause() => Pause(ref _data, ref _funcs);
@@ -55,18 +53,14 @@ public struct Clock: IEquatable<Clock>
     public int GetApproximativFPS() => GetApproximativFPS(ref _data ,ref _funcs);
 
 
-    private unsafe static void InitClock(ref ClockData data , ref ClockFunctions func , in ClockConfig config)
+    private unsafe static void InitClock(ref ClockData data , ref ClockFunctions func , in PlatformConfig config)
     {
-        #if WIN
-        data.FixedTimeStep  = config.FixedTimeStep;
-        data.OneOverFrequency  = 1.0 / GetFrequency() ;
-
-        infos.FixedTimeStep = data.FixedTimeStep;
-        infos.UpdateMethod = config.UpdateMethod.ToString();
-        infos.Frequency = GetFrequency() ;
-      
+        #if WIN64
+        func = new( config.LibraryName_Clock);
+        data.FixedTimeStep  = config.Clock_FixedTimeStep;
+        data.OneOverFrequency  = 1.0 / GetFrequency(ref func) ;
         #endif
-        switch( config.LoopMode)
+        switch( config.Clock_LoopMode)
         {
             case ClockLoopMode.Default :
                 data.LoopMethod  = Update_Default;
@@ -91,8 +85,8 @@ public struct Clock: IEquatable<Clock>
 
     private unsafe static ulong GetTick(ref ClockFunctions func )
     {
-        #if WIN
-        _ = funcs.QueryPerformanceCounter( out UInt64 tick);
+        #if WIN64
+        _ = func.QueryPerformanceCounter( out UInt64 tick);
         return tick;
         #else
         return 0L;
@@ -102,8 +96,8 @@ public struct Clock: IEquatable<Clock>
 
     private unsafe static ulong GetFrequency(ref ClockFunctions func ) 
     {
-        #if WIN
-        _= funcs.QueryPerformanceFrequency( out UInt64 freq);
+        #if WIN64
+        _= func.QueryPerformanceFrequency( out UInt64 freq);
         return freq;
         #else
         return 0L;

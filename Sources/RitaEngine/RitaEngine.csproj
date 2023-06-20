@@ -80,6 +80,7 @@
        <When Condition="$(Compil)=='WEB'">
       <PropertyGroup>
           <DefineConstants>WEB;NOASSETS</DefineConstants>
+          
       </PropertyGroup>
     </When>
   </Choose>

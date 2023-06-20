@@ -1,4 +1,4 @@
-namespace RitaEngine.Base.Platform.Config; //https://github.com/Syncaidius/MoltenEngine/tree/master/Molten.Engine/Settings
+namespace RitaEngine.Base.Platform; //https://github.com/Syncaidius/MoltenEngine/tree/master/Molten.Engine/Settings
 
 using System.Collections.Generic;
 using RitaEngine.Base.Math.Color;

@@ -24,7 +24,7 @@ public unsafe sealed class PlayerSound2D : IDisposable
         Log.Info("Init Source Win32");
             var context = audiodevice.GetData();
             //  DECODE WAV 
-            WaveReader wav = new(filename!);
+            WaveReader wav = new( RitaEngine.Base.Platform.PlatformHelper.AssetsPath + filename!);
             wav.ReadHeader();
             //use own readfile wav ?
             // uint wavSizeInBytes = wav.DataSize;

@@ -28,17 +28,17 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         _data = new();
     }
    
-    public unsafe void Init(in GraphicDeviceConfig config, in Window window )
+    public unsafe void Init(in PlatformConfig config, in Window window )
     {
         TransfertToData(in config,in window ,ref _functions , ref _data);   
         GraphicDeviceImplement.Init(ref _functions , ref _data);
     }
 
-    private static unsafe void TransfertToData(in GraphicDeviceConfig config, in Window window ,ref GraphicDeviceFunctions functions , ref GraphicDeviceData data)
+    private static unsafe void TransfertToData(in PlatformConfig config, in Window window ,ref GraphicDeviceFunctions functions , ref GraphicDeviceData data)
     {
         //check if Exist vulkandllname? 
-        functions.InitLoaderFunctions( config.VulkanDllName);
-        data.Info.EnableDebug = config.EnableDebugMode;
+        functions.InitLoaderFunctions( config.LibraryName_GraphicDevice_Vulkan);
+        data.Info.EnableDebug = config.GraphicDevice_EnableDebugMode;
         data.Info.GameName  = window.GetWindowName();
         data.Info.Handle = window.GetWindowHandle();
         data.Info.HInstance = window.GetWindowHInstance();
@@ -88,12 +88,12 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         }
 
         data.Handles.IndicesSize =(uint) pipeline.Indices.Length;
-        data.Info.TextureName =  pipeline.TextureName;
+        data.Info.TextureName =  RitaEngine.Base.Platform.PlatformHelper.AssetsPath + pipeline.TextureName;
         data.Info.MAX_FRAMES_IN_FLIGHT = pipeline.MAX_FRAMES_IN_FLIGHT;
         data.Info.FragmentEntryPoint = pipeline.FragmentEntryPoint;
         data.Info.VertexEntryPoint = pipeline.VertexEntryPoint;
-        data.Info.FragmentShaderFileNameSPV = pipeline.FragmentShaderFileNameSPV;
-        data.Info.VertexShaderFileNameSPV = pipeline.VertexShaderFileNameSPV;
+        data.Info.FragmentShaderFileNameSPV =RitaEngine.Base.Platform.PlatformHelper.AssetsPath + pipeline.FragmentShaderFileNameSPV;
+        data.Info.VertexShaderFileNameSPV =RitaEngine.Base.Platform.PlatformHelper.AssetsPath + pipeline.VertexShaderFileNameSPV;
 
         data.Info.RenderArea.extent = data.Info.VkSurfaceArea;
         data.Info.RenderArea.offset = data.Info.RenderAreaOffset;

@@ -1,9 +1,7 @@
-
-
 namespace RitaEngine.Advanced;
 
 using RitaEngine.Base;
-using RitaEngine.Base.Platform.Config;
+
 
 [SkipLocalsInit, StructLayout(LayoutKind.Sequential)]
 public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
@@ -14,6 +12,7 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
     /// <summary> Ctor Empty for settings game use each instance </summary>
     public RitaEngineMain()
     {     
+        //GC latency
     }
     
     /// <summary>  Just Run  with try catch  </summary>
@@ -54,39 +53,35 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
     private unsafe void InternalInit()
     {    
         Init();
-        clock.Init();
-        win.Init(WinConfig);
-        graphic.Init(GraphicConfig, win );
-        input.Init( win);
-        audio.Init();
-        
+        clock.Init(Config);
+        window.Init(Config);
+        graphic.Init(Config, window );
+        input.Init( Config, window);
+        audio.Init(Config);  
     }
 
-  
 
     private void InternalLoad()
     {
         Load();   
-      
     }
 
     private void InternalWarmUp()
     {
         WarmUp();
-     
-        win.Show();
+        window.Show();
     }
 
     private void InternalLoop()
     {
-       
-        while(win.ShouldClose())
+
+        while(window.ShouldClose())
         {
           
-            win.DispatchPending();
+            window.DispatchPending();
 
             #if !DEBUG
-            if (!win.IsForeGround())
+            if (!window.IsForeGround())
             {
                 // clock.Pause();
                 // graphic.Pause();
@@ -114,9 +109,11 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
         graphic.Release();
         audio.Release();
         input.Release();
-        win.Release();
+        window.Release();
         clock.Release();
+        Config.Dispose();
         Log.Release();
+
     }
 
     ~RitaEngineMain(){ InternalRelease();}
@@ -124,24 +121,24 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
     
     #region Attributs
     RitaEngine.Base.Platform.Clock clock = new();
-    RitaEngine.Base.Platform.Window win = new();
+    RitaEngine.Base.Platform.Window window = new();
     RitaEngine.Base.Platform.Inputs input = new();
     RitaEngine.Base.Platform.AudioDevice audio = new();
     RitaEngine.Base.Platform.GraphicDevice graphic =new();
-
     private bool _disposed = false ;
 
     #endregion
+    public RitaEngine.Base.PlatformConfig Config = new();
+    public RitaEngine.Base.Platform.GraphicRenderConfig RenderConfig = new();
 
     public ref readonly RitaEngine.Base.Platform.Clock Clock => ref clock;
-    public ref readonly RitaEngine.Base.Platform.Window Window => ref win;
+    public ref readonly RitaEngine.Base.Platform.Window Window => ref window;
     public ref readonly RitaEngine.Base.Platform.Inputs Input => ref input;
     public ref readonly RitaEngine.Base.Platform.AudioDevice AudioDevice => ref  audio;
     public ref RitaEngine.Base.Platform.GraphicDevice GraphicDevice => ref graphic;
     
-    public RitaEngine.Base.Platform.Config.GraphicDeviceConfig GraphicConfig = new();
-    public RitaEngine.Base.Platform.Config.GraphicRenderConfig RenderConfig = new();
-    public RitaEngine.Base.Platform.Config.WindowConfig WinConfig = new();
+   
+    
 
     #region [ Abstract to override ]
 

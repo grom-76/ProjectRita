@@ -19,30 +19,22 @@ public struct Inputs
 {
     private InputData _data ;
     private InputFunctions _funcs ;
-    public  InputsConfig Config = new();
-    private nint _address = nint.Zero;
-    public Inputs()  {  _address = AddressOfPtrThis();  }
-    public unsafe nint AddressOfPtrThis( )
-    { 
-        #pragma warning disable CS8500
-        fixed (void* pointer = &this )  { return((nint) pointer ) ; }  
-        #pragma warning restore
-    }
-
-    public unsafe void Init(in Window win)
+    public Inputs()  {  }
+  
+    public unsafe void Init(PlatformConfig config, in Window win)
     {
         #if WIN64
         _data = new();
-        _data.User32 = Libraries.Load( Config.ModulesUser32);
+        _data.User32 = Libraries.Load( config.LibraryName_Input);
         _data.WindowHandle = win.GetWindowHandle();
         _funcs = new( Libraries.GetUnsafeSymbol , _data.User32);
 
-        KeyMapping(Config.MappingKeysToAzerty,  Config.Langue == "FRA" ?0:1);
+        KeyMapping(config.Input_MappingKeysToAzerty,  config.Input_Langue == "FRA" ?0:1);
 
         #else
 
         #endif
-        Config.Dispose();
+
     }
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Update()=> Update(ref _funcs ,ref _data);

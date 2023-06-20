@@ -12,17 +12,13 @@ public struct ClockData : IEquatable<ClockData>
     public double Elapsed_ms=0.0;
     public double FixedTimeStep =0.0;
 
-    public nint Kernel32 = nint.Zero;
+
     public PFN_Update LoopMethod = null!;
-    private nint _address = nint.Zero;
+
     public bool IsPaused = false;
 
-    public ClockData() {   _address = AddressOfPtrThis( ) ; }
-    public unsafe nint AddressOfPtrThis( ) { 
-            #pragma warning disable CS8500
-        fixed (void* pointer = &this )  { return((nint) pointer ) ; }  
-        #pragma warning restore
-    }
+    public ClockData() {   }
+  
     #region OVERRIDE    
     public override string ToString() => string.Format($"Data Input " );
     public unsafe override int GetHashCode() => HashCode.Combine( 0);

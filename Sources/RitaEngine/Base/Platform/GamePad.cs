@@ -12,18 +12,18 @@ public struct ControllerDevice
     private const int FALSE =0 ;
     private const int TRUE = 1 ;
 
-    public unsafe static void InitControllersXInput(ref  ControllerDeviceData  data  ,ref ControllerDeviceFunction func, in ControllerDeviceConfig config)
+    public unsafe static void InitControllersXInput(ref  ControllerDeviceData  data  ,ref ControllerDeviceFunction func, in PlatformConfig config)
     {
 
         func.XInputEnable(TRUE );
-        if ( config.MaxController <= 0 && config.MaxController > 8 )throw new Exception("Wrong max controller ");
+        if ( config.Controller_MaxController <= 0 && config.Controller_MaxController > 8 )throw new Exception("Wrong max controller ");
 
-        data.AcquireMiliSec = config.AcquireMiliSec;
-        data.States = new ControllerState[config.MaxController];
+        data.AcquireMiliSec = config.Controller_AcquireMiliSec;
+        data.States = new ControllerState[config.Controller_MaxController];
        
-        data.Max_Count = config.MaxController;
+        data.Max_Count = config.Controller_MaxController;
         
-        for (uint i=0; i< config.MaxController; i++ )
+        for (uint i=0; i< config.Controller_MaxController; i++ )
         {
            data.States[i] = new();
 
