@@ -9,7 +9,7 @@ using RitaEngine.Base.Platform.API.Vulkan;
 /// <summary>
 /// RENAME WITH PIPELINE
 /// </summary>
-public sealed class GraphicRenderConfig 
+public sealed class GraphicRenderConfig :IDisposable
 {
     // RenderPass
     public Palette BackColorARGB = Palette.Lavender;
@@ -24,8 +24,6 @@ public sealed class GraphicRenderConfig
     public bool VertexOutsideShader = false;
     public uint AttributeDescription = 2;
 
-    // public Position2f_Color3f[] traingle = new Position2f_Color3f[] { new( 0.5f,-0.5f,1.0f,0.0f,0.0f),new(0.5f,0.5f,0.0f,1.0f,0.0f),new(-0.5f,0.5f,0.0f,0.0f,1.0f) }  ;
-
     public Position3f_Color3f_UV2f[] Vertices = new Position3f_Color3f_UV2f[] 
     {
         new(-0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f),
@@ -37,15 +35,21 @@ public sealed class GraphicRenderConfig
 
    
     public int VerticeSize =0;// = Vertices.Length * Vertices.Size ;
-    public bool IsStaging = true;
-    public string TextureName ="";
+    public string TextureName ="wood.png";
 
     public Camera Camera = new();
 
     public GraphicRenderConfig() {}
 
+    public void Dispose()
+    {
+        Indices = null!;
+        Vertices = null!;
+        GC.SuppressFinalize(this);
+    }
+
     //Pipeline
-// VK_SAMPLE_COUNT_1_BIT
+    // VK_SAMPLE_COUNT_1_BIT
     //Shader
 
     //Vertex

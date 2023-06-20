@@ -94,8 +94,7 @@ public static class Sample_0001
             input.Release();
             window.Release();
             clock.Release();
-            
-            // graphicConfig.Dispose();
+            config.Dispose();
         }
         
     }

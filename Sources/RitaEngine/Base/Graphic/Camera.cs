@@ -1,11 +1,11 @@
-
-
 namespace RitaEngine.Base.Graphic;
 
 
 using RitaEngine.Base.Math;
 
-public struct Camera
+
+
+public struct Camera :IEquatable<Camera>
 {
     Matrix Model = Matrix.Identity;
     Matrix View=Matrix.Identity;
@@ -17,7 +17,7 @@ public struct Camera
     /// <returns></returns>
     public Vector3 Eye =new(2.0f,2.0f,2.0f);
     public Vector3 Target =new(0.00f,0.00f,0.00f);
-    public Vector3 Up =new(0.0f,0.0f,1.0f);
+    public Vector3 Up =new(0.0f,-1.0f,1.0f);
     public float FieldOfViewInDegree = 45.0f;
 
     
@@ -45,5 +45,17 @@ public struct Camera
         Projection[0],Projection[1],Projection[2],Projection[3],Projection[4],Projection[5],Projection[6],Projection[7],Projection[8],Projection[9],Projection[10],Projection[11],Projection[12],Projection[13],Projection[14],Projection[15],
     };
 
+    public void Release()
+    {
+        
+    }
 
+    #region OVERRIDE    
+    public override string ToString() => string.Format($"Camera Manager? " );
+    public override int GetHashCode() => HashCode.Combine(  Eye, Target );
+    public override bool Equals(object? obj) => obj is Camera  camera && this.Equals(camera) ;
+    public bool Equals(Camera other)=>  Eye.Equals(other.Eye) ;
+    public static bool operator ==(Camera  left,Camera right) => left.Equals(right);
+    public static bool operator !=(Camera  left,Camera right) => !left.Equals(right);
+    #endregion
 }
