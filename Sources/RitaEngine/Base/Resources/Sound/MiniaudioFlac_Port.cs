@@ -1,17 +1,10 @@
+namespace RitaEngine.Base.Resources.Sound;
 
-
-
-
-
-
-
-
-namespace RitaEngine.Base.Resources
+/// <summary>
+/// Decoder flac audio decoder 
+/// Source : 
+/// </summary>
+public sealed unsafe partial class FLAC
 {
-    namespace Sound
-    {
-        public static class MiniaudioFlac_Port{}
-
-    }
 
 }

@@ -1,17 +1,7 @@
+namespace RitaEngine.Base.Resources.Sound;
+    
 
-
-
-
-
-
-
-
-namespace RitaEngine.Base.Resources
+public sealed partial class Wav
 {
-    namespace Sound
-    {
-        public static class DRWave_Port{}
-
-    }
 
 }

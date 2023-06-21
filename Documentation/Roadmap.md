@@ -18,7 +18,7 @@ Vulkan => RIGHT HAND -X AND ZERO TO ONE
 see : [https://matthewwellings.com/blog/the-new-vulkan-coordinate-system/]
 
     ```c#
-Suppress this code everywhere
+//Suppress this code everywhere
 
     public unsafe nint AddressOfPtrThis( )
     { 
@@ -26,3 +26,8 @@ Suppress this code everywhere
         fixed (void* pointer = &this )  { return((nint) pointer ) ; }  
         #pragma warning restore
     }
+    ```
+
+Geometric prmitive create cube with widh height (discosultan
+)
+

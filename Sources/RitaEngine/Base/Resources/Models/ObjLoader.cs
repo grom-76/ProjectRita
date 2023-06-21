@@ -11,16 +11,6 @@ namespace RitaEngine.Base.Resources.Models.ObjLoader
         // / et stock le résultat dans la liste materials
         // /  List<Material> materials = new(20);  20 nombre approximatif de materiaux que peut contenir le fichier
         // /  MCJ.Engine.Resources.ObModels.LoadMaterials(ref materials , "mon_fichier.mtl");
-        // / 
-        // / </summary>
-        // / <param name="materials"></param>
-        // / <param name="filename"></param>
-        
-        
-        
-        /// <summary>
-        /// 
-        /// </summary>
         /// <param name="materials"></param>
         /// <param name="filename"></param>
         public static void LoadMaterials(ref List<Material> materials, string filename)
@@ -121,7 +111,7 @@ namespace RitaEngine.Base.Resources.Models.ObjLoader
         /// <param name="basePath"></param>
         public static void LoadModel(ref Model model, string objFileName, string basePath)
         {
-             int error = 1;//pour situer l'erreur dans le obj 
+            int error = 1;//pour situer l'erreur dans le obj 
             try
             {
                 var contents = System.IO.File.ReadAllLines(basePath + "\\" + objFileName + ".obj");

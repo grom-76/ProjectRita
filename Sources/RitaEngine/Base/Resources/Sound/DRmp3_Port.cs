@@ -1,17 +1,11 @@
+namespace RitaEngine.Base.Resources.Sound;
 
-
-
-
-
-
-
-
-namespace RitaEngine.Base.Resources
+/// <summary>
+/// sources : 
+/// https://keyj.emphy.de/minimp3/
+/// https://github.com/lieff/minimp3
+/// </summary>
+public sealed unsafe partial class MiniMP3Port
 {
-    namespace Sound
-    {
-        public static class DRmp3_Port{}
-
-    }
 
 }

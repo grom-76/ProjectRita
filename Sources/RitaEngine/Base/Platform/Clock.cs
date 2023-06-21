@@ -9,27 +9,16 @@ public struct Clock: IEquatable<Clock>
 {
     private ClockData _data;
     private ClockFunctions _funcs;
-    // public  ClockConfig Config=new();
-    private nint _address = nint.Zero;
 
-    public Clock()
-    {
-        _address = AddressOfPtrThis( ) ;
-    }
-    public unsafe nint AddressOfPtrThis( )
-    { 
-        #pragma warning disable CS8500
-        fixed (void* pointer = &this )  { return((nint) pointer ) ; }  
-        #pragma warning restore
-    }
 
+    public Clock() { }
+  
     // <summary> Universal Time,  Tick & Frequence </summary>
     // https://github.com/Syncaidius/MoltenEngine/blob/master/Molten.Utility/Timing.cs
 
     public void Init( PlatformConfig config)
     {
         InitClock(ref _data , ref _funcs , in config);
-
     }
 
     public void Pause() => Pause(ref _data, ref _funcs);
@@ -117,10 +106,78 @@ public struct Clock: IEquatable<Clock>
     {
         data.IsPaused = true;
         data.PreviousTick = GetTick(ref func);
+        data.Elapsed_ms = 0.0;
         //time stop
         //Save accumulate time  ( temps depuis le debut de la pause)
     }
-    
+
+//source : https://github.com/discosultan/VulkanCore/blob/master/Samples/MiniFramework/Timer.cs
+
+    // private ulong _baseTime;
+    // private ulong _pausedTime;
+    // private ulong _stopTime;
+    // private ulong _prevTime;
+    // private ulong _currTime;
+    // private bool _stopped;
+    // public void Reset()
+    // {
+    //     ulong curTime = GetCurrentTick();
+    //     _baseTime = curTime;
+    //     _prevTime = curTime;
+    //     _stopTime = 0;
+    //     _stopped = false;
+    // }
+
+    // public void Start()
+    // {
+    //     ulong startTime = GetCurrentTick();
+    //     if (_stopped)
+    //     {
+    //         _pausedTime += (startTime - _stopTime);
+    //         _prevTime = startTime;
+    //         _stopTime = 0;
+    //         _stopped = false;
+    //     }
+    // }
+
+    // public void Stop()
+    // {
+    //     if (!_stopped)
+    //     {
+    //         ulong curTime = GetCurrentTick();
+    //         _stopTime = curTime;
+    //         _stopped = true;
+    //     }
+    // }
+
+    // public void Tick()
+    // {
+    //     if (_stopped)
+    //     {
+    //         _deltaTime = 0.0;
+    //         return;
+    //     }
+
+    //     ulong curTime =GetCurrentTick();
+    //     _currTime = curTime;
+    //     _deltaTime = (_currTime - _prevTime) * _secondsPerCount;
+
+    //     _prevTime = _currTime;
+    //     if (_deltaTime < 0.0)
+    //         _deltaTime = 0.0;
+    // }
+    // public float TotalTime
+    // {
+    //     get
+    //     {
+    //         if (_stopped)
+    //             return (float)((_stopTime - _pausedTime - _baseTime) * _secondsPerCount);
+
+    //         return (float)((_currTime - _pausedTime - _baseTime) * _secondsPerCount);
+    //     }
+    // }
+
+
     private static int GetApproximativFPS(ref ClockData data ,ref ClockFunctions func )
     => (int)  RitaEngine.Base.Math.Helper.Round(   ( 1.0/  GetElapsed_ms( ref  data ,ref  func) ));
     
@@ -131,7 +188,6 @@ public struct Clock: IEquatable<Clock>
     public unsafe static void Update_Default( ref ClockData data ,ref ClockFunctions func  )
     {
         #if WIN64
-        // data.FrameCount++;
         data.Elapsed_ms = GetElapsed_ms(ref  data ,ref  func );
         data.PreviousTick = GetTick(ref func );
         #endif

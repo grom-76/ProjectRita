@@ -1,21 +1,8 @@
+namespace RitaEngine.Base.Resources.Media;
+    
 
-
-
-
-
-
-
-
-namespace RitaEngine.Base.Resources
+public static class FFMPEG
 {
-
-
-
-
-
-    namespace Media
-    {
-        public static class FFMPEG{} // necessite ffmpeg.dll ?
-    }
-
-}
+    
+} // necessite ffmpeg.dll ?
+    

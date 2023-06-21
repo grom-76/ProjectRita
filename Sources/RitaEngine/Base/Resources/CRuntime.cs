@@ -295,16 +295,16 @@ internal static unsafe class CRuntime
 		qsortInternal((byte*) data, (long) size, comparer, 0, (long) count - 1);
 	}
 
-public const long DBL_EXP_MASK = 0x7ff0000000000000L;
-		public const int DBL_MANT_BITS = 52;
-		public const long DBL_SGN_MASK = -1 - 0x7fffffffffffffffL;
-		public const long DBL_MANT_MASK = 0x000fffffffffffffL;
-		public const long DBL_EXP_CLR_MASK = DBL_SGN_MASK | DBL_MANT_MASK;
+	public const long DBL_EXP_MASK = 0x7ff0000000000000L;
+	public const int DBL_MANT_BITS = 52;
+	public const long DBL_SGN_MASK = -1 - 0x7fffffffffffffffL;
+	public const long DBL_MANT_MASK = 0x000fffffffffffffL;
+	public const long DBL_EXP_CLR_MASK = DBL_SGN_MASK | DBL_MANT_MASK;
 
-		public static int abs(int v)
-		{
-			return Math.Abs(v);
-		}
+	public static int abs(int v)
+	{
+		return Math.Abs(v);
+	}
 
 		/// <summary>
 		///     This code had been borrowed from here: https://github.com/MachineCognitis/C.math.NET
