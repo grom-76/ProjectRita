@@ -12,6 +12,11 @@ public sealed class PlatformConfig : IDisposable
     public string LibraryName_Audio = "xaudio2_9.dll";
     public  AudioChannels Audio_Channels = AudioChannels.stereo;
     public  AudioCategory Audio_Category =  AudioCategory.GameMedia;
+    #if WIN64
+    public AudioDeviceBackEnd Audio_BackEnd = AudioDeviceBackEnd.Xaudio;
+    #else
+    public AudioDeviceBackEnd Audio_BackEnd = AudioDeviceBackEnd.None;
+    #endif
 
     public string LibraryName_Clock = "Kernel32.dll";
     public ClockLoopMode Clock_LoopMode = ClockLoopMode.Default;
@@ -38,6 +43,7 @@ public sealed class PlatformConfig : IDisposable
     public string LibraryName_Window_Gdi =  "Gdi32.dll";
 
     public string LibraryName_GraphicDevice_Vulkan = "vulkan-1.dll";
+
     public bool GraphicDevice_EnableDebugMode = false;
     public string[] GraphicDevice_ValidationLayerExtensions = new string[]{  
     "VK_LAYER_KHRONOS_validation",

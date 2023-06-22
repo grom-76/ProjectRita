@@ -72,7 +72,6 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         data.Info.RenderAreaOffset.y =0;       
         data.Info.ClearColor = new(ColorHelper.ToRGBA( (uint)pipeline.BackColorARGB),1.0f,0);
         data.Info.ClearColor2 = new( r:0.0f,g:0.0f,b:0.0f,a:1.0f ,depth:0.0f,stencil:0);
-
         
         data.Info.Indices = pipeline.Primitive.IndicesToArray();
         int sizeVertices = pipeline.Primitive.Vertices.Length  ;
@@ -1365,7 +1364,7 @@ public static class GraphicDeviceImplement
         uint texChannels=4;
         //TODO CreateTextureImage  File.ReadAllBytes( data.Info.TextureName) do this outside 
         var file = File.ReadAllBytes( data.Info.TextureName);
-        StbImage.stbi__vertically_flip_on_load_set = 1;
+        // StbImage.stbi__vertically_flip_on_load_set = 1;
         ImageResult result = ImageResult.FromMemory(file , ColorComponents.RedGreenBlueAlpha);
         texWidth = (uint)result.Width;
         texHeight = (uint)result.Height;
@@ -1466,6 +1465,7 @@ public static class GraphicDeviceImplement
         VkImageCreateInfo imageInfo = new();
         imageInfo.sType =VkStructureType.VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         imageInfo.imageType =VkImageType. VK_IMAGE_TYPE_2D;
+        
         imageInfo.extent.width = width;
         imageInfo.extent.height = height;
         imageInfo.extent.depth = 1;

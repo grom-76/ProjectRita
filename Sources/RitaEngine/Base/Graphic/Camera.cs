@@ -17,7 +17,7 @@ public struct Camera :IEquatable<Camera>
     /// <returns></returns>
     public Vector3 Eye =new(2.0f,2.0f,2.0f);
     public Vector3 Target =new(0.00f,0.00f,0.00f);
-    public Vector3 Up =new(0.0f,-1.0f,1.0f);
+    public Vector3 Up =new(0.0f,1.0f,0.0f);
     public float FieldOfViewInDegree = 45.0f;
 
     

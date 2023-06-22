@@ -55,7 +55,7 @@ public static class Sample_0002
             RenderConfig.VertexEntryPoint ="main";
             RenderConfig.FragmentShaderFileNameSPV =  "shader_depth_frag.spv";
             RenderConfig.VertexShaderFileNameSPV =  "shader_depth_vert.spv";
-            RenderConfig.TextureName = "wood.png";
+            RenderConfig.TextureName = "grid.png";
             RenderConfig.Camera.FieldOfViewInDegree = 45.0f;
             RenderConfig.Camera.Eye = new(2.0f,2.0f,2.0f);
             RenderConfig.Primitive = RitaEngine.Base.Math.GeometricPrimitive.CreateCube(1.0f,1.0f,1.0f);

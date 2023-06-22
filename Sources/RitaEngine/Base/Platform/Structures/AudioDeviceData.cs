@@ -11,13 +11,8 @@ public struct AudioDeviceData: IEquatable<AudioDeviceData>
     public IXAudio2MasteringVoice MasterVoice;
     public uint InputChannels = 2;
     public AUDIO_STREAM_CATEGORY Categorie= AUDIO_STREAM_CATEGORY.AudioCategory_GameMedia;
-
-    #if WIN64
     public AudioDeviceBackEnd BackEnd = AudioDeviceBackEnd.Xaudio;
-    #else
-    public AudioDeviceBackEnd BackEnd = AudioDeviceBackEnd.None;
-    #endif
-    
+
 
     public AudioDeviceData()  {   }
   
