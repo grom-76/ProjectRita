@@ -6,12 +6,15 @@ namespace RitaEngine.Base.Platform.Structures;
 public struct ClockData : IEquatable<ClockData>
 {
     public delegate void PFN_Update(ref ClockData data ,ref ClockFunctions func );
-    public UInt64 PreviousTick =0;
-    
-    /// <summary> Period or second per count/cycles </summary>
-    public double SecondPerCycle=0.0 ;
-    public double ElapsedInMiliSec=0.0;
+    public ulong PreviousTick =0L;
+    public ulong BaseTime =0L;
+    public ulong StopTime =0L;
+    public ulong PausedTime =0L;
     public double FixedTimeStep =0.0;
+    /// <summary> Period or second per count/cycles </summary>
+    public double SecondPerCycle =0L;
+    /// <summary>  Delta time in miliseecone </summary>
+    public double ElapsedInMiliSec =0L;
     public PFN_Update LoopMethod = null!;
     public bool IsInPause = false;
 

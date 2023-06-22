@@ -70,6 +70,7 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
     {
         WarmUp();
         window.Show();
+        clock.Reset();
     }
 
     private void InternalLoop()
@@ -79,17 +80,15 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
         {
           
             window.DispatchPending();
-
+            clock.Update();
+            
             #if !DEBUG
             if (!window.IsForeGround())
             {
-                // clock.Pause();
-                // graphic.Pause();
                 continue;
             }
             #endif
 
-            clock.Update();
             UpdatePhysics();
         
             input.Update();
