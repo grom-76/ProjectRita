@@ -14,6 +14,17 @@ public static class ColorHelper
         return cc;	
 	}
 
+    public static uint[] PaletteToRGBA( Palette color )
+    {
+        uint[] cc = {
+            (uint) Get_r((uint)color),
+            (uint) Get_g((uint)color),
+            (uint) Get_b((uint)color),
+            (uint) Get_a((uint)color),
+        };
+        return cc ;
+    }
+
     public static byte Get_a( uint argbcolor) =>  (byte) (argbcolor >> 24);
 	public static byte Get_r( uint argbcolor) =>  (byte) (argbcolor >> 16);
 	public static byte Get_g( uint argbcolor) =>  (byte) (argbcolor >> 8);
@@ -25,21 +36,7 @@ public static class ColorHelper
     public static uint ToARGB(byte a, byte r, byte g, byte b)
     	=>  (uint) ((((uint) a) << 24) | (((uint) r) << 16)  | (((uint) g) << 8) | ((uint) b));
 
-	// public static float[] ToRGBA( uint argbcolor)
-	// {
-	// 	 float[] cc = {  
-    //         (float)Get_r(argbcolor)  / byte.MaxValue,
-    //         (float)Get_g(argbcolor)  / byte.MaxValue,
-    //         (float)Get_b(argbcolor)  / byte.MaxValue,
-    //         (float)Get_a(argbcolor)  / byte.MaxValue
-    //     };
-    //     return cc;	
-	// }
-	// public static byte Get_a( uint argbcolor) =>  (byte) (argbcolor >> 24);
-	// public static byte Get_r( uint argbcolor) =>  (byte) (argbcolor >> 16);
-	// public static byte Get_g( uint argbcolor) =>  (byte) (argbcolor >> 8);
-	// public static byte Get_b( uint argbcolor) =>  (byte) (argbcolor & 0x000000FF );
-
+	
     
 	public static byte[] ConvertCmykToRgb(float c, float m, float y, float k)
     {
@@ -202,33 +199,6 @@ public static class ColorHelper
     }
 }
 
-
-
-// public uint ARGB { get; }
-//     public Color( Color c){ ARGB = c.ARGB;}
-// 	// public Color( )
-// 	public static implicit operator uint(Color argb )=> argb.ARGB;
-
-// 	public static uint ToABGR(byte r, byte g, byte b, byte alpha)
-// 		=> ((uint)alpha << 24) | ((uint)b << 16) | ((uint)g << 8) | r;
-
-//     public static uint ToARGB(byte a, byte r, byte g, byte b)
-//     	=>  (uint) ((((uint) a) << 24) | (((uint) r) << 16)  | (((uint) g) << 8) | ((uint) b));
-
-// 	public static float[] ToRGBA( uint argbcolor)
-// 	{
-// 		 float[] cc = {
-//             (float)Get_r(argbcolor)  / byte.MaxValue,
-//             (float)Get_g(argbcolor)  / byte.MaxValue,
-//             (float)Get_b(argbcolor)  / byte.MaxValue,
-//             (float)Get_a(argbcolor)  / byte.MaxValue
-//         };
-//         return cc;
-// 	}
-// 	public static byte Get_a( uint argbcolor) =>  (byte) (argbcolor >> 24);
-// 	public static byte Get_r( uint argbcolor) =>  (byte) (argbcolor >> 16);
-// 	public static byte Get_g( uint argbcolor) =>  (byte) (argbcolor >> 8);
-// 	public static byte Get_b( uint argbcolor) =>  (byte) (argbcolor & 0x000000FF );
 
 // 	public static byte[] ConvertCmykToRgb(float c, float m, float y, float k)
 //     {

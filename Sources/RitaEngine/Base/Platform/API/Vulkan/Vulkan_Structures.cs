@@ -28,6 +28,11 @@ public unsafe  struct VkClearColorValue {
 	public VkClearColorValue(uint r, uint g, uint b, uint a = 255): this()
     {     uint32[0] =r ;    uint32[1] =g ; uint32[2] =b ; uint32[3] =a ;}
     
+	public VkClearColorValue(int[] color): this()
+    {     int32[0] = color[0];  int32[1] = color[1];   int32[2] = color[2];    int32[3] = 255;    }
+
+	public VkClearColorValue(uint[] color): this()
+    {     uint32[0] = color[0];  uint32[1] = color[1];   uint32[2] = color[2];    uint32[3] = 255;    }
 }
 
 [StructLayout(LayoutKind.Explicit)]
@@ -35,20 +40,24 @@ public unsafe  struct VkClearValue {
 	[FieldOffset(0)]public  VkClearColorValue  color;
 	[FieldOffset(0)]public  VkClearDepthStencilValue  depthStencil;
 
-	public VkClearValue(float r, float g, float b, float a = 1.0f, float depth =0.0f, uint stencil=0)
+	
+	public VkClearValue( float depth =0.0f, uint stencil=0)
     {
         depthStencil =new(depth,stencil);
-        color = new(r, g, b, a);
-    }
-	public VkClearValue(uint r, uint g, uint b, uint a , float depth =0.0f, uint stencil=0)
-    {
-        depthStencil =new(depth,stencil);
-        color = new(r, g, b, a);
     }
 
-	public VkClearValue(float[] rgba ,float depth =0.0f, uint stencil=0 )
+	public VkClearValue(float[] rgba  )
 	{
-		depthStencil =new(depth,stencil);
+        color = new(rgba);
+	}
+
+	public VkClearValue(int[] rgba  )
+	{
+        color = new(rgba);
+	}
+
+	public VkClearValue(uint[] rgba  )
+	{
         color = new(rgba);
 	}
 }
@@ -1362,7 +1371,7 @@ public unsafe  struct VkBufferImageCopy {
 public unsafe  struct VkClearDepthStencilValue {
 	public  float  depth;
 	public  uint  stencil;
-	public VkClearDepthStencilValue() {depth =1.0f; stencil =0;}
+	public VkClearDepthStencilValue() {depth =0.0f; stencil =0;}
 	public VkClearDepthStencilValue(float pdepth , uint pstencil) {depth =pdepth; stencil = pstencil;}
 	
 }

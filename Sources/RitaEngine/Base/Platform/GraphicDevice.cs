@@ -70,8 +70,8 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         data.Info.UniformBufferArray =  pipeline.Camera.ToArray; 
         data.Info.RenderAreaOffset.x =0;
         data.Info.RenderAreaOffset.y =0;       
-        data.Info.ClearColor = new(ColorHelper.ToRGBA( (uint)pipeline.BackColorARGB),1.0f,0);
-        data.Info.ClearColor2 = new( r:0.0f,g:0.0f,b:0.0f,a:1.0f ,depth:0.0f,stencil:0);
+        data.Info.ClearColor = new(ColorHelper.PaletteToRGBA( pipeline.BackColorARGB));
+        data.Info.ClearColor2 = new(depth:1.0f,stencil:0);
         
         data.Info.Indices = pipeline.Primitive.IndicesToArray();
         int sizeVertices = pipeline.Primitive.Vertices.Length  ;
@@ -2225,8 +2225,8 @@ public static class GraphicDeviceImplement
 
         VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo = new();
         depthStencilStateCreateInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-        // depthStencilStateCreateInfo.depthTestEnable =  VK.VK_TRUE;
-        // depthStencilStateCreateInfo.depthWriteEnable = VK.VK_TRUE;
+        depthStencilStateCreateInfo.depthTestEnable =  VK.VK_TRUE;
+        depthStencilStateCreateInfo.depthWriteEnable = VK.VK_TRUE;
         depthStencilStateCreateInfo.depthCompareOp = VkCompareOp.VK_COMPARE_OP_LESS;
         depthStencilStateCreateInfo.depthBoundsTestEnable = VK.VK_FALSE;
         depthStencilStateCreateInfo.stencilTestEnable = VK.VK_FALSE;

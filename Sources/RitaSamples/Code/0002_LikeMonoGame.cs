@@ -29,12 +29,6 @@ public static class Sample_0002
         public MyGame()
         {
             Config.LogConfig( Log.Display.OnConsole);
-            // RitaEngine.Base.Resources.Shaders. CreateSPIRV(path, "shader_depth.vert","shader_depth_vert.spv", RitaEngine.Base.Resources.Shaders.ShaderType.VertexShader , "main");
-            // RitaEngine.Base.Resources.Shaders. CreateSPIRV(path, "shader_depth.frag","shader_depth_frag.spv", RitaEngine.Base.Resources.Shaders.ShaderType.FragmentShader , "main");
-        }
-
-        protected override void Init()
-        {
             Config.AssetPath( @"C:\Users\Administrator\Documents\Repos\ProjectRita\Assets\" );
             Config.Clock_FixedTimeStep = 0.033;
             Config.Clock_LoopMode = RitaEngine.Base.Platform.Config.ClockLoopMode.Default;
@@ -44,13 +38,20 @@ public static class Sample_0002
             Config.Audio_Category = AudioCategory.GameMedia;
             Config.Audio_Channels = AudioChannels.stereo;
             Config.GraphicDevice_EnableDebugMode = true;
+            // RitaEngine.Base.Resources.Shaders. CreateSPIRV(path, "shader_depth.vert","shader_depth_vert.spv", RitaEngine.Base.Resources.Shaders.ShaderType.VertexShader , "main");
+            // RitaEngine.Base.Resources.Shaders. CreateSPIRV(path, "shader_depth.frag","shader_depth_frag.spv", RitaEngine.Base.Resources.Shaders.ShaderType.FragmentShader , "main");
+        }
+
+        protected override void Init()
+        {
+          
         }
 
         protected override void Load()
         {
             snd.Init( AudioDevice ,   "demo.wav" );
 
-            RenderConfig.BackColorARGB = RitaEngine.Base.Math.Color.Palette.BlanchedAlmond;
+            RenderConfig.BackColorARGB = RitaEngine.Base.Math.Color.Palette.Lavender;
             RenderConfig.FragmentEntryPoint ="main";
             RenderConfig.VertexEntryPoint ="main";
             RenderConfig.FragmentShaderFileNameSPV =  "shader_depth_frag.spv";
@@ -58,7 +59,7 @@ public static class Sample_0002
             RenderConfig.TextureName = "grid.png";
             RenderConfig.Camera.FieldOfViewInDegree = 45.0f;
             RenderConfig.Camera.Eye = new(2.0f,2.0f,2.0f);
-            RenderConfig.Primitive = RitaEngine.Base.Math.GeometricPrimitive.CreateCube(1.0f,1.0f,1.0f);
+            RenderConfig.Primitive = RitaEngine.Base.Math.GeometricPrimitive.CreateCube(1.0f,1.0f,2.0f);
 
            GraphicDevice.BuildRender( RenderConfig);
         }
