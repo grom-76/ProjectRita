@@ -2,7 +2,7 @@ namespace RitaEngine.Base.Platform; //https://github.com/Syncaidius/MoltenEngine
 
 using System.Collections.Generic;
 using RitaEngine.Base.Math.Color;
-using RitaEngine.Base.Math.Vertex;
+using RitaEngine.Base.Math;
 using RitaEngine.Base.Graphic;
 using RitaEngine.Base.Platform.API.Vulkan;
 
@@ -24,14 +24,16 @@ public sealed class GraphicRenderConfig :IDisposable
     public bool VertexOutsideShader = false;
     public uint AttributeDescription = 2;
 
-    public Position3f_Color3f_UV2f[] Vertices = new Position3f_Color3f_UV2f[] 
-    {
-        new(-0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f),
-        new(0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f),
-        new(0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f),
-        new(-0.5f, 0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f)
-    };
-    public short[] Indices = new short[] { 0, 1, 2, 2, 3, 0};
+    // public Position3f_Color3f_UV2f[] Vertices = new Position3f_Color3f_UV2f[] 
+    // {
+    //     new(-0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f),
+    //     new(0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f),
+    //     new(0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f),
+    //     new(-0.5f, 0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f)
+    // };
+    // public short[] Indices = new short[] { 0, 1, 2, 2, 3, 0};
+
+    public GeometricPrimitive Primitive = new();
 
    
     public int VerticeSize =0;// = Vertices.Length * Vertices.Size ;
@@ -43,8 +45,7 @@ public sealed class GraphicRenderConfig :IDisposable
 
     public void Dispose()
     {
-        Indices = null!;
-        Vertices = null!;
+        
         GC.SuppressFinalize(this);
     }
 

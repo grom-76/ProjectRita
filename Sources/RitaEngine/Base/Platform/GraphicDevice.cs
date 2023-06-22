@@ -7,7 +7,7 @@ using RitaEngine.Base.Platform.Config;
 using RitaEngine.Base.Platform.API.Vulkan;
 using RitaEngine.Base.Platform.Structures;
 using RitaEngine.Base.Strings;
-using RitaEngine.Base.Math.Vertex;
+using RitaEngine.Base.Math;
 
 using VkDeviceSize = UInt64;
 using RitaEngine.Base.Resources.Images;
@@ -74,20 +74,11 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         data.Info.ClearColor2 = new( r:0.0f,g:0.0f,b:0.0f,a:1.0f ,depth:0.0f,stencil:0);
 
         
-        data.Info.Indices = pipeline.Indices;
+        data.Info.Indices = pipeline.Primitive.IndicesToArray();
+        int sizeVertices = pipeline.Primitive.Vertices.Length  ;
+        data.Info.Vertices = pipeline.Primitive.VertexToArray();
+        data.Handles.IndicesSize =(uint) pipeline.Primitive.Indices.Length;
 
-        int sizeVertices =  ( pipeline.Vertices.Length  );
-        data.Info.Vertices = new float[ sizeVertices *8 ]  ;
-        for( int i =0 ; i <  sizeVertices ; i++ )
-        {
-            var start  = 8 * i ;
-            for( int y =0 ; y < 8 ; y++ )
-            {
-                data.Info.Vertices[start + y] = pipeline.Vertices[i].ToArray[y];
-            }
-        }
-
-        data.Handles.IndicesSize =(uint) pipeline.Indices.Length;
         data.Info.TextureName =  RitaEngine.Base.Platform.PlatformHelper.AssetsPath + pipeline.TextureName;
         data.Info.MAX_FRAMES_IN_FLIGHT = pipeline.MAX_FRAMES_IN_FLIGHT;
         data.Info.FragmentEntryPoint = pipeline.FragmentEntryPoint;
@@ -2103,24 +2094,24 @@ public static class GraphicDeviceImplement
   
         VkVertexInputBindingDescription bindingDescription =new();
         bindingDescription.binding = 0;
-        bindingDescription.stride =(uint)Position3f_Color3f_UV2f.Stride;
+        bindingDescription.stride =(uint)Vertex.Stride;
         bindingDescription.inputRate = VkVertexInputRate.VK_VERTEX_INPUT_RATE_VERTEX;
 
         VkVertexInputAttributeDescription* attributeDescriptions = stackalloc VkVertexInputAttributeDescription[3] ;
         attributeDescriptions[0].binding = 0;
         attributeDescriptions[0].location = 0;
         attributeDescriptions[0].format = VkFormat.VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[0].offset = (uint)Position3f_Color3f_UV2f.OffsetPosition;
+        attributeDescriptions[0].offset = (uint)Vertex.OffsetPosition;
 
         attributeDescriptions[1].binding = 0;
         attributeDescriptions[1].location = 1;
         attributeDescriptions[1].format = VkFormat.VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[1].offset =   (uint)Position3f_Color3f_UV2f.OffsetColor;
+        attributeDescriptions[1].offset =   (uint)Vertex.FormatNormal;
         
         attributeDescriptions[2].binding = 0;
         attributeDescriptions[2].location = 2;
         attributeDescriptions[2].format = VkFormat.VK_FORMAT_R32G32_SFLOAT;
-        attributeDescriptions[2].offset =   (uint)Position3f_Color3f_UV2f.OffsetUV; 
+        attributeDescriptions[2].offset =   (uint)Vertex.OffsetTexCoord; 
             
         vertexInputInfo.vertexBindingDescriptionCount = 1;
         vertexInputInfo.vertexAttributeDescriptionCount = 3;
