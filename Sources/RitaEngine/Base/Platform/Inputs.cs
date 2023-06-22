@@ -3,16 +3,7 @@ namespace RitaEngine.Base.Platform;
 using RitaEngine.Base.Platform.API.Window;
 using RitaEngine.Base.Platform.Structures;
 using RitaEngine.Base.Platform.Config;
-    /// <summary>
-    /// /// INput manager see https://github.com/vchelaru/FlatRedBall/blob/NetStandard/Engines/FlatRedBallXNA/FlatRedBall/Input/Windows/WindowsInputEventManager.cs
-    /// </summary>
-    // public struct Inputs{
-    //     //GETKEYBOARD
-    //     //GETMOUSE
-    //     //GETJOYSTICK
-    //     //GETHAPTIC
-    //     //GET
-    // } // Keyboard Mouse WindowEvents?
+  
 
 [StructLayout(LayoutKind.Sequential, Pack = 4),SkipLocalsInit]
 public struct Inputs
@@ -29,27 +20,34 @@ public struct Inputs
         _data.WindowHandle = win.GetWindowHandle();
         _funcs = new( Libraries.GetUnsafeSymbol , _data.User32);
 
-        KeyMapping(config.Input_MappingKeysToAzerty,  config.Input_Langue == "FRA" ?0:1);
+        InputImplement.KeyMapping(config.Input_MappingKeysToAzerty,  config.Input_Langue == "FRA" ?0:1);
 
         #else
 
         #endif
 
     }
+    
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Update()=> Update(ref _funcs ,ref _data);
+    public void Update()=> InputImplement.Update(ref _funcs ,ref _data);
+    
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Release()=> Release(ref _data);
+    public void Release()=> InputImplement.Release(ref _data);
+    
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool IsKeyDown( int key)=> IsKeyDown(ref _data, key);
+    public bool IsKeyDown( int key)=> InputImplement.IsKeyDown(ref _data, key);
+    
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool IsKeyUp( int key)=> IsKeyUp(ref _data, key);
-     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool IsKeyPressed( int key)=> IsKeyPressed(ref _data, key);
-     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool IsKeyReleased( int key)=> IsKeyReleased(ref _data, key);
+    public bool IsKeyUp( int key)=> InputImplement.IsKeyUp(ref _data, key);
+    
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int[]  GetKeysPressed()=> GetKeysPressed(ref _data);
+    public bool IsKeyPressed( int key)=> InputImplement.IsKeyPressed(ref _data, key);
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool IsKeyReleased( int key)=> InputImplement.IsKeyReleased(ref _data, key);
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public int[]  GetKeysPressed()=> InputImplement.GetKeysPressed(ref _data);
 
 
 
@@ -60,7 +58,7 @@ public struct Inputs
     /// <param name="key">code de la touche a tester voir enum Keys de 0 à 255</param>
     /// <returns>true si la touche est enfoncé sinon false</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool IsKeyState(int key) =>  IsKeyState(ref _funcs, key);
+    private bool IsKeyState(int key) =>  InputImplement.IsKeyState(ref _funcs, key);
     
     /// <summary>
     /// Vérifie si la touche passé en paramètre est appuyé
@@ -69,19 +67,19 @@ public struct Inputs
     /// <param name="key">code de la touche a tester voir enum Keys de 0 à 255</param>
     /// <returns>true si la touche est enfoncé sinon false</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool IsAsyncKeyState( int key)=> IsAsyncKeyState(ref _funcs, key);
+    public bool IsAsyncKeyState( int key)=> InputImplement.IsAsyncKeyState(ref _funcs, key);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public  bool IsMouseButtonDown(int  button ) => IsMouseButtonDown(ref _data, button);
+    public  bool IsMouseButtonDown(int  button ) => InputImplement.IsMouseButtonDown(ref _data, button);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public  bool IsMouseButtonUp(int  button ) => IsMouseButtonUp(ref _data, button);
+    public  bool IsMouseButtonUp(int  button ) => InputImplement.IsMouseButtonUp(ref _data, button);
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public  bool IsMouseButtonReleased(int  button ) => IsMouseButtonReleased(ref _data, button);
+    public  bool IsMouseButtonReleased(int  button ) => InputImplement.IsMouseButtonReleased(ref _data, button);
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public  bool IsMouseButtonPressed(int  button ) => IsMouseButtonPressed(ref _data, button);
+    public  bool IsMouseButtonPressed(int  button ) => InputImplement.IsMouseButtonPressed(ref _data, button);
 
     /// <summary>
     /// Obtiens la position de la souris sur l'écran (Monitor)
@@ -89,23 +87,34 @@ public struct Inputs
     /// <param name="x"></param>
     /// <param name="y"></param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void GetCurrentMousePositionOnScreen( ref int x , ref int y ) => GetMousePosOnScreen(ref _funcs , ref x , ref y);
+    public unsafe void GetCurrentMousePositionOnScreen( ref int x , ref int y ) => InputImplement.GetMousePos(ref _funcs , _data.WindowHandle,false, ref x , ref y);
      /// <summary>
     /// Obtiens la position de la souris sur la Fenetre RitaEngine (Window)
     /// </summary>
     /// <param name="x"></param>
     /// <param name="y"></param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public unsafe void GetCurrentMousePositionOnWindow( ref int x , ref int y ) => GetMousePosOnWindow(ref _funcs , _data.WindowHandle, ref x , ref y);
+    public unsafe void GetCurrentMousePositionOnWindow( ref int x , ref int y ) => InputImplement.GetMousePos(ref _funcs , _data.WindowHandle,true, ref x , ref y);
     
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void SetMousePositionOnScreen( int x, int y )=> SetMousePosition(ref _funcs , x,  y );
+    public unsafe void SetMousePositionOnScreen( int x, int y )=> InputImplement.SetMousePos(ref _funcs, _data.WindowHandle , false, x,  y );
 
-    //TODO SETDELTA in update  is mouse leave ....
+     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public unsafe void SetMousePositionOnWindow( int x, int y )=> InputImplement.SetMousePos(ref _funcs, _data.WindowHandle , true, x,  y );
+
+   
+
+}
+
+
+[SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
+public static class InputImplement
+{
+ //TODO SETDELTA in update  is mouse leave ....
 
     #region IMPLEMENTATION
-    private unsafe static int Update(ref InputFunctions funcs, ref InputData data)
+    public unsafe static int Update(ref InputFunctions funcs, ref InputData data)
     {
         #if WIN64
 
@@ -117,17 +126,18 @@ public struct Inputs
         data.Mouse_PreviousFrame_Position_X = data.Mouse_CurrentFrame_Position_X;
         data.Mouse_PreviousFrame_Position_Y = data.Mouse_CurrentFrame_Position_Y;
         
-        GetMousePosOnWindow(ref funcs , data.WindowHandle, ref data.Mouse_CurrentFrame_Position_X , ref data.Mouse_CurrentFrame_Position_Y);
+        GetMousePos(ref funcs , data.WindowHandle, true, ref data.Mouse_CurrentFrame_Position_X , ref data.Mouse_CurrentFrame_Position_Y);
         
-        data.Mouse_CurrentFrame_Delta_X = ( data.Mouse_CurrentFrame_Position_X -  data.Mouse_PreviousFrame_Position_X );
+       data.Mouse_CurrentFrame_Delta_X = ( data.Mouse_CurrentFrame_Position_X -  data.Mouse_PreviousFrame_Position_X );
        data.Mouse_CurrentFrame_Delta_Y = ( data.Mouse_CurrentFrame_Position_Y -  data.Mouse_PreviousFrame_Position_Y );
+       
        #elif LINUX
 
-        #endif
-        return 0;
+       #endif
+       return 0;
     }
 
-    private static int Release(ref InputData data)
+    public static int Release(ref InputData data)
     {
         #if WIN64
        
@@ -137,14 +147,14 @@ public struct Inputs
         return 0;
     }
 
-    private  static bool IsKeyDown( ref InputData input , int key)
+    public  static bool IsKeyDown( ref InputData input , int key)
     #if WIN64
         => (input.CurrentKeys [key & 0xff] & 0x80) != 0 && (input.PreviousKeys[key & 0xff] & 0x80) != 0;
     #else
         => false;
     #endif
        
-    private  static bool  IsKeyUp(ref InputData input , int key )
+    public  static bool  IsKeyUp(ref InputData input , int key )
     #if WIN64
         =>     (input.CurrentKeys [key & 0xff] & 0x80) == 0 && (input.PreviousKeys[key & 0xff] & 0x80) == 0;
     #else
@@ -165,7 +175,7 @@ public struct Inputs
         => false;
     #endif
 
-    private static int[]  GetKeysPressed(ref InputData input )
+    public static int[]  GetKeysPressed(ref InputData input )
     {
         #if WIN64
         int count =0;
@@ -189,14 +199,14 @@ public struct Inputs
         #endif
     }
 
-    private  unsafe static bool IsKeyState(ref InputFunctions input ,int key) 
+    public  unsafe static bool IsKeyState(ref InputFunctions input ,int key) 
     #if WIN64
     => (input.GetKeyState( key& 0xFF) & 0x80 ) != 0;
     #else
         => false;
     #endif
 
-    private unsafe static bool IsAsyncKeyState(ref InputFunctions input , int key)
+    public unsafe static bool IsAsyncKeyState(ref InputFunctions input , int key)
     #if WIN64
         => (input.GetAsyncKeyState(key& 0xFF)  & 0x80 ) != 0;
     #else
@@ -204,7 +214,7 @@ public struct Inputs
     #endif
 
    
-    private  static  bool IsMouseButtonDown(ref InputData input ,int  button )
+    public  static  bool IsMouseButtonDown(ref InputData input ,int  button )
     #if WIN64
         => (input.CurrentKeys [button & 0xFF] & 0x80) != 0 && (input.PreviousKeys[button & 0xFF] & 0x80) != 0;
     #else
@@ -212,7 +222,7 @@ public struct Inputs
     #endif
     
    
-    private static bool IsMouseButtonUp(ref InputData input , int  button )
+    public static bool IsMouseButtonUp(ref InputData input , int  button )
     #if WIN64
         => (input.CurrentKeys [button & 0xFF] & 0x80) == 0 && (input.PreviousKeys[button & 0xFF] & 0x80) == 0;
           #else
@@ -220,52 +230,51 @@ public struct Inputs
     #endif
     
    
-    private static bool IsMouseButtonPressed(ref InputData input , int  button )
+    public static bool IsMouseButtonPressed(ref InputData input , int  button )
     #if WIN64
         => (input.CurrentKeys [button & 0xFF] & 0x80) != 0 && (input.PreviousKeys[button & 0xFF] & 0x80) == 0;
           #else
         => false;
     #endif
     
-    private static  bool IsMouseButtonReleased( ref InputData input ,int  button )
+    public static  bool IsMouseButtonReleased( ref InputData input ,int  button )
     #if WIN64
         => (input.CurrentKeys [button & 0xFF] & 0x80) == 0 && (input.PreviousKeys[button & 0xFF] & 0x80) != 0; 
     #else
         => false;
     #endif
 
-    private unsafe static void GetMousePosOnScreen(ref InputFunctions input , ref int x , ref int y )
+   
+    public static unsafe void GetMousePos(ref InputFunctions input ,void* hwnd, bool onWindow,ref int x, ref int y)
     {
         #if WIN64
         POINT p ;
-        input.GetCursorPos(&p);
-        
+        input.GetCursorPos( &p);
+        if( hwnd != null && onWindow)
+            input.ScreenToClient(hwnd ,&p );
         x = p.X;
         y = p.Y;
         #else
-         x = 0; y = 0;
+        x = 0; y = 0;
         #endif
-    }
-    private static unsafe void GetMousePosOnWindow(ref InputFunctions input ,void* hwnd ,ref int x, ref int y)
-    {
-        POINT p ;
-        input.GetCursorPos( &p);
-        input.ScreenToClient(hwnd ,&p );
-        x = p.X;
-        y = p.Y;
     }
 
   
-    private unsafe static void SetMousePosition(ref InputFunctions input , int x, int y ) 
-    #if WIN64
-        =>input.SetCursorPos( x,y);
-    #else
-        => false;
-    #endif
+    public unsafe static void SetMousePos(ref InputFunctions input  ,void* hwnd, bool onWindow,int x, int y ) 
+    {
+         #if WIN64
+        POINT p  = new POINT(x, y);
 
+        if (hwnd != null && onWindow )
+            input.ClientToScreen(hwnd,&p);
 
+        input.SetCursorPos(p.X, p.Y);
+        #else
 
-    private static void KeyMapping(bool azerty = true, int lang =0 /*0 = FRA , 1 = ENG*/)
+        #endif
+    }
+
+    public static void KeyMapping(bool azerty = true, int lang =0 /*0 = FRA , 1 = ENG*/)
     {
         #if WIN64
         //TODO Lang = FR   azerty , qwerty other , ..
@@ -280,6 +289,16 @@ public struct Inputs
     }
     #endregion
     #region Raylib Bindinggs
+      /// <summary>
+    /// /// INput manager see https://github.com/vchelaru/FlatRedBall/blob/NetStandard/Engines/FlatRedBallXNA/FlatRedBall/Input/Windows/WindowsInputEventManager.cs
+    /// </summary>
+    // public struct Inputs{
+    //     //GETKEYBOARD
+    //     //GETMOUSE
+    //     //GETJOYSTICK
+    //     //GETHAPTIC
+    //     //GET
+    // } // Keyboard Mouse WindowEvents?
     //------------------------------------------------------------------------------------
     // Input Handling Functions (Module: core)
     //------------------------------------------------------------------------------------
@@ -330,4 +349,3 @@ public struct Inputs
     #endregion
   
 }
-

@@ -10,12 +10,9 @@ public struct Clock: IEquatable<Clock>
     private ClockData _data;
     private ClockFunctions _funcs;
 
-
     public Clock() { }
   
-    // <summary> Universal Time,  Tick & Frequence </summary>
-    // https://github.com/Syncaidius/MoltenEngine/blob/master/Molten.Utility/Timing.cs
-
+  
     public void Init( PlatformConfig config)
     {
         InitClock(ref _data , ref _funcs , in config);
@@ -36,7 +33,7 @@ public struct Clock: IEquatable<Clock>
     public ulong GetFrequency() => GetFrequency(ref _funcs);
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public double GetElapsed_ms() => GetElapsed_ms(ref _data ,ref _funcs);
+    public double GetElapsedInMiliSec() => GetElapsedInMiliSec(ref _data ,ref _funcs);
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int GetApproximativFPS() => GetApproximativFPS(ref _data ,ref _funcs);
@@ -47,7 +44,7 @@ public struct Clock: IEquatable<Clock>
         #if WIN64
         func = new( config.LibraryName_Clock);
         data.FixedTimeStep  = config.Clock_FixedTimeStep;
-        data.OneOverFrequency  = 1.0 / GetFrequency(ref func) ;
+        data.SecondPerCycle  = 1.0 / GetFrequency(ref func) ;
         #endif
         switch( config.Clock_LoopMode)
         {
@@ -80,9 +77,13 @@ public struct Clock: IEquatable<Clock>
         #else
         return 0L;
         #endif
-        
     }
 
+    /// <summary>
+    /// Frequency is often represented as the number of oscillations or cycles that occur within a certain period of time. In physics, frequency is typically measured in hertz (Hz), which is the number of oscillations or cycles per second
+    /// </summary>
+    /// <param name="func"></param>
+    /// <returns></returns>
     private unsafe static ulong GetFrequency(ref ClockFunctions func ) 
     {
         #if WIN64
@@ -91,7 +92,6 @@ public struct Clock: IEquatable<Clock>
         #else
         return 0L;
         #endif
-       
     }
 
     /// <summary>
@@ -99,26 +99,27 @@ public struct Clock: IEquatable<Clock>
     /// </summary>
     // [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     
-    private  static double GetElapsed_ms(ref ClockData data ,ref ClockFunctions func ) 
-    => (GetTick(ref func) -  data.PreviousTick) * data.OneOverFrequency; 
+    private  static double GetElapsedInMiliSec(ref ClockData data ,ref ClockFunctions func ) 
+        => (GetTick(ref func) -  data.PreviousTick) * data.SecondPerCycle; 
 
     private static void Pause(ref ClockData data  ,ref ClockFunctions func)
     {
-        data.IsPaused = true;
+        data.IsInPause = true;
         data.PreviousTick = GetTick(ref func);
-        data.Elapsed_ms = 0.0;
+        data.ElapsedInMiliSec = 0.0;
         //time stop
         //Save accumulate time  ( temps depuis le debut de la pause)
     }
-
+  
+// https://github.com/Syncaidius/MoltenEngine/blob/master/Molten.Utility/Timing.cs
 //source : https://github.com/discosultan/VulkanCore/blob/master/Samples/MiniFramework/Timer.cs
 
     // private ulong _baseTime;
     // private ulong _pausedTime;
     // private ulong _stopTime;
-    // private ulong _prevTime;
-    // private ulong _currTime;
-    // private bool _stopped;
+    // private ulong _prevTime; 
+    // private ulong _currTime; GeTticks
+    // private bool _stopped; PAuse
     // public void Reset()
     // {
     //     ulong curTime = GetCurrentTick();
@@ -168,18 +169,14 @@ public struct Clock: IEquatable<Clock>
     // }
     // public float TotalTime
     // {
-    //     get
-    //     {
-    //         if (_stopped)
-    //             return (float)((_stopTime - _pausedTime - _baseTime) * _secondsPerCount);
-
-    //         return (float)((_currTime - _pausedTime - _baseTime) * _secondsPerCount);
-    //     }
+    //      get => (_stopped)? 
+            // (float)((_stopTime - _pausedTime - _baseTime) * _secondsPerCount) 
+            // : (float)(( _currTime - _pausedTime - _baseTime) * _secondsPerCount);
     // }
 
 
     private static int GetApproximativFPS(ref ClockData data ,ref ClockFunctions func )
-    => (int)  RitaEngine.Base.Math.Helper.Round(   ( 1.0/  GetElapsed_ms( ref  data ,ref  func) ));
+    => (int)  RitaEngine.Base.Math.Helper.Round(   ( 1.0/  GetElapsedInMiliSec( ref  data ,ref  func) ));
     
 
     // [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -188,7 +185,7 @@ public struct Clock: IEquatable<Clock>
     public unsafe static void Update_Default( ref ClockData data ,ref ClockFunctions func  )
     {
         #if WIN64
-        data.Elapsed_ms = GetElapsed_ms(ref  data ,ref  func );
+        data.ElapsedInMiliSec = GetElapsedInMiliSec(ref  data ,ref  func );
         data.PreviousTick = GetTick(ref func );
         #endif
     }

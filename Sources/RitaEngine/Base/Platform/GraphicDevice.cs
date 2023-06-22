@@ -127,6 +127,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
     #endregion
 }
 
+
 public static class GraphicDeviceImplement
 {
     #region public PRUPOSE
