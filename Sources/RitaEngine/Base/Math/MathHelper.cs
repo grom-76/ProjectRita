@@ -290,6 +290,10 @@ public static class Helper
     [ MethodImpl(  MethodImplOptions.AggressiveOptimization)  ]
     public static double Round(double value) => System.Math.Round( value);
 
+    [ MethodImpl(  MethodImplOptions.AggressiveOptimization)  ]
+    public static float Round(float value, int digits) => MathF.Round( value, digits);
+
+
     /// <summary>  Retourne la valeur absolue d'un float   </summary>
     /// <param name="scalar">float valeur comprise entre 0 et float.MaxValue </param>
     /// <returns></returns>
@@ -349,6 +353,7 @@ public static class Helper
     /// <returns></returns>
     public static int Ceiling(float fp) => 32768 - (int)(32768.0f - fp);
 
+  
     /// <summary>
     /// Donne l'arrondie au chiffre inférieur
     /// </summary>

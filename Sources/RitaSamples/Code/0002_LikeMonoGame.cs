@@ -40,6 +40,18 @@ public static class Sample_0002
             Config.GraphicDevice_EnableDebugMode = true;
             // RitaEngine.Base.Resources.Shaders. CreateSPIRV(path, "shader_depth.vert","shader_depth_vert.spv", RitaEngine.Base.Resources.Shaders.ShaderType.VertexShader , "main");
             // RitaEngine.Base.Resources.Shaders. CreateSPIRV(path, "shader_depth.frag","shader_depth_frag.spv", RitaEngine.Base.Resources.Shaders.ShaderType.FragmentShader , "main");
+            Window.Events.OnKillFocus = onkillFocus;
+            Window.Events.OnSetFocus = onSetFocus;
+        }
+
+        private void onSetFocus(nuint wParam, nint lParam)
+        {
+            Log.Info("SETTTT FOCUUSSSS");
+        }
+
+        private void onkillFocus(nuint wParam, nint lParam)
+        {
+            Log.Info("KILLL FOCUUSSSS");
         }
 
         protected override void Init()
@@ -58,7 +70,7 @@ public static class Sample_0002
             RenderConfig.VertexShaderFileNameSPV =  "shader_depth_vert.spv";
             RenderConfig.TextureName = "grid.png";
             RenderConfig.Camera.FieldOfViewInDegree = 45.0f;
-            RenderConfig.Camera.Eye = new(2.0f,2.0f,2.0f);
+            RenderConfig.Camera.Eye = new(2.0f,2.0f,20.0f);
             RenderConfig.Primitive = RitaEngine.Base.Math.GeometricPrimitive.CreateCube(1.0f,1.0f,2.0f);
 
            GraphicDevice.BuildRender( RenderConfig);

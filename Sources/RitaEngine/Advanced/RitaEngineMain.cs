@@ -82,12 +82,12 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
             window.DispatchPending();
             clock.Update();
             
-            #if !DEBUG
-            if (!window.IsForeGround())
-            {
-                continue;
-            }
-            #endif
+            // #if !DEBUG
+            // if (!window.IsForeGround())
+            // {
+            //     continue;
+            // }
+            // #endif
 
             UpdatePhysics();
         
@@ -131,7 +131,7 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
     public RitaEngine.Base.Platform.GraphicRenderConfig RenderConfig = new();
 
     public ref readonly RitaEngine.Base.Platform.Clock Clock => ref clock;
-    public ref readonly RitaEngine.Base.Platform.Window Window => ref window;
+    public ref RitaEngine.Base.Platform.Window Window => ref window;
     public ref readonly RitaEngine.Base.Platform.Inputs Input => ref input;
     public ref readonly RitaEngine.Base.Platform.AudioDevice AudioDevice => ref  audio;
     public ref RitaEngine.Base.Platform.GraphicDevice GraphicDevice => ref graphic;

@@ -57,7 +57,6 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
     public void Pause() =>  GraphicDeviceImplement.Pause( _functions , ref _data);
     
-
     public void BuildRender(in GraphicRenderConfig config)
     {
         TransfertToRender(in config, in _functions , ref _data);
@@ -97,7 +96,6 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         // TransfertToRender(in config, in _functions , ref _data);
         // GraphicDeviceImplement.UpdateUniformBuffer(_functions,ref _data);
     }
-
 
     /// <summary>
     /// Don't forget to Do Update Before Draw 

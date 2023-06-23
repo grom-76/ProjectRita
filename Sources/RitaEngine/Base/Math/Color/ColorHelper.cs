@@ -3,27 +3,16 @@ namespace RitaEngine.Base.Math.Color;
 using static RitaEngine.Base.Math.Helper;
 public static class ColorHelper
 {
-    public static float[] ToRGBA( uint argbcolor)
+    public static float[] PaletteToRGBA( Palette color)
 	{
         float[] cc = {  
-            (float)Get_r(argbcolor)  / byte.MaxValue,
-            (float)Get_g(argbcolor)  / byte.MaxValue,
-            (float)Get_b(argbcolor)  / byte.MaxValue,
-            (float)Get_a(argbcolor)  / byte.MaxValue
+            Round((float)Get_r((uint)color)  / (float)byte.MaxValue,2),
+            Round((float)Get_g((uint)color)  / (float)byte.MaxValue,2),
+            Round((float)Get_b((uint)color)  / (float)byte.MaxValue,2),
+            Round((float)Get_a((uint)color)  / (float)byte.MaxValue,2)
         };
         return cc;	
 	}
-
-    public static uint[] PaletteToRGBA( Palette color )
-    {
-        uint[] cc = {
-            (uint) Get_r((uint)color),
-            (uint) Get_g((uint)color),
-            (uint) Get_b((uint)color),
-            (uint) Get_a((uint)color),
-        };
-        return cc ;
-    }
 
     public static byte Get_a( uint argbcolor) =>  (byte) (argbcolor >> 24);
 	public static byte Get_r( uint argbcolor) =>  (byte) (argbcolor >> 16);

@@ -103,7 +103,8 @@ public struct GraphicDeviceInfo : IEquatable<GraphicDeviceInfo>
     public byte[] GameName = null!;
 
     public VkPhysicalDeviceProperties PhysicalDeviceProperties = new();
-     #region VKDeivce
+    
+    #region VKDeivce
     public VkSurfaceCapabilitiesKHR Capabilities;
     public VkSurfaceFormatKHR[] Formats= null!;
     public VkPresentModeKHR[] PresentModes = null!;

@@ -9,7 +9,7 @@ public struct Window : IEquatable<Window>
 {
     private WindowData _data = new();
     private WindowFunction _funcs;
-  
+    public WindowEvent Events = new();
     
     public Window(){  }
 
@@ -18,11 +18,8 @@ public struct Window : IEquatable<Window>
     public unsafe int GetWindowWidth() => _data.Width ;
     public unsafe int GetWindowheight() => _data.Height ;
     public byte[] GetWindowName() => _data.Title ;
-           
-     // // #define LOBYTE(w)              ((BYTE)((DWORD_PTR)(w) & 0xFF))
-// // #define HIBYTE(w)              ((BYTE)((DWORD_PTR)(w) >> 8))
-// // #define MAKEWORD(low,high)     ((WORD)(((BYTE)((DWORD_PTR)(low) & 0xFF)) | ((WORD)((BYTE)((DWORD_PTR)(high) & 0xFF))) << 8))
-// // #define MAKELONG(low,high)     ((LONG)(((WORD)((DWORD_PTR)(low) & 0xFFFF)) | ((DWORD)((WORD)((DWORD_PTR)(high) & 0xFFFF))) << 16))
+    public void ChangeTitleBarCaption(string title) => WindowImplement.UpdateCaptionTitleBar( ref _data , ref _funcs , title);
+
     public unsafe static int LOWORD( nint lParam ) =>  (int)((nint)lParam & 0xFFFF);
 	public unsafe static int HIWORD( nint lParam ) =>  (int)((nint)lParam >> 16);
 	public unsafe static int GET_X_LPARAM(nint lp) => (int)(short)LOWORD(lp);
@@ -30,15 +27,6 @@ public struct Window : IEquatable<Window>
     public static int MakeLong (short lowPart, short highPart) => (int)(((ushort)lowPart) | (uint)(highPart << 16));
     public static int MakeWord (short lowPart, short highPart) => (int)(((ushort)lowPart) | (uint)(highPart << 16));
 
-    public void ChangeTitleBarCaption(string title) 
-        => UpdateCaptionTitleBar( ref _data , ref _funcs , title);
-
-    private unsafe static void UpdateCaptionTitleBar(ref WindowData data ,ref WindowFunction funcs, string title)
-    {
-        var bytes = Encoding.UTF8.GetBytes(title).AsSpan();// byte* title = RitaEngine.Base.MemoryHelper.AsPointer<byte[]>(ref bytes);
-        int result = funcs.SetWindowTextA(data.Handle , bytes.GetPointer() );
-        Log.WarnWhenConditionIsFalse( result !=0 ,$"Change caption title to {title}");
-    }
 
     public void GetFrameBuffer(ref uint width , ref uint height)
     {
@@ -53,48 +41,66 @@ public struct Window : IEquatable<Window>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public unsafe void Init(in PlatformConfig config)
     {
-        _data.User32 =Libraries.Load( config.LibraryName_Window_User32 );
-        _data.Kernel = Libraries.Load( config.LibraryName_Window_Kernel );
-        _data.Gdi =  Libraries.Load( config.LibraryName_Window_Gdi );
-        _funcs = new(Libraries.GetUnsafeSymbol, _data.User32 , _data.Kernel, _data.Gdi);
+        UpadateData(config);
+
+        WindowImplement.MonitorsInfo(ref _data, ref _funcs);
+
+        WindowImplement.AdjustSize(ref _data, ref _funcs);
+
+        WindowImplement.Create(ref _data, ref _funcs);
+    }
+
+    private unsafe void UpadateData(PlatformConfig config)
+    {
+        _data.User32 = Libraries.Load(config.LibraryName_Window_User32);
+        _data.Kernel = Libraries.Load(config.LibraryName_Window_Kernel);
+        _data.Gdi = Libraries.Load(config.LibraryName_Window_Gdi);
+        _funcs = new(Libraries.GetUnsafeSymbol, _data.User32, _data.Kernel, _data.Gdi);
         _data.WndProc = this.WndProc2;
-        (_data.Width, _data.Height) =  PlatformConfig.GetResolution( config.Window_Resolution);
+        (_data.Width, _data.Height) = PlatformConfig.GetResolution(config.Window_Resolution);
         _data.Left = Constants.CW_USEDEFAULT;
         _data.Top = Constants.CW_USEDEFAULT;
-        _data.Style= Constants.WS_CAPTION | Constants.WS_SYSMENU | /*Constants.WS_VISIBLE |*/ Constants.WS_THICKFRAME;
+        _data.Style = Constants.WS_CAPTION | Constants.WS_SYSMENU | /*Constants.WS_VISIBLE |*/ Constants.WS_THICKFRAME;
         _data.ExStyle = Constants.WS_EX_APPWINDOW | Constants.WS_EX_WINDOWEDGE;
         _data.HInstance = _funcs.GetModuleHandleA(null);// Marshal.GetHINSTANCE(typeof(WindowData).Module).ToPointer(); 
-        _data.Title =Encoding.UTF8.GetBytes(config.Game_Title);
-
-        MonitorsInfo( ref _data , ref _funcs);
-        
-        AdjustSize(ref _data ,ref _funcs);
-        
-        Create(ref _data, ref _funcs );
+        _data.Title = Encoding.UTF8.GetBytes(config.Game_Title);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool IsForeGround() {return Focused; } 
+    public void Show() => WindowImplement.Show(ref _data , ref _funcs);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Show() => Show(ref _data , ref _funcs);
+    public void DispatchPending() => WindowImplement.DispatchPending(ref _data , ref _funcs);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void PoolEvents() => WindowImplement.Update(ref _data , ref _funcs);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void DispatchPending() => Update(ref _data , ref _funcs);
+    public bool ShouldClose() => WindowImplement.ShouldClose(ref _data );
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool ShouldClose() => ShouldClose(ref _data );
+    public void RequestClose() =>WindowImplement.RequestClose(ref _data , ref _funcs);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void RequestClose() =>RequestClose(ref _data , ref _funcs);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Release() => Release(ref _data , ref _funcs);
-    
-    private static bool Focused = false;
+    public void Release()
+    {
+        WindowImplement.Release(ref _data , ref _funcs);
+        Events.Release();
+    } 
 
     #region STATIC IMPLEMENT
     
+    /// <summary>
+	///  How to send a key 
+	/// Exemples : SendMessage(EventsMessage.KEYDOWN, (uint)EventsKeyCode.VK_SPACE	,0 );
+	/// </summary>
+	/// <param name="Wm_messageType"></param>
+	/// <param name="highValue"></param>
+	/// <param name="lowValue"></param>
+	public unsafe void SendMessage( TypeOfMessageToSend Wm_messageType , uint highValue=0 , int lowValue=0)
+	{
+		_funcs.SendMessageA( _data.Handle ,(uint)Wm_messageType,highValue, lowValue  );
+	}
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private unsafe nint WndProc2( void* hWnd, uint message,  nuint wParam,  nint lParam)
 		=>  message switch {
@@ -131,11 +137,13 @@ public struct Window : IEquatable<Window>
 		// OnKeyPress(wParam,lParam);
 		return _funcs.DefWindowProcA(hWnd, message, wParam, lParam);
 	}
+
 	private  unsafe nint Win32OnMouseButtonClic(void* hWnd, uint message, nuint wParam, nint lParam)
 	{
 		// OnMouseButtonClic!(wParam,lParam);
 		return _funcs.DefWindowProcA(hWnd, message, wParam, lParam);
 	}
+
 	private   unsafe nint Win32OnQuit(void* hWnd, uint message, nuint wParam, nint lParam)
 	{
 		// OnQuit!(wParam,lParam);
@@ -150,16 +158,15 @@ public struct Window : IEquatable<Window>
 
 	private  unsafe nint Win32OnSetFocus(void* hWnd, uint message, nuint wParam, nint lParam)
 	{
-        Focused =true;
-		// OnSetFocus!(wParam,lParam);
+		Events.OnSetFocus(wParam,lParam);
 		// _isfocused =false;
 		return _funcs.DefWindowProcA(hWnd, message, wParam, lParam);
 	}
 
 	private  unsafe nint Win32OnKillFocus(void* hWnd, uint message, nuint wParam, nint lParam)
 	{
-        Focused = false;
-		// OnKillFocus!(wParam,lParam);
+      
+		Events.OnKillFocus!(wParam,lParam);
 		// _isfocused = false;
 		return _funcs.DefWindowProcA(hWnd, message, wParam, lParam);
 	}
@@ -182,13 +189,34 @@ public struct Window : IEquatable<Window>
 		return nint.Zero;
 	}
 
-    private unsafe static int Create(ref WindowData data ,ref WindowFunction funcs)
+   #endregion
+
+    #region OVERRIDE    
+    public override string ToString() => string.Format($"Window " );
+    public override int GetHashCode() => HashCode.Combine( _data.GetHashCode(), _funcs.GetHashCode());
+    public override bool Equals(object? obj) => obj is Window  window && this.Equals(window) ;
+    public bool Equals(Window other)=>  _data.Equals(other._data) ;
+    public static bool operator ==(Window  left,Window right) => left.Equals(right);
+    public static bool operator !=(Window  left,Window right) => !left.Equals(right);
+    #endregion
+}
+
+[SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
+public static partial class WindowImplement
+{
+    public unsafe static void UpdateCaptionTitleBar(ref WindowData data ,ref WindowFunction funcs, string title)
+    {
+        var bytes = Encoding.UTF8.GetBytes(title).AsSpan();// byte* title = RitaEngine.Base.MemoryHelper.AsPointer<byte[]>(ref bytes);
+        int result = funcs.SetWindowTextA(data.Handle , bytes.GetPointer() );
+        Log.WarnWhenConditionIsFalse( result !=0 ,$"Change caption title to {title}");
+    }
+    
+    public unsafe static int Create(ref WindowData data ,ref WindowFunction funcs)
     {
         #if WIN64
 
         var EngineNameChars = Encoding.UTF8.GetBytes(RitaEngine.Base.BaseHelper.ENGINE_NAME);
-       
-        
+
         WNDCLASSEXA wcex = new ();
         wcex.cbSize = (uint)Marshal.SizeOf( wcex) ;
         wcex.style = Constants.CS_OWNDC  | Constants.CS_HREDRAW | Constants.CS_VREDRAW ;//CS_HREDRAW | CS_VREDRAW | CS_OWNDC
@@ -222,7 +250,7 @@ public struct Window : IEquatable<Window>
         return 0;
     }
 
-    private unsafe static void MonitorsInfo(ref WindowData data ,ref WindowFunction funcs)
+    public unsafe static void MonitorsInfo(ref WindowData data ,ref WindowFunction funcs)
     {
         MONITORINFOEX target;
         target.Size = MONITORINFOEX.MonitorInfoSize;
@@ -259,7 +287,7 @@ public struct Window : IEquatable<Window>
             
     }
     
-    private unsafe  static void AdjustSize(ref WindowData data ,ref WindowFunction funcs)
+    public unsafe  static void AdjustSize(ref WindowData data ,ref WindowFunction funcs)
     {
     #if WIN64
 
@@ -402,17 +430,26 @@ if (uMsg == m_ShowStageMessage) {
 }
 */
 
-
-    private unsafe static int Update(ref WindowData data ,ref WindowFunction funcs)
+    public unsafe static int Update(ref WindowData data ,ref WindowFunction funcs)
     {
         #if WIN64
 
-        // fixed (MSG* msg = &data.Msg){
-        //     data.IsRun = funcs.GetMessageA(msg, null, 0,  0)>0;
-        //     
-        //     _=funcs.TranslateMessage(msg);
-        //     _=funcs.DispatchMessageA(msg);
-        // } 
+        fixed (MSG* msg = &data.Msg){
+            data.IsRun = funcs.GetMessageA(msg, null, 0,  0)>0;
+            
+            _=funcs.TranslateMessage(msg);
+            _=funcs.DispatchMessageA(msg);
+        } 
+
+        #else
+
+        #endif
+        return 0;
+    }
+
+    public unsafe static int DispatchPending(ref WindowData data ,ref WindowFunction funcs)
+    {
+        #if WIN64
 
         fixed (MSG* msg = &data.Msg){
             while( funcs.PeekMessageA(msg,null,0,0,1) > 0 )  
@@ -423,15 +460,13 @@ if (uMsg == m_ShowStageMessage) {
             }
             
         } 
-
-
         #else
 
         #endif
         return 0;
     }
 
-    private unsafe static int Release(ref WindowData data ,ref WindowFunction funcs)
+    public unsafe static int Release(ref WindowData data ,ref WindowFunction funcs)
     {
         #if WIN64
         if (  data.Handle != null)
@@ -454,7 +489,7 @@ if (uMsg == m_ShowStageMessage) {
         return 0;
     }
 
-    private unsafe static void Minimize(ref WindowData data ,ref WindowFunction funcs) 
+    public unsafe static void Minimize(ref WindowData data ,ref WindowFunction funcs) 
     {
         #if WIN64
         funcs.ShowWindow(data.Handle , Constants.SW_MINIMIZE);
@@ -463,7 +498,7 @@ if (uMsg == m_ShowStageMessage) {
         #endif
     }
 
-    private unsafe static void Show(ref WindowData data ,ref WindowFunction funcs)
+    public unsafe static void Show(ref WindowData data ,ref WindowFunction funcs)
     { 
         #if WIN64
         funcs.ShowWindow(data.Handle, Constants.SW_SHOW );
@@ -475,24 +510,14 @@ if (uMsg == m_ShowStageMessage) {
         #endif
     }
 
-    private static bool ShouldClose(ref WindowData data ) =>  data.IsRun;
+    public static bool ShouldClose(ref WindowData data ) =>  data.IsRun;
 
-    private unsafe static void RequestClose(ref WindowData data ,ref WindowFunction funcs )
+    public unsafe static void RequestClose(ref WindowData data ,ref WindowFunction funcs )
     {   
         #if WIN64   
         funcs.PostQuitMessage(0);
         data.IsRun = false; 
         #endif
     }
-    #endregion
-
-    #region OVERRIDE    
-    public override string ToString() => string.Format($"Data Window " );
-    public override int GetHashCode() => HashCode.Combine( _data.GetHashCode(), _funcs.GetHashCode());
-    public override bool Equals(object? obj) => obj is Window  window && this.Equals(window) ;
-    public bool Equals(Window other)=>  _data.Equals(other._data) ;
-    public static bool operator ==(Window  left,Window right) => left.Equals(right);
-    public static bool operator !=(Window  left,Window right) => !left.Equals(right);
-    #endregion
+ 
 }
-
