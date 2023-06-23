@@ -153,8 +153,9 @@ public static partial class ClockImplement
         {
             ulong curTime =  GetTick(ref func );
             data.StopTime = curTime;
-            data.IsInPause = true;
+           
         }
+        data.IsInPause = true;
     }
 
     public  static void Tick(ref ClockData data  ,ref ClockFunctions func)

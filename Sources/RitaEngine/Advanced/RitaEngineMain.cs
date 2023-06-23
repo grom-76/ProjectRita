@@ -54,7 +54,7 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
     {    
         Init();
         clock.Init(Config);
-        window.Init(Config);
+        window.Init(Config,clock);
         graphic.Init(Config, window );
         input.Init( Config, window);
         audio.Init(Config);  
@@ -82,12 +82,12 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
             window.DispatchPending();
             clock.Update();
             
-            // #if !DEBUG
-            // if (!window.IsForeGround())
-            // {
-            //     continue;
-            // }
-            // #endif
+            #if !DEBUG
+            if (!window.IsLostFocus)
+            {
+                continue;
+            }
+            #endif
 
             UpdatePhysics();
         

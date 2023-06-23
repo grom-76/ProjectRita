@@ -8,12 +8,15 @@ using static RitaEngine.Base.MemoryHelper;
 [ StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public struct Window : IEquatable<Window>
 {
+    public delegate void PFN_Clock( );
+    public PFN_Clock clockPause = null!;
+    public PFN_Clock clockStart = null!;
     private WindowData _data = new();
     private WindowFunction _funcs;
     public WindowEvent Events = new();
     
     public Window(){  }
-
+    public bool IsLostFocus { get ; private set;} = false;
     public unsafe void* GetWindowHandle() => _data.Handle ;
     public unsafe void* GetWindowHInstance() => _data.HInstance ;
     public unsafe int GetWindowWidth() => _data.Width ;
@@ -40,8 +43,11 @@ public struct Window : IEquatable<Window>
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public unsafe void Init(in PlatformConfig config)
+    public unsafe void Init(in PlatformConfig config, in Clock clock)
     {
+        clockPause = clock.Pause;
+        clockStart = clock.Start;
+
         UpadateData(config);
 
         WindowImplement.MonitorsInfo(ref _data, ref _funcs);
@@ -160,15 +166,16 @@ public struct Window : IEquatable<Window>
 	private  unsafe nint Win32OnSetFocus(void* hWnd, uint message, nuint wParam, nint lParam)
 	{
 		Events.OnSetFocus(wParam,lParam);
-		// _isfocused =false;
+		IsLostFocus =false;
+        clockStart();
 		return _funcs.DefWindowProcA(hWnd, message, wParam, lParam);
 	}
 
 	private  unsafe nint Win32OnKillFocus(void* hWnd, uint message, nuint wParam, nint lParam)
 	{
-      
 		Events.OnKillFocus!(wParam,lParam);
-		// _isfocused = false;
+		IsLostFocus = true;
+        clockPause();
 		return _funcs.DefWindowProcA(hWnd, message, wParam, lParam);
 	}
 

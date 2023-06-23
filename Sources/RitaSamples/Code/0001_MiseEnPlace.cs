@@ -37,7 +37,7 @@ public static class Sample_0001
             config.GraphicDevice_EnableDebugMode = true;
 
             clock.Init(config);
-            window.Init(config);
+            window.Init(config, clock);
             input.Init(config, window);
             audio.Init(config);
             graphic.Init( config, window);
