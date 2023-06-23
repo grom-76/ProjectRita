@@ -54,11 +54,11 @@ public readonly struct WindowFunction : IEquatable<WindowFunction>
         GetMonitorInfoW =   (delegate* unmanaged<void* ,  MONITORINFOEX*, int>) load(user32, "GetMonitorInfoW");
         MonitorFromWindow = (delegate* unmanaged<void*,uint,void*>)  load(user32, "MonitorFromWindow");
         EnumDisplaySettingsW = (delegate* unmanaged<char* ,int, DEVMODEW*, int>) load( user32 , "EnumDisplaySettingsW" );
+        EnumDisplaySettingsExW = (delegate* unmanaged<char* ,int, DEVMODEW*,int/*dwFlags*/ ,int>)  load( user32 , "EnumDisplaySettingsExW" );
+        ChangeDisplaySettingsExW  = (delegate* unmanaged<char* /*LPCWSTR  lpszDeviceName*/, DEVMODEW*,void*,int/*dwFlags*/ ,nint/*lParam*/, long> ) load( user32 , "ChangeDisplaySettingsExW" );
         SetProcessDpiAwarenessContext=(delegate* unmanaged<void*, int>)load( user32, "SetProcessDpiAwarenessContext" );
         GetWindowDpiAwarenessContext = ( delegate* unmanaged<void*, nuint>) load( user32, "GetWindowDpiAwarenessContext" );
-
         GetDesktopWindow= (delegate* unmanaged<void* > ) load(user32, "GetDesktopWindow");
-
         GetDeviceCaps=( delegate* unmanaged<void*,int, int>)load(gdi, "GetDeviceCaps");
 
     }
@@ -72,6 +72,10 @@ public readonly struct WindowFunction : IEquatable<WindowFunction>
     public readonly unsafe delegate* unmanaged<void*/*HWND*/,void*/*HDC*/,int> ReleaseDC=null;
 
     public readonly unsafe delegate* unmanaged<char* ,int, DEVMODEW*,int> EnumDisplaySettingsW = null;
+
+    public readonly unsafe delegate* unmanaged<char* ,int, DEVMODEW*,int/*dwFlags*/ ,int> EnumDisplaySettingsExW = null;
+
+    public readonly unsafe delegate* unmanaged<char* /*LPCWSTR  lpszDeviceName*/, DEVMODEW*,void*,int/*dwFlags*/ ,nint/*lParam*/, long> ChangeDisplaySettingsExW  = null;
     public readonly unsafe delegate* unmanaged<void*,int> SetProcessDpiAwarenessContext=null;
     // public readonly unsafe delegate* unmanaged<BOOL> SetProcessDPIAware=null;
     // public readonly unsafe delegate* unmanaged<uint,uint,void*,uint,BOOL> SystemParametersInfo=null;
@@ -83,10 +87,8 @@ public readonly struct WindowFunction : IEquatable<WindowFunction>
     // public readonly unsafe delegate* unmanaged<bool SetProcessDpiAwareness(PROCESS_DPI_AWARENESS awareness); //shcore
     // public readonly unsafe delegate* unmanaged<void GetProcessDpiAwareness(System.IntPtr hprocess, out PROCESS_DPI_AWARENESS awareness);
 
-    public unsafe nint AddressOfPtrThis( ){fixed (void* pointer = &this)  { return((nint) pointer ) ; }  }
-
     #region OVERRIDE
-    public override string ToString() => string.Format($"Vector" );
+    public override string ToString() => string.Format($"Window Functions" );
     public unsafe override int GetHashCode() => HashCode.Combine( ((nint)UpdateWindow).ToInt32()  ,  ((nint)ShowWindow).ToInt32(),  ((nint)SetWindowTextA).ToInt32(), ((nint)GetClientRect).ToInt32() ) ;
     public override bool Equals(object? obj) => obj is WindowFunction context && this.Equals(context) ;
     public unsafe bool Equals(WindowFunction other)=> other is WindowFunction win && (((nint)UpdateWindow).ToInt64()).Equals(((nint)win.UpdateWindow).ToInt64() );

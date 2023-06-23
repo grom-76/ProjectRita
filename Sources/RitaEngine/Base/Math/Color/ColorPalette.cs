@@ -1,11 +1,4 @@
-
-
-namespace RitaEngine.Base.Math
-{
-
-    namespace Color
-    {
-      
+namespace RitaEngine.Base.Math.Color;
 
 public enum Palette : uint
 {
@@ -153,6 +146,3 @@ public enum Palette : uint
 	YellowGreen          = 0xFF9ACD32,
 }
 
-
-    }
-}

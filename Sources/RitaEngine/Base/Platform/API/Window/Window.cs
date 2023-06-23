@@ -313,8 +313,48 @@ public static class Constants
     public const int ENUM_CURRENT_SETTINGS = -1;
     public const int ENUM_REGISTRY_SETTINGS = -2;
 
+       // dwFlags of EnumDisplaySettingsEx (default is 0)
+    public const uint EDS_RAWMODE = 0x00000002;
+    public const uint EDS_ROTATEDMODE = 0x00000004;
+
+    // dwflags of ChangeDisplaySettingsEx (default is 0)
+    public const uint CDS_UPDATEREGISTRY = 0x00000001;
+    public const uint CDS_TEST = 0x00000002;
+    public const uint CDS_FULLSCREEN = 0x00000004;
+    public const uint CDS_GLOBAL = 0x00000008;
+    public const uint CDS_SET_PRIMARY = 0x00000010;
+    public const uint CDS_VIDEOPARAMETERS = 0x00000020;
+    public const uint CDS_ENABLE_UNSAFE_MODES = 0x00000100;
+    public const uint CDS_DISABLE_UNSAFE_MODES = 0x00000200;
+    public const uint CDS_RESET = 0x40000000;
+    public const uint CDS_RESET_EX = 0x20000000;
+    public const uint CDS_NORESET = 0x10000000;
+
+    // Result of ChangeDisplaySettingsEx
+    public const int DISP_CHANGE_SUCCESSFUL = 0;   // The settings change was successful.
+    public const int DISP_CHANGE_RESTART = 1;      // The computer must be restarted for the graphics mode to work.
+    public const int DISP_CHANGE_FAILED = -1;      // The display driver failed the specified graphics mode.
+    public const int DISP_CHANGE_BADMODE = -2;     // The graphics mode is not supported.
+    public const int DISP_CHANGE_NOTUPDATED = -3;  // Unable to write settings to the registry.
+    public const int DISP_CHANGE_BADFLAGS = -4;    // An invalid set of flags was passed in.
+    public const int DISP_CHANGE_BADPARAM = -5;    // An invalid parameter was passed in. This can include an invalid flag or combination of flags.
+    public const int DISP_CHANGE_BADDUALVIEW = -6; // The settings change was unsuccessful because the system is DualView capable.
+
     #endregion
 }
+
+public enum DMDO : uint
+{
+    /// <summary> The display orientation is the natural orientation of the display device. </summary>
+    DMDO_DEFAULT = 0,
+    /// <summary> The display orientation is rotated 90 degrees (measured clockwise) from DMDO_DEFAULT. </summary>
+    DMDO_90 = 1,
+    /// <summary> The display orientation is rotated 180 degrees (measured clockwise) from DMDO_DEFAULT. </summary>
+    DMDO_180 = 2,
+    /// <summary> The display orientation is rotated 270 degrees (measured clockwise) from DMDO_DEFAULT. </summary>
+    DMDO_270 = 3,
+}
+
 
 public enum DEVICE_CAP
 {
@@ -557,6 +597,7 @@ public unsafe struct CURSORINFO
 [ StructLayout( LayoutKind.Sequential)]
 public unsafe struct DEVMODEW
 {
+    public static readonly ushort SizeInBytes = (ushort)Unsafe.SizeOf<DEVMODEW>();
     public fixed ushort dmDeviceName[32];
     public ushort dmSpecVersion;
     public ushort dmDriverVersion;
@@ -592,7 +633,7 @@ public unsafe struct DEVMODEW
 [StructLayout( LayoutKind.Sequential )]
 public struct MONITORINFOEX
 {
-    public static readonly uint MonitorInfoSize = (uint)  Unsafe.SizeOf<MONITORINFOEX>();
+    public static readonly uint SizeInBytes = (uint)  Unsafe.SizeOf<MONITORINFOEX>();
     public uint Size ;
     public RECT Monitor;
     public RECT Work;
@@ -600,5 +641,5 @@ public struct MONITORINFOEX
     ///  Si = 1 This member can be the following value:   1 : MONITORINFOF_PRIMARY
     /// </summary>
     public uint Flags;
-    public unsafe fixed ushort DeviceName[32];
+    public unsafe fixed char DeviceName[32];
 }

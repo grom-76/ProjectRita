@@ -1,5 +1,6 @@
 namespace RitaEngine.Base.Platform ;
 
+using System.Collections.Generic;
 using RitaEngine.Base.Platform.API.Window;
 using RitaEngine.Base.Platform.Structures;
 using static RitaEngine.Base.MemoryHelper;
@@ -252,22 +253,29 @@ public static partial class WindowImplement
 
     public unsafe static void MonitorsInfo(ref WindowData data ,ref WindowFunction funcs)
     {
-        MONITORINFOEX target;
-        target.Size = MONITORINFOEX.MonitorInfoSize;
+        MONITORINFOEX target= new();
+        target.Size = MONITORINFOEX.SizeInBytes;
 
         void* hMon = funcs.MonitorFromWindow( funcs.GetDesktopWindow(), Constants.MONITOR_DEFAULTTOPRIMARY);
         funcs.GetMonitorInfoW(hMon, &target);
         // string asStrin = new string((char *) target.DeviceName, 0, 32);
+        string deviceName = new string(target.DeviceName);
+        Log.Info($"Monitor Name : {deviceName}");
         data.IsPrimaryMonitor = target.Flags == 1 ;
 
-        DEVMODEW devmod;
-        devmod.dmSize = (ushort)Unsafe.SizeOf<DEVMODEW>();
-        // int err =_funcs.EnumDisplaySettingsW( (char *) target.DeviceName,Constants.ENUM_CURRENT_SETTINGS,&devmod );
+        DEVMODEW devmod = new();
+        devmod.dmSize = DEVMODEW.SizeInBytes;
 
-        int err =  funcs.EnumDisplaySettingsW( null,0,&devmod );
+        // GET CURRENT MODE
+        int err = funcs.EnumDisplaySettingsW( (char *) target.DeviceName,Constants.ENUM_CURRENT_SETTINGS,&devmod );
+        Log.WarnWhenConditionIsFalse( err != 0 ,"Enum Display GET CURRENT MODE");
 
-        err =  funcs.EnumDisplaySettingsW( null,1,&devmod );
-        err =  funcs.EnumDisplaySettingsW( null,2,&devmod );
+        err =  funcs.EnumDisplaySettingsW( (char *) target.DeviceName,0,&devmod );
+        Log.WarnWhenConditionIsFalse( err != 0 ,"Enum Display Error Id 0");
+        err =  funcs.EnumDisplaySettingsW(  (char *) target.DeviceName,1,&devmod );
+        Log.WarnWhenConditionIsFalse( err != 0 ,"Enum Display Error Id 1");
+        err =  funcs.EnumDisplaySettingsW( (char *) target.DeviceName,2,&devmod );
+        Log.WarnWhenConditionIsFalse( err != 0 ,"Enum Display Error Id 2");
         //  If the function fails, the return value is zero. The function fails if iDevNum is greater than the largest device index
         //  This setting is the screen DPI, or dots per inch.
         // 
@@ -286,6 +294,7 @@ public static partial class WindowImplement
             // ScreenScalingFactor; // 1.25 = 125%
             
     }
+
     
     public unsafe  static void AdjustSize(ref WindowData data ,ref WindowFunction funcs)
     {
