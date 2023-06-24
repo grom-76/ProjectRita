@@ -28,7 +28,7 @@ public static class Sample_0002
         
         public MyGame()
         {
-            Config.LogConfig( Log.Display.OnConsole);
+            Config.Log( Log.Display.OnConsole);
             Config.AssetPath( @"C:\Users\Administrator\Documents\Repos\ProjectRita\Assets\" );
             Config.Clock_FixedTimeStep = 0.033;
             Config.Clock_LoopMode = RitaEngine.Base.Platform.Config.ClockLoopMode.Default;

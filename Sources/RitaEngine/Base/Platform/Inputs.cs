@@ -16,7 +16,7 @@ public struct Inputs
     {
         #if WIN64
         _data = new();
-        _data.User32 = Libraries.Load( config.LibraryName_Input);
+        _data.User32 = Libraries.Load( config.LibraryName_User32);
         _data.WindowHandle = win.GetWindowHandle();
         _funcs = new( Libraries.GetUnsafeSymbol , _data.User32);
 

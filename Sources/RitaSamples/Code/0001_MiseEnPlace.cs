@@ -28,7 +28,8 @@ public static class Sample_0001
             config.Game_Title = "My Game";
             config.Window_Resolution =  WindowResolution.HD_720p_1920x720;
             config.AssetPath( @"C:\Users\Administrator\Documents\Repos\ProjectRita\Assets\" );
-            config.LogConfig(Log.Display.OnConsole);
+            config.Log(Log.Display.OnConsole);
+            // config.Garbage(GarbageCollectionPriority.Interactive, 1024*1024*60);
             config.Clock_FixedTimeStep = 0.033;
             config.Clock_LoopMode = RitaEngine.Base.Platform.Config.ClockLoopMode.Default;
             config.Input_ShowCursor = true;

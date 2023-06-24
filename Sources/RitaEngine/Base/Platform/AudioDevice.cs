@@ -18,7 +18,7 @@ public struct AudioDevice: IEquatable<AudioDevice>
     {
         #if WIN64     
 
-        _funcs = new(Config.LibraryName_Audio);
+        _funcs = new(Config.LibraryName_xaudio);
         
         uint err = _funcs.XAudio2Create(ref _data.Instance);
         Log.WarnWhenConditionIsFalse (err != 0,  $"Create Xaudio 2 INSTANCE : {_data.Instance:X8}  ");

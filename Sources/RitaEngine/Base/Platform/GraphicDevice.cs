@@ -3,7 +3,6 @@ namespace RitaEngine.Base.Platform;
 using System.IO;
 using RitaEngine.Base.Debug;
 using RitaEngine.Base.Math.Color;
-using RitaEngine.Base.Platform.Config;
 using RitaEngine.Base.Platform.API.Vulkan;
 using RitaEngine.Base.Platform.Structures;
 using RitaEngine.Base.Strings;
@@ -19,25 +18,134 @@ using System.Collections.Generic;
 [SkipLocalsInit, StructLayout(LayoutKind.Sequential ,Pack =  BaseHelper.FORCE_ALIGNEMENT)]
 public struct GraphicDevice : IEquatable<GraphicDevice>
 {
-    private GraphicDeviceFunctions _functions;
-    private GraphicDeviceData _data; // inside => Instance Device Render Infos 
+    private GraphicDeviceFunctions _functions = new();
+    private GraphicDeviceData _data =new(); // inside => Instance Device Render Infos 
 
-    public GraphicDevice() 
-    {
-        _functions = new();
-        _data = new();
-    }
+    public GraphicDevice() { }
    
     public unsafe void Init(in PlatformConfig config, in Window window )
     {
-        TransfertToData(in config,in window ,ref _functions , ref _data);   
-        GraphicDeviceImplement.Init(ref _functions , ref _data);
+        GraphicDeviceImplement.TransfertToData(in config,in window ,ref _functions , ref _data);   
+       
+        // APP  : WSI , DEBUG , INSTANCE        
+        GraphicDeviceImplement.CreateInstanceAndDebug(ref _functions,ref _data);
+        GraphicDeviceImplement.CreateSurface(ref _functions , ref _data);
+        // //DEVICE          
+        GraphicDeviceImplement.SelectPhysicalDevice(ref _functions ,ref _data);
+        GraphicDeviceImplement.GetPhysicalInformations( ref _functions, ref _data);
+        GraphicDeviceImplement.CreateLogicalDevice(ref _functions ,ref _data );
+        // //SWAP CHAIN
+        GraphicDeviceImplement.CreateSwapChain( ref _functions , ref _data);
+        GraphicDeviceImplement.CreateImageViews( ref _functions , ref _data );
     }
 
-    private static unsafe void TransfertToData(in PlatformConfig config, in Window window ,ref GraphicDeviceFunctions functions , ref GraphicDeviceData data)
+    public void BuildRender(in GraphicRenderConfig config)
+    {
+        GraphicDeviceImplement.TransfertToRender(in config, in _functions , ref _data);
+        //GraphicDeviceImplement.BuildRender(ref _functions, ref _data);
+        GraphicDeviceImplement.CreateRenderPass(ref _functions,ref _data);
+        GraphicDeviceImplement.CreateDepthResources( ref _functions, ref _data);//need for framebuffer
+        GraphicDeviceImplement.CreateCommandPool(ref _functions,ref _data);
+        GraphicDeviceImplement.CreateCommandBuffer(ref _functions,ref _data);
+        //LoadModel => Do in TransfertConfigRenderTo_data load vertex indeices and textures ....
+        GraphicDeviceImplement.CreateVertexBuffer( ref _functions , ref _data );
+        GraphicDeviceImplement.CreateIndexBuffer( ref _functions , ref _data);
+        GraphicDeviceImplement.CreateTextureImage(ref _functions , ref _data);
+        GraphicDeviceImplement.CreateTextureImageView(ref _functions , ref _data);
+            // _data to transfert at shader
+        GraphicDeviceImplement.CreateTextureSampler(ref _functions , ref _data);
+        GraphicDeviceImplement.CreateUniformBuffers(ref _functions , ref _data );
+        GraphicDeviceImplement.CreateDescriptorSetLayout(ref _functions , ref _data);
+        GraphicDeviceImplement.CreateDescriptorPool(ref _functions,ref _data);
+        GraphicDeviceImplement.CreateDescriptorSets(ref _functions,ref _data);
+        // need to complete descriptor before layout
+        GraphicDeviceImplement.CreatePipelineLayout( ref _functions , ref _data);
+        GraphicDeviceImplement.CreatePipeline(ref _functions, ref _data );
+        GraphicDeviceImplement.CreateFramebuffers(ref _functions,ref _data);
+        GraphicDeviceImplement.CreateSyncObjects(ref _functions , ref _data);
+    }
+
+    public unsafe void Release()
+    {  
+        Log.Info("Dispose Graphic Device");
+
+        // GraphicDeviceImplement.DisposeForReCreateSwapChain( _functions , ref __data);
+        Pause();
+        GraphicDeviceImplement.DisposeDepthResources(  _functions , ref _data);
+        GraphicDeviceImplement.DisposeFrameBuffer(_functions, ref _data);
+        GraphicDeviceImplement.DisposeSwapChain(_functions , ref _data);
+        // GraphicDeviceImplement.DisposeBuildRender(_functions, ref _data);
+        GraphicDeviceImplement.DisposePipeline( _functions,ref _data);
+        GraphicDeviceImplement.DisposeRenderPass( _functions,ref _data);
+        GraphicDeviceImplement.DisposeUniformBuffers( _functions , ref _data);
+        GraphicDeviceImplement.DisposeTextureSampler( _functions , ref _data);
+        GraphicDeviceImplement.DisposeTextureImage( _functions , ref _data);
+        GraphicDeviceImplement.DisposeDescriptorPool( _functions , ref _data);
+        GraphicDeviceImplement.DisposeBuffers( _functions , ref _data);
+        GraphicDeviceImplement.DisposeSyncObjects( _functions ,ref _data);
+        GraphicDeviceImplement.DisposeCommandPool( _functions,ref _data);
+        // GraphicDeviceImplement.DisposeInstance(_functions, ref _data);
+        GraphicDeviceImplement.DisposeLogicalDevice(in _functions ,ref _data);
+        GraphicDeviceImplement.DisposeSurface(_functions, ref _data);
+        GraphicDeviceImplement.DisposeInstanceAndDebug(in _functions,ref _data);  
+        _data.Release();
+        _functions.Release();
+    }
+
+    public void Pause() =>  GraphicDeviceImplement.Pause( _functions , ref _data);
+
+    public void UpdateRender(in GraphicRenderConfig config)
+    {    
+        _data.Info.UniformBufferArray = config.Camera.ToArray;
+    }
+
+    public void DrawRender()
+        => GraphicDeviceImplement.DrawPipeline(ref _functions, ref _data);
+
+    #region OVERRIDE    
+    public override string ToString() => string.Format($"Data GraphicDevice " );
+    public override int GetHashCode() => HashCode.Combine( _functions.GetHashCode(), _data.GetHashCode());
+    public override bool Equals(object? obj) => obj is GraphicDevice  window && this.Equals(window) ;
+    public bool Equals(GraphicDevice other)=>  _data.Equals(other._data) ;
+    public static bool operator ==(GraphicDevice  left,GraphicDevice right) => left.Equals(right);
+    public static bool operator !=(GraphicDevice  left,GraphicDevice right) => !left.Equals(right);
+    #endregion
+}
+
+public static class GraphicDeviceImplement
+{
+
+    public unsafe static void Pause(in GraphicDeviceFunctions func,ref GraphicDeviceData data  )
+    {
+        if ( !data.Handles.Device.IsNull){
+            func.vkDeviceWaitIdle(data.Handles.Device).Check($"WAIT IDLE VkDevice : {data.Handles.Device}");
+        }
+    }
+
+    public unsafe static void ReCreateSwapChain(ref GraphicDeviceFunctions func,ref GraphicDeviceData data)
+    {
+        if ( data.Handles.SwapChain == VkSwapchainKHR.Null)return ;
+
+        data.Handles.GetFrameBufferCallback(ref data.Info.VkSurfaceArea.width ,ref data.Info.VkSurfaceArea.height );
+
+        Pause( func,ref data);
+        DisposeDepthResources(  func , ref data);
+        DisposeFrameBuffer(func, ref data);
+        DisposeSwapChain(func , ref data);
+       
+        CreateSwapChain(ref func,ref data);
+        CreateImageViews(ref func, ref data);
+        CreateDepthResources( ref func, ref data);
+        CreateFramebuffers(ref func,ref data);
+        
+    }
+
+    public static string VersionToString( uint version ) => $"{VK.VK_VERSION_MAJOR(version)}.{VK.VK_VERSION_MINOR(version)}.{VK.VK_VERSION_PATCH(version)} ";
+
+    public static unsafe void TransfertToData(in PlatformConfig config, in Window window ,ref GraphicDeviceFunctions functions , ref GraphicDeviceData data)
     {
         //check if Exist vulkandllname? 
-        functions.InitLoaderFunctions( config.LibraryName_GraphicDevice_Vulkan);
+        functions.InitLoaderFunctions( config.LibraryName_Vulkan);
         data.Info.EnableDebug = config.GraphicDevice_EnableDebugMode;
         data.Info.GameName  = window.GetWindowName();
         data.Info.Handle = window.GetWindowHandle();
@@ -48,22 +156,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         
     }
 
-    public unsafe void Release()
-    {  
-        GraphicDeviceImplement.Release(in _functions , ref _data);
-        _data.Release();
-        _functions.Release();
-    }
-
-    public void Pause() =>  GraphicDeviceImplement.Pause( _functions , ref _data);
-    
-    public void BuildRender(in GraphicRenderConfig config)
-    {
-        TransfertToRender(in config, in _functions , ref _data);
-        GraphicDeviceImplement.BuildRender(ref _functions, ref _data);
-    }
-
-    private static void TransfertToRender(in GraphicRenderConfig pipeline, in GraphicDeviceFunctions functions, ref GraphicDeviceData data)
+     public static void TransfertToRender(in GraphicRenderConfig pipeline, in GraphicDeviceFunctions functions, ref GraphicDeviceData data)
     {
         pipeline.Camera.BuildCamera();
         data.Info.UniformBufferArray =  pipeline.Camera.ToArray; 
@@ -89,146 +182,9 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
     }   
 
-    public void UpdateRender(in GraphicRenderConfig config)
-    {
-        
-        _data.Info.UniformBufferArray = config.Camera.ToArray;
-        // TransfertToRender(in config, in _functions , ref _data);
-        // GraphicDeviceImplement.UpdateUniformBuffer(_functions,ref _data);
-    }
-
-    /// <summary>
-    /// Don't forget to Do Update Before Draw 
-    /// </summary>
-    public void DrawRender()
-    {
-        GraphicDeviceImplement.DrawPipeline(ref _functions, ref _data);
-    }
-
-    #region OVERRIDE    
-    public override string ToString() => string.Format($"Data GraphicDevice " );
-    public override int GetHashCode() => HashCode.Combine( _functions.GetHashCode(), _data.GetHashCode());
-    public override bool Equals(object? obj) => obj is GraphicDevice  window && this.Equals(window) ;
-    public bool Equals(GraphicDevice other)=>  _data.Equals(other._data) ;
-    public static bool operator ==(GraphicDevice  left,GraphicDevice right) => left.Equals(right);
-    public static bool operator !=(GraphicDevice  left,GraphicDevice right) => !left.Equals(right);
-    #endregion
-}
-
-
-public static class GraphicDeviceImplement
-{
-    #region public PRUPOSE
-    public static void Init(ref GraphicDeviceFunctions func , ref GraphicDeviceData data)
-    {
-// APP  : WSI , DEBUG , INSTANCE        
-        CreateInstanceAndDebug(ref func,ref data);
-        CreateSurface(ref func , ref data);
-// //DEVICE          
-        SelectPhysicalDevice(ref func ,ref data);
-        GetPhysicalInformations( ref func, ref data);
-        CreateLogicalDevice(ref func ,ref data );
-// //SWAP CHAIN
-        CreateSwapChain( ref func , ref data);
-        CreateImageViews( ref func , ref data );
-    }
-    
-    public static unsafe void Release(in GraphicDeviceFunctions func , ref GraphicDeviceData data )
-    {
-        Log.Info("Dispose Graphic Device");
-
-        DisposeForReCreateSwapChain( func , ref data);
-
-        DisposeBuildRender(func, ref data);
-        
-        DisposeLogicalDevice(in func ,ref data);
-        DisposeSurface(func, ref data);
-        DisposeInstanceAndDebug(in func,ref data);  
-    }
-
-    public unsafe static void Pause(in GraphicDeviceFunctions func,ref GraphicDeviceData data  )
-    {
-        if ( !data.Handles.Device.IsNull){
-            func.vkDeviceWaitIdle(data.Handles.Device).Check($"WAIT IDLE VkDevice : {data.Handles.Device}");
-        }
-    }
-
-    public unsafe static void BuildRender(ref GraphicDeviceFunctions func,ref GraphicDeviceData data)
-    {
-        CreateRenderPass(ref func,ref data);
-        CreateDepthResources( ref func, ref data);//need for framebuffer
-
-        CreateCommandPool(ref func,ref data);
-        CreateCommandBuffer(ref func,ref data);
-
-        //LoadModel => Do in TransfertConfigRenderToData load vertex indeices and textures ....
-        CreateVertexBuffer( ref func , ref data );
-        CreateIndexBuffer( ref func , ref data);
-        CreateTextureImage(ref func , ref data);
-        CreateTextureImageView(ref func , ref data);
-    
-        // Data to transfert at shader
-       
-        CreateTextureSampler(ref func , ref data);
-        CreateUniformBuffers(ref func , ref data );
-
-        CreateDescriptorSetLayout(ref func , ref data);
-        CreateDescriptorPool(ref func,ref data);
-        CreateDescriptorSets(ref func,ref data);
-        
-        // need to complete descriptor before layout
-        CreatePipelineLayout( ref func , ref data);
-        CreatePipeline(ref func, ref data );
-        
-
-        CreateFramebuffers(ref func,ref data);
-        
-        CreateSyncObjects(ref func , ref data);
-    }
-    
-    public unsafe static void DisposeBuildRender(in  GraphicDeviceFunctions func,ref GraphicDeviceData data  )
-    {
-        DisposePipeline( func,ref data);
-        DisposeRenderPass( func,ref data);
-        DisposeUniformBuffers( func , ref data);
-        DisposeTextureSampler( func , ref data);
-        DisposeTextureImage( func , ref data);
-        DisposeDescriptorPool( func , ref data);
-        DisposeBuffers( func , ref data);
-        DisposeSyncObjects( func ,ref data);
-        DisposeCommandPool( func,ref data);
-    }
-
-    public unsafe static void ReCreateSwapChain(ref GraphicDeviceFunctions func,ref GraphicDeviceData data)
-    {
-        if ( data.Handles.SwapChain == VkSwapchainKHR.Null)return ;
-
-        data.Handles.GetFrameBufferCallback(ref data.Info.VkSurfaceArea.width ,ref data.Info.VkSurfaceArea.height );
-
-        DisposeForReCreateSwapChain( func, ref data);
-       
-        CreateSwapChain(ref func,ref data);
-        CreateImageViews(ref func, ref data);
-        CreateDepthResources( ref func, ref data);
-        CreateFramebuffers(ref func,ref data);
-        
-    }
-
-    public unsafe static void DisposeForReCreateSwapChain(in GraphicDeviceFunctions func,ref GraphicDeviceData data)
-    {
-        Pause( func,ref data);
-        DisposeDepthResources(  func , ref data);
-        DisposeFrameBuffer(func, ref data);
-        DisposeSwapChain(func , ref data);
-    }
-
-    public static string VersionToString( uint version ) => $"{VK.VK_VERSION_MAJOR(version)}.{VK.VK_VERSION_MINOR(version)}.{VK.VK_VERSION_PATCH(version)} ";
-
-    #endregion
-
     #region INSTANCE & DEBUG
 
-    private unsafe static void CreateInstanceAndDebug(ref GraphicDeviceFunctions func,ref GraphicDeviceData data)
+    public unsafe static void CreateInstanceAndDebug(ref GraphicDeviceFunctions func,ref GraphicDeviceData data)
     {
         // VALIDATION LAYER  --------------------------------------------------------------------
         uint layerCount = 0;
@@ -324,7 +280,7 @@ public static class GraphicDeviceImplement
         Log.Info($"Create Debug {data.Handles.DebugMessenger}");
     }
 
-    private unsafe static void DisposeInstanceAndDebug(in GraphicDeviceFunctions func,ref GraphicDeviceData data)
+    public unsafe static void DisposeInstanceAndDebug(in GraphicDeviceFunctions func,ref GraphicDeviceData data)
     {
         if (!data.Handles.Instance.IsNull && !data.Handles.DebugMessenger.IsNull){
             Log.Info($"Release DebugMessenger [{data.Handles.DebugMessenger}]");
@@ -366,7 +322,7 @@ public static class GraphicDeviceImplement
 
     #region WSI  Window System Integration
     
-    private static unsafe void CreateSurface( ref GraphicDeviceFunctions func,ref GraphicDeviceData data )
+    public static unsafe void CreateSurface( ref GraphicDeviceFunctions func,ref GraphicDeviceData data )
     {
         #if WIN64
         VkWin32SurfaceCreateInfoKHR sci = new() ;
@@ -384,7 +340,7 @@ public static class GraphicDeviceImplement
         #endif
     }
     
-    private static unsafe void DisposeSurface(in GraphicDeviceFunctions func,ref GraphicDeviceData data)
+    public static unsafe void DisposeSurface(in GraphicDeviceFunctions func,ref GraphicDeviceData data)
     {
         if ( !data.Handles.Instance.IsNull && !data.Handles.Surface.IsNull)
         {
@@ -397,7 +353,7 @@ public static class GraphicDeviceImplement
     
     #region PHYSICAL DEVICE 
 
-    private static unsafe void SelectPhysicalDevice( ref GraphicDeviceFunctions func,ref GraphicDeviceData data )
+    public static unsafe void SelectPhysicalDevice( ref GraphicDeviceFunctions func,ref GraphicDeviceData data )
     {
         uint deviceCount = 0;
         func.vkEnumeratePhysicalDevices(data.Handles.Instance, &deviceCount, null).Check("EnumeratePhysicalDevices Count");
@@ -421,7 +377,7 @@ public static class GraphicDeviceImplement
         Log.Info($"Select Physical device {data.Handles.PhysicalDevice}");
     }
 
-    private static unsafe void GetPhysicalInformations( ref GraphicDeviceFunctions func,ref GraphicDeviceData data)
+    public static unsafe void GetPhysicalInformations( ref GraphicDeviceFunctions func,ref GraphicDeviceData data)
     {
         SwapChainSupportDetails swap = QuerySwapChainSupport( ref func , data.Handles.PhysicalDevice , data.Handles.Surface  );
         data.Info.Capabilities = swap.Capabilities;
@@ -659,7 +615,7 @@ public static class GraphicDeviceImplement
 
     #region DEVICE
     
-    private static unsafe void CreateLogicalDevice(ref GraphicDeviceFunctions func,ref GraphicDeviceData data )
+    public static unsafe void CreateLogicalDevice(ref GraphicDeviceFunctions func,ref GraphicDeviceData data )
     {
          (data.Info.VkGraphicFamilyIndice,data.Info.VkPresentFamilyIndice) = FindQueueFamilies(ref func , data.Handles.PhysicalDevice,data.Handles.Surface);
 
@@ -721,7 +677,7 @@ public static class GraphicDeviceImplement
         Log.Info($"Graphic Queues : indice :{ data.Info.VkGraphicFamilyIndice} Adr[{data.Handles.GraphicQueue}]\nPresent : indice :{data.Info.VkPresentFamilyIndice} Adr[{data.Handles.PresentQueue}]");
     }
 
-    private static unsafe void DisposeLogicalDevice(in GraphicDeviceFunctions func,ref GraphicDeviceData data )
+    public static unsafe void DisposeLogicalDevice(in GraphicDeviceFunctions func,ref GraphicDeviceData data )
     {
         
         if ( !data.Handles.Device.IsNull)
@@ -736,7 +692,7 @@ public static class GraphicDeviceImplement
 
     #region SWAP CHAIN
     
-    private static unsafe void CreateSwapChain(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data)
+    public static unsafe void CreateSwapChain(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data)
     {
          // FOR SWAP CHAIN ----------------------------------------------------
         data.Info.VkPresentMode = ChooseSwapPresentMode(ref data);
@@ -796,7 +752,7 @@ public static class GraphicDeviceImplement
         data.Info.ImageCount = imageCount  ;
     }
 
-    private static unsafe void CreateImageViews(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data )
+    public static unsafe void CreateImageViews(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data )
     {
         uint size  = data.Info.ImageCount;
         data.Handles.SwapChainImageViews = new VkImageView[size ];
@@ -826,7 +782,7 @@ public static class GraphicDeviceImplement
         }
     }
     
-    private static unsafe void DisposeSwapChain(in GraphicDeviceFunctions  func,ref GraphicDeviceData data )
+    public static unsafe void DisposeSwapChain(in GraphicDeviceFunctions  func,ref GraphicDeviceData data )
     {
         if (!data.Handles.Device.IsNull && data.Handles.SwapChainImageViews != null) 
         {
@@ -848,7 +804,7 @@ public static class GraphicDeviceImplement
     
     #region RenderPass
 
-    private static unsafe void CreateRenderPass(ref GraphicDeviceFunctions func,ref GraphicDeviceData data) 
+    public static unsafe void CreateRenderPass(ref GraphicDeviceFunctions func,ref GraphicDeviceData data) 
     {
         // COLOR 
         VkAttachmentDescription colorAttachment =new();
@@ -929,7 +885,7 @@ public static class GraphicDeviceImplement
         Log.Info($"Create Render Pass : {data.Handles.RenderPass}");
     }
 
-    private static unsafe void DisposeRenderPass(in GraphicDeviceFunctions  func,ref GraphicDeviceData data  )
+    public static unsafe void DisposeRenderPass(in GraphicDeviceFunctions  func,ref GraphicDeviceData data  )
     {
         if (!data.Handles.Device.IsNull && !data.Handles.RenderPass.IsNull)
         {
@@ -942,7 +898,7 @@ public static class GraphicDeviceImplement
 
     #region FrameBuffer
 
-    private static unsafe void CreateFramebuffers( ref GraphicDeviceFunctions  func,ref GraphicDeviceData data)
+    public static unsafe void CreateFramebuffers( ref GraphicDeviceFunctions  func,ref GraphicDeviceData data)
     {
         int size= data.Handles.SwapChainImageViews.Length;
         data.Handles.Framebuffers = new VkFramebuffer[size];
@@ -973,7 +929,7 @@ public static class GraphicDeviceImplement
         
     }
 
-    private unsafe static void DisposeFrameBuffer(in GraphicDeviceFunctions  func,ref GraphicDeviceData data  )
+    public unsafe static void DisposeFrameBuffer(in GraphicDeviceFunctions  func,ref GraphicDeviceData data  )
     {
         if (data.Handles.Framebuffers != null)
         {
@@ -991,7 +947,7 @@ public static class GraphicDeviceImplement
     #endregion
 
     #region DEpth Buffering 
-    private unsafe static void CreateDepthResources(ref GraphicDeviceFunctions func, ref GraphicDeviceData data)
+    public unsafe static void CreateDepthResources(ref GraphicDeviceFunctions func, ref GraphicDeviceData data)
     {
         VkFormat depthFormat = FindDepthFormat(func , data.Handles.PhysicalDevice);
 
@@ -1017,6 +973,25 @@ public static class GraphicDeviceImplement
             func.vkCreateImageView(data.Handles.Device, &viewInfo, null, imageView).Check("failed to create image view!");
         }
         Log.Info($"Create Depth Resources: {data.Info.DepthImageView}");
+    }
+    
+    public unsafe static void DisposeDepthResources(in GraphicDeviceFunctions  func, ref GraphicDeviceData data)
+    {
+        if ( data.Info.DepthImageView != VkImageView.Null )
+        {
+            Log.Info($"Destroy Depth Image : {data.Info.DepthImageView}");
+            func.vkDestroyImageView(data.Handles.Device,data.Info.DepthImageView, null);
+        }
+        if(data.Info.DepthImage != VkImage.Null )
+        {
+            Log.Info($"Destroy Depth Image : {data.Info.DepthImage}");
+            func.vkDestroyImage(data.Handles.Device, data.Info.DepthImage, null);
+        }
+        if ( data.Info.DepthImageMemory != VkDeviceMemory.Null)
+        {
+            Log.Info($"Destroye Depth Image memory : {data.Info.DepthImageMemory}");
+            func.vkFreeMemory(data.Handles.Device, data.Info.DepthImageMemory, null);
+        }
     }
     
     private static unsafe  VkFormat FindSupportedFormat(in GraphicDeviceFunctions func, in VkPhysicalDevice physicalDevice,  VkFormat[] candidates, VkImageTiling tiling, VkFormatFeatureFlagBits features) 
@@ -1050,30 +1025,11 @@ public static class GraphicDeviceImplement
         );
     }
 
-    private unsafe static void DisposeDepthResources(in GraphicDeviceFunctions  func, ref GraphicDeviceData data)
-    {
-        if ( data.Info.DepthImageView != VkImageView.Null )
-        {
-            Log.Info($"Destroy Depth Image : {data.Info.DepthImageView}");
-            func.vkDestroyImageView(data.Handles.Device,data.Info.DepthImageView, null);
-        }
-        if(data.Info.DepthImage != VkImage.Null )
-        {
-            Log.Info($"Destroy Depth Image : {data.Info.DepthImage}");
-            func.vkDestroyImage(data.Handles.Device, data.Info.DepthImage, null);
-        }
-        if ( data.Info.DepthImageMemory != VkDeviceMemory.Null)
-        {
-            Log.Info($"Destroye Depth Image memory : {data.Info.DepthImageMemory}");
-            func.vkFreeMemory(data.Handles.Device, data.Info.DepthImageMemory, null);
-        }
-    }
-
     #endregion
  
     #region COMMAND BUFFERS 
 
-    private static unsafe void CreateCommandPool(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data  ) 
+    public static unsafe void CreateCommandPool(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data  ) 
     {
         
         VkCommandPoolCreateInfo poolInfo = new();
@@ -1089,7 +1045,7 @@ public static class GraphicDeviceImplement
         Log.Info($"Create Command Pool {data.Handles.CommandPool}  with {VkCommandPoolCreateFlagBits.VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT}");
     }
 
-    private static unsafe void CreateCommandBuffer(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data ) 
+    public static unsafe void CreateCommandBuffer(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data ) 
     {
         data.Handles.CommandBuffers = new VkCommandBuffer[data.Info.MAX_FRAMES_IN_FLIGHT]; 
 
@@ -1107,7 +1063,7 @@ public static class GraphicDeviceImplement
         Log.Info($"Create Allocate Command buffer count : {data.Info.MAX_FRAMES_IN_FLIGHT}");
     }
 
-    private unsafe static void DisposeCommandPool(in GraphicDeviceFunctions  func,ref GraphicDeviceData data )
+    public unsafe static void DisposeCommandPool(in GraphicDeviceFunctions  func,ref GraphicDeviceData data )
     {
         if (!data.Handles.Device.IsNull && !data.Handles.CommandPool.IsNull)
         {
@@ -1120,7 +1076,7 @@ public static class GraphicDeviceImplement
 
     #region Vertex & Index
  
-    private unsafe static void CreateVertexBuffer(ref GraphicDeviceFunctions func, ref GraphicDeviceData data  ) 
+    public unsafe static void CreateVertexBuffer(ref GraphicDeviceFunctions func, ref GraphicDeviceData data  ) 
     {
         VkDeviceSize bufferSize =  (uint)data.Info.Vertices.Length * sizeof(float) ;//(uint)( Position3f_Color3f_UV2f.Stride * data.Info.Vertices.Length);
 
@@ -1155,7 +1111,7 @@ public static class GraphicDeviceImplement
         Log.Info($"Create Vertex Buffer Memory {data.Info.VertexBufferMemory} ");
     }
 
-    private unsafe static void CreateIndexBuffer(ref GraphicDeviceFunctions func, ref GraphicDeviceData data   ) 
+    public unsafe static void CreateIndexBuffer(ref GraphicDeviceFunctions func, ref GraphicDeviceData data   ) 
     {
         VkDeviceSize bufferSize = (uint)(sizeof(short) * data.Info.Indices.Length);
 
@@ -1196,7 +1152,7 @@ public static class GraphicDeviceImplement
         Log.Info($"Create Vertex Buffer Memory {data.Info.IndicesBufferMemory} ");
     }
 
-    private unsafe static void DisposeBuffers(in GraphicDeviceFunctions  func, ref GraphicDeviceData data)
+    public unsafe static void DisposeBuffers(in GraphicDeviceFunctions  func, ref GraphicDeviceData data)
     {
         if( !data.Handles.IndicesBuffer.IsNull)
         {
@@ -1353,9 +1309,7 @@ public static class GraphicDeviceImplement
 
     #region Texture
 
-    
-
-    private unsafe static void CreateTextureImage(ref GraphicDeviceFunctions func,ref GraphicDeviceData data )
+    public unsafe static void CreateTextureImage(ref GraphicDeviceFunctions func,ref GraphicDeviceData data )
     {
         VkFormat format = VkFormat.VK_FORMAT_UNDEFINED;
         uint texWidth=512, texHeight=512;
@@ -1417,7 +1371,7 @@ public static class GraphicDeviceImplement
         Log.Info($"Create Texture Image Memory {data.Info.TextureImageMemory} ");
     }
 
-    private unsafe static void CreateTextureImageView(ref GraphicDeviceFunctions  func, ref GraphicDeviceData data)
+    public unsafe static void CreateTextureImageView(ref GraphicDeviceFunctions  func, ref GraphicDeviceData data)
     {
         VkImageViewCreateInfo viewInfo = new();
         viewInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -1437,7 +1391,7 @@ public static class GraphicDeviceImplement
         Log.Info($"Create Texture Image View {data.Info.TextureImageView}");
     }
 
-    private unsafe static void DisposeTextureImage(in GraphicDeviceFunctions  func, ref GraphicDeviceData data)
+    public unsafe static void DisposeTextureImage(in GraphicDeviceFunctions  func, ref GraphicDeviceData data)
     {
         if( !data.Info.TextureImage.IsNull)
         {
@@ -1609,7 +1563,7 @@ public static class GraphicDeviceImplement
 
     #region  UNIFORM BUFFER  NEED TO DESCRIPTOR SET
 
-    private unsafe static void CreateUniformBuffers(ref GraphicDeviceFunctions func, ref GraphicDeviceData data   ) 
+    public unsafe static void CreateUniformBuffers(ref GraphicDeviceFunctions func, ref GraphicDeviceData data   ) 
     {
         ulong uboAlignment  = data.Info.PhysicalDeviceProperties.limits.minUniformBufferOffsetAlignment;
         ulong uboSize = (ulong)data.Info.UniformBufferArray.Length * sizeof(float);
@@ -1642,7 +1596,7 @@ public static class GraphicDeviceImplement
        
     }
 
-    private unsafe static void DisposeUniformBuffers(in GraphicDeviceFunctions  func, ref GraphicDeviceData data ) 
+    public unsafe static void DisposeUniformBuffers(in GraphicDeviceFunctions  func, ref GraphicDeviceData data ) 
     {
         for (nint i = 0; i < data.Info.MAX_FRAMES_IN_FLIGHT; i++) 
         {
@@ -1678,7 +1632,7 @@ public static class GraphicDeviceImplement
     #endregion
 
     #region SAMPLER NEED TO DESCRIPTOR SET
-    private unsafe static void CreateTextureSampler(ref GraphicDeviceFunctions  func, ref GraphicDeviceData data)
+    public unsafe static void CreateTextureSampler(ref GraphicDeviceFunctions  func, ref GraphicDeviceData data)
     {
         VkSamplerCreateInfo samplerInfo = new();
         samplerInfo.sType =  VkStructureType.VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -1702,9 +1656,7 @@ public static class GraphicDeviceImplement
         Log.Info($"Create Texture sampler {data.Info.TextureSampler}");
     }
 
-   
-
-    private unsafe static void DisposeTextureSampler(in GraphicDeviceFunctions  func, ref GraphicDeviceData data)
+    public unsafe static void DisposeTextureSampler(in GraphicDeviceFunctions  func, ref GraphicDeviceData data)
     {
         if( !data.Info.TextureSampler.IsNull)
         {
@@ -1718,7 +1670,7 @@ public static class GraphicDeviceImplement
     
     #region Desciptor pool descriptor set and layout 
 
-    private static unsafe void CreateDescriptorPool(ref GraphicDeviceFunctions  func, ref GraphicDeviceData data)
+    public static unsafe void CreateDescriptorPool(ref GraphicDeviceFunctions  func, ref GraphicDeviceData data)
     {
         VkDescriptorPoolSize* poolSizes = stackalloc VkDescriptorPoolSize[2];
 
@@ -1740,7 +1692,7 @@ public static class GraphicDeviceImplement
         Log.Info($"Create Descriptor Pool : {data.Handles.DescriptorPool}");
     }
     
-    private unsafe static void CreateDescriptorSetLayout(ref GraphicDeviceFunctions  func, ref GraphicDeviceData data  ) 
+    public unsafe static void CreateDescriptorSetLayout(ref GraphicDeviceFunctions  func, ref GraphicDeviceData data  ) 
     {
         VkDescriptorSetLayoutBinding uboLayoutBinding = new();
         uboLayoutBinding.binding = 0;
@@ -1770,7 +1722,7 @@ public static class GraphicDeviceImplement
         Log.Info($"Create Descriptor Set layout : {data.Handles.DescriptorSetLayout}");
     }
    
-    private static unsafe void CreateDescriptorSets(ref GraphicDeviceFunctions  func, ref GraphicDeviceData data) 
+    public static unsafe void CreateDescriptorSets(ref GraphicDeviceFunctions  func, ref GraphicDeviceData data) 
     {
         // int value = data.Info.MAX_FRAMES_IN_FLIGHT;
         VkDescriptorSetLayout* layouts  =  stackalloc VkDescriptorSetLayout[2] { data.Handles.DescriptorSetLayout,data.Handles.DescriptorSetLayout };
@@ -1824,7 +1776,7 @@ public static class GraphicDeviceImplement
         }
     }
 
-    private static unsafe void DisposeDescriptorPool(in GraphicDeviceFunctions  func, ref GraphicDeviceData data)
+    public static unsafe void DisposeDescriptorPool(in GraphicDeviceFunctions  func, ref GraphicDeviceData data)
     {
         if ( !data.Handles.DescriptorPool.IsNull)
         {
@@ -1937,7 +1889,7 @@ public static class GraphicDeviceImplement
     #endregion
 
     #region Synchronisation & cache control (  Fence = memory barrier )
-    private static unsafe void CreateSyncObjects(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data   )
+    public static unsafe void CreateSyncObjects(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data   )
     {
         data.Handles.ImageAvailableSemaphores = new VkSemaphore[data.Info.MAX_FRAMES_IN_FLIGHT]; 
         data.Handles.RenderFinishedSemaphores = new VkSemaphore[data.Info.MAX_FRAMES_IN_FLIGHT];
@@ -1973,7 +1925,7 @@ public static class GraphicDeviceImplement
         }
     }
 
-    private static unsafe void DisposeSyncObjects(in GraphicDeviceFunctions  func,ref GraphicDeviceData data)
+    public static unsafe void DisposeSyncObjects(in GraphicDeviceFunctions  func,ref GraphicDeviceData data)
     {
         if (  !data.Handles.Device.IsNull && data.Handles.RenderFinishedSemaphores != null){
             for ( int i = 0 ; i< data.Info.MAX_FRAMES_IN_FLIGHT ; i++)
@@ -2030,7 +1982,7 @@ public static class GraphicDeviceImplement
         shader = fragShaderModule;
     }
 
-    private unsafe static void CreatePipelineLayout(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data  )
+    public unsafe static void CreatePipelineLayout(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data  )
     {
         VkPipelineLayoutCreateInfo pipelineLayoutInfo=new();
         pipelineLayoutInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -2053,7 +2005,7 @@ public static class GraphicDeviceImplement
 
     #endregion
 
-    private static unsafe void CreatePipeline(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data )
+    public static unsafe void CreatePipeline(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data )
     {
         #region SHADERS
 
@@ -2413,7 +2365,7 @@ public static class GraphicDeviceImplement
        CurrentFrame = ((CurrentFrame + 1) % data.Info.MAX_FRAMES_IN_FLIGHT);   
     }
 
-    private static unsafe void DisposePipeline(in GraphicDeviceFunctions  func,ref GraphicDeviceData data)
+    public static unsafe void DisposePipeline(in GraphicDeviceFunctions  func,ref GraphicDeviceData data)
     {
         if( !data.Handles.Device.IsNull && !data.Handles.PipelineLayout.IsNull)
         {

@@ -73,7 +73,7 @@ public static partial class ClockImplement
     public unsafe static void InitClock(ref ClockData data , ref ClockFunctions func , in PlatformConfig config)
     {
         #if WIN64
-        func = new( config.LibraryName_Clock);
+        func = new( config.LibraryName_Kernel);
         data.FixedTimeStep  = config.Clock_FixedTimeStep;
         data.SecondPerCycle  = 1.0 / GetFrequency(ref func) ;
         #endif

@@ -59,9 +59,9 @@ public struct Window : IEquatable<Window>
 
     private unsafe void UpadateData(PlatformConfig config)
     {
-        _data.User32 = Libraries.Load(config.LibraryName_Window_User32);
-        _data.Kernel = Libraries.Load(config.LibraryName_Window_Kernel);
-        _data.Gdi = Libraries.Load(config.LibraryName_Window_Gdi);
+        _data.User32 = Libraries.Load(config.LibraryName_User32);
+        _data.Kernel = Libraries.Load(config.LibraryName_Kernel);
+        _data.Gdi = Libraries.Load(config.LibraryName_Gdi);
         _funcs = new(Libraries.GetUnsafeSymbol, _data.User32, _data.Kernel, _data.Gdi);
         _data.WndProc = this.WndProc2;
         (_data.Width, _data.Height) = PlatformConfig.GetResolution(config.Window_Resolution);
