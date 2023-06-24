@@ -278,6 +278,20 @@ public static class Helper
     /// <returns>simple precision angle between 0° to 360° </returns>
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public static float ToDegree(float radian) => radian * 57.295779513082320876798154814105f;
+
+     /// <summary> Converti valeur  de degré vers radians  </summary>
+    /// <param name="degree"> float de 0 a 360  </param>
+    /// <returns>simple precision between 0 to PI </returns>
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    public static double ToRadians(double degree) => degree * 0.01745329251994329576923690768489;
+    
+    /// <summary> Convertion de radians vers degrée </summary>
+    /// <param name="radian">double 0 PI</param>
+    /// <returns>simple precision angle between 0° to 360° </returns>
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    public static double ToDegree(double radian) => radian * 57.295779513082320876798154814105;
+
+     public static float ToRad(this float degree) => degree * 0.01745329251994329576923690768489f;
 #endregion
 
 #region Approx

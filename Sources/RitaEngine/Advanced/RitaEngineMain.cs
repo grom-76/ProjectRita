@@ -83,7 +83,7 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
             clock.Update();
             
             #if !DEBUG
-            if (!window.IsLostFocus)
+            if (window.IsLostFocus)
             {
                 continue;
             }
@@ -95,7 +95,7 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
             UpdateInputs();
 
             UpdateDraw();
-            graphic.DrawRender();
+            graphic.DrawRender(RenderConfig);
         }
     }
 

@@ -2173,9 +2173,9 @@ using static RitaEngine.Base.Math.Helper;
         public static void Scaling(float x, float y, float z, out Matrix result)
         {
             result = Identity;
-            result.M11 = x;
-            result.M22 = y;
-            result.M33 = z;
+            result.M11 = Math.Helper.Abs(x);
+            result.M22 =  Math.Helper.Abs(y);
+            result.M33 =  Math.Helper.Abs(z);
         }
 
         /// <summary>
@@ -2199,7 +2199,7 @@ using static RitaEngine.Base.Math.Helper;
         public static void Scaling(float scale, out Matrix result)
         {
             result = Identity;
-            result.M11 = result.M22 = result.M33 = scale;
+            result.M11 = result.M22 = result.M33 = Math.Helper.Abs(scale);
         }
 
         /// <summary>

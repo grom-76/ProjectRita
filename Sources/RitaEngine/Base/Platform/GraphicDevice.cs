@@ -26,7 +26,6 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
     public unsafe void Init(in PlatformConfig config, in Window window )
     {
         GraphicDeviceImplement.TransfertToData(in config,in window ,ref _functions , ref _data);   
-       
         // APP  : WSI , DEBUG , INSTANCE        
         GraphicDeviceImplement.CreateInstanceAndDebug(ref _functions,ref _data);
         GraphicDeviceImplement.CreateSurface(ref _functions , ref _data);
@@ -96,10 +95,10 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
     public void UpdateRender(in GraphicRenderConfig config)
     {    
-        _data.Info.UniformBufferArray = config.Camera.ToArray;
+        _data.Info.UniformBufferArray = config.Camera.ToArray();
     }
 
-    public void DrawRender()
+    public void DrawRender(in GraphicRenderConfig config)
         => GraphicDeviceImplement.DrawPipeline(ref _functions, ref _data);
 
     #region OVERRIDE    
@@ -159,7 +158,7 @@ public static class GraphicDeviceImplement
      public static void TransfertToRender(in GraphicRenderConfig pipeline, in GraphicDeviceFunctions functions, ref GraphicDeviceData data)
     {
         pipeline.Camera.BuildCamera();
-        data.Info.UniformBufferArray =  pipeline.Camera.ToArray; 
+        data.Info.UniformBufferArray =  pipeline.Camera.ToArray(); 
         data.Info.RenderAreaOffset.x =0;
         data.Info.RenderAreaOffset.y =0;       
         data.Info.ClearColor = new(ColorHelper.PaletteToRGBA( pipeline.BackColorARGB));
@@ -455,7 +454,14 @@ public static class GraphicDeviceImplement
        
     }
 
-    struct QueueFamilyIndices 
+    private ref struct SwapChainSupportDetails
+    {
+        public VkSurfaceCapabilitiesKHR Capabilities;
+        public ReadOnlySpan<VkSurfaceFormatKHR> Formats;
+        public ReadOnlySpan<VkPresentModeKHR> PresentModes;
+    }
+
+    private struct QueueFamilyIndices 
     {
         public uint? graphicsFamily = null!;
         public uint? presentFamily = null!;
@@ -517,13 +523,6 @@ public static class GraphicDeviceImplement
         return !swapChainSupport.Formats.IsEmpty && !swapChainSupport.PresentModes.IsEmpty;
     }
     
-    private ref struct SwapChainSupportDetails
-    {
-        public VkSurfaceCapabilitiesKHR Capabilities;
-        public ReadOnlySpan<VkSurfaceFormatKHR> Formats;
-        public ReadOnlySpan<VkPresentModeKHR> PresentModes;
-    }
-
     private  unsafe static SwapChainSupportDetails QuerySwapChainSupport(ref GraphicDeviceFunctions func,VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
     {
         SwapChainSupportDetails details = new();
@@ -994,7 +993,12 @@ public static class GraphicDeviceImplement
         }
     }
     
-    private static unsafe  VkFormat FindSupportedFormat(in GraphicDeviceFunctions func, in VkPhysicalDevice physicalDevice,  VkFormat[] candidates, VkImageTiling tiling, VkFormatFeatureFlagBits features) 
+    private static unsafe  VkFormat FindSupportedFormat(
+        in GraphicDeviceFunctions func, 
+        in VkPhysicalDevice physicalDevice,  
+        VkFormat[] candidates,/*valid Formats*/ 
+        VkImageTiling tiling, 
+        VkFormatFeatureFlagBits features) 
     {
 
         foreach ( VkFormat format in candidates)
@@ -1005,10 +1009,12 @@ public static class GraphicDeviceImplement
 
             if (tiling == VkImageTiling.VK_IMAGE_TILING_LINEAR && (formatProperties.linearTilingFeatures & (uint)features) == (uint)features) 
             {
+                Log.Info($"Depth Format : { format.ToString()}");
                 return format;
             } 
             else if (tiling == VkImageTiling.VK_IMAGE_TILING_OPTIMAL && (formatProperties.optimalTilingFeatures & (uint)features) == (uint)features) 
             {
+                Log.Info($"Depth Format : { format.ToString() }");
                 return format;
             }
         }
@@ -1019,7 +1025,14 @@ public static class GraphicDeviceImplement
     private static unsafe VkFormat FindDepthFormat( in GraphicDeviceFunctions func, in VkPhysicalDevice physicalDevice ) 
     {
         return FindSupportedFormat(func , physicalDevice,
-            new VkFormat[] {VkFormat.VK_FORMAT_D32_SFLOAT, VkFormat.VK_FORMAT_D32_SFLOAT_S8_UINT, VkFormat.VK_FORMAT_D24_UNORM_S8_UINT},
+            new VkFormat[] 
+            {
+                VkFormat.VK_FORMAT_D32_SFLOAT, 
+                VkFormat.VK_FORMAT_D32_SFLOAT_S8_UINT, 
+                VkFormat.VK_FORMAT_D24_UNORM_S8_UINT,
+                VkFormat.VK_FORMAT_D16_UNORM_S8_UINT,
+                VkFormat.VK_FORMAT_D16_UNORM
+            },
             VkImageTiling.VK_IMAGE_TILING_OPTIMAL,
              VkFormatFeatureFlagBits.VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
         );

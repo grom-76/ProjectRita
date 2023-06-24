@@ -69,7 +69,7 @@ public static class Sample_0001
                     snd.PlaySource();
                 }
 
-                graphic.DrawRender();
+                graphic.DrawRender(renderConfig);
 
                 window.DispatchPending();
                 input.Update();
