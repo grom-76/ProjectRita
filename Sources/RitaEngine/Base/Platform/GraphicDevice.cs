@@ -95,7 +95,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
     public void UpdateRender(in GraphicRenderConfig config)
     {    
-        _data.Info.UniformBufferArray = config.Camera.ToArray();
+        _data.Info.UniformBufferArray = config.Camera.ToArray;
     }
 
     public void DrawRender(in GraphicRenderConfig config)
@@ -155,10 +155,10 @@ public static class GraphicDeviceImplement
         
     }
 
-     public static void TransfertToRender(in GraphicRenderConfig pipeline, in GraphicDeviceFunctions functions, ref GraphicDeviceData data)
+    public static void TransfertToRender(in GraphicRenderConfig pipeline, in GraphicDeviceFunctions functions, ref GraphicDeviceData data)
     {
-        pipeline.Camera.BuildCamera();
-        data.Info.UniformBufferArray =  pipeline.Camera.ToArray(); 
+        // pipeline.Camera.AddLookAkCamera(new( 0.0f,-0.12f,-2.0f),new(0.0f, 45.0f, 00.0f), new(0.0f,1.0f,0.0f), 45.0f,( 1280/720) , 0.1f, 100.0f);
+        data.Info.UniformBufferArray =  pipeline.Camera.ToArray; 
         data.Info.RenderAreaOffset.x =0;
         data.Info.RenderAreaOffset.y =0;       
         data.Info.ClearColor = new(ColorHelper.PaletteToRGBA( pipeline.BackColorARGB));

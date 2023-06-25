@@ -3,104 +3,216 @@ namespace RitaEngine.Base.Graphic;
 using RitaEngine.Base.Math;
 using RitaEngine.Base.Platform;
 
+[ StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public struct Camera :IEquatable<Camera>
 {
-    Matrix World = Matrix.Identity;
-    Matrix View=Matrix.Identity;
-    Matrix Projection=Matrix.Identity;
-
-    /// <summary>
-    /// Called too Position
-    /// </summary>
-    /// <returns></returns>
-    public Vector3 _position =new(0.0f,-0.12f,-2.0f);
-    private Vector3 _rotation = new(0.0f, 45.0f, 00.0f);
-    public Vector3 Target =new(0.00f,0.00f,0.00f);
-    public Vector3 Up =new(0.0f,1.0f,0.0f);
-    public float FieldOfViewInDegree = 45.0f;
-    private CameraType _type = CameraType.LookAt;
-
-
+    private CameraData _data = new();
     public Camera() { }
 
-    public void AddLookAkCamera(Vector3 position,Vector3 rotation, Vector3 up , float fov, float ratio , float near , float far )
+    public void AddLookAkCamera(Vector3 position,Vector3 rotation, Vector3 up , float fov, float aspectRatio , float near , float far )
     {
-        _type = CameraType.LookAt;
-        World =  RitaEngine.Base.Math.Matrix.Identity;
-        Matrix.CreatePerspectiveFieldOfView( Helper.ToRadians( FieldOfViewInDegree) ,(1280.0f/720.0f), 0.1f,100.0f,out Projection );
-        Projection.M22 *= -1;
-        UpdateViewMatrix();
+        _data.Type = CameraType.LookAt;
+        _data.Position = position;
+        _data.Up = up;
+        _data.AspectRatio = aspectRatio;
+        _data.ZNear = near;
+        _data.ZFar = far ; 
+        _data.FieldOfViewInDegree = fov;
+        _data.Rotation = rotation;
+        CameraImplement.LookAkCamera(ref _data); 
+    }
+    public void AddFirstPersonCamera( Vector3 position,Vector3 target, Vector3 up , float fov, float aspectRatio , float near , float far)
+    {
+        _data.Type = CameraType.FirstPerson;
+        _data.Position = position;
+        _data.Up = up;
+        _data.AspectRatio = aspectRatio;
+        _data.ZNear = near;
+        _data.ZFar = far ; 
+        _data.FieldOfViewInDegree = fov;
+        _data.Target = target;
+        CameraImplement.FirstPerson(ref _data);
     }
 
-    public void AddFirstPersonCamera( Vector3 position,Vector3 target, Vector3 up , float fov, float ratio , float near , float far)
+    public void PoorZoom( float advance )
     {
-        _type = CameraType.FirstPerson;
-        World =  RitaEngine.Base.Math.Matrix.Identity;
-        Matrix.CreateLookAt( ref _position ,ref Target, ref Up, out View);
-        Matrix.CreatePerspectiveFieldOfView( Helper.ToRadians( FieldOfViewInDegree) ,(1280.0f/720.0f), 0.1f,100.0f,out Projection );
-        Projection.M22 *= -1;
-        //https://computergraphics.stackexchange.com/questions/12448/vulkan-perspective-matrix-vs-opengl-perspective-matrix
-        // Matrix.MakeProjectionMatrixWithoutFlipYAxis( Helper.ToRadians( FieldOfViewInDegree) ,(1280.0f/720.0f), 0.1f,100.0f,out Projection );
+        _data.FieldOfViewInDegree += advance;
+        _data.FieldOfViewInDegree =  Math.Helper.Clamp( _data.FieldOfViewInDegree,0.1f,89.9f)  ;
+        CameraImplement.UpdateProjection(ref _data );
     }
+    
 
     /// <summary>
-    ///  Update Camera per Frame 
+    /// // x movement  LEFT => negatif RIGHT => positif
     /// </summary>
-    /// <param name="DeltaTime"></param>
-    public void Transform(double DeltaTime)
+    /// <param name="distance speed">deltaTime * MoveSpeed</param>
+    public void Strafe(float distance) => CameraImplement.Strafe(ref _data , distance);
+
+    public void Update(float deltaTime) => CameraImplement.Update(ref _data);
+
+    public void TranslateLookAt(float x,float y,float z)
     {
-        //Rotation
-        //Translation
-        //Scale
+        _data.Position.X += x;_data.Position.Y += y;_data.Position.Z += z;
+        _data.IsUpdated = true;
+    }
+
+    public float[] ToArray => _data.ToArray();
+
+    public void Release()
+    {
+        _data.Release();
+    }
+
+    #region OVERRIDE    
+    public override string ToString() => string.Format($"Camera Manager? " );
+    public override int GetHashCode() => HashCode.Combine( _data );
+    public override bool Equals(object? obj) => obj is Camera  camera && this.Equals(camera) ;
+    public bool Equals(Camera other)=>  _data.Equals(other._data) ;
+    public static bool operator ==(Camera  left,Camera right) => left.Equals(right);
+    public static bool operator !=(Camera  left,Camera right) => !left.Equals(right);
+    #endregion
+}
+
+[SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
+public static class CameraImplement
+{
+    
+    public static void LookAkCamera(ref CameraData data)
+    {
+        data.World =  RitaEngine.Base.Math.Matrix.Identity;
+        UpdateProjection(ref data);
+        UpdateViewMatrix(ref data);
+    }
+
+    public static void FirstPerson(ref CameraData data)
+    {
+        data.World =  RitaEngine.Base.Math.Matrix.Identity;
+        data.CamFront =  data.Target - data.Position;
+        Matrix.CreateLookAt( ref data.Position ,ref data.CamFront, ref data.Up, out data.View);
+        UpdateProjection(ref data);
     }
 
 
-    public void Update(float deltaTime)
-    {
-        _ = _type switch{
-            CameraType.LookAt => UpdateViewMatrix(),
-            CameraType.FirstPerson => UpdateFirstPerson(),
-            _=> UpdateViewMatrix()
-        };
-    }
-
-    private void UpdateViewMatrix()
+    public static int UpdateViewMatrix(ref CameraData data)
     {
         Matrix rotM = Matrix.Identity;
         Matrix transM;
         
-        rotM = Matrix.RotationX(Math.Helper.ToRadians(_rotation.X*-1.0f)) * rotM;
-        rotM = Matrix.RotationY(Math.Helper.ToRadians(_rotation.Y)) * rotM;
-        rotM = Matrix.RotationZ(Math.Helper.ToRadians(_rotation.Z)) * rotM;
-        // rotM = Matrix.RotationAxis(_rotation, 1.0f);
+        rotM = Matrix.RotationX(Math.Helper.ToRadians(data.Rotation.X* data.FlipY)) * rotM;
+        rotM = Matrix.RotationY(Math.Helper.ToRadians(data.Rotation.Y)) * rotM;
+        rotM = Matrix.RotationZ(Math.Helper.ToRadians(data.Rotation.Z)) * rotM;
 
-       Vector3 translation = _position;
-        translation.Y *= -1.0f;
+        Vector3 translation = data.Position;
+        translation.Y *=  data.FlipY;
         transM = Matrix.Translation(translation);
 
-        // View = rotM * transM;
-        View =  transM * rotM;
+        data.View = data.Type == CameraType.LookAt ?  transM * rotM  :  rotM * transM;
+      
+        return 0;
     }
-
-    private void UpdateFirstPerson(){}
-
-    public void Translate(float x , float y , float z)
+   
+    public static void UpdateProjection(ref CameraData data )
     {
-        _position.X += x;  _position.Y += y;  _position.Z += z;
+        Matrix.CreatePerspectiveFieldOfView( Helper.ToRadians( data.FieldOfViewInDegree) ,data.AspectRatio, data.ZNear,data.ZFar,out data.Projection );
+        data.Projection.M22 *= data.FlipY;
+        //https://computergraphics.stackexchange.com/questions/12448/vulkan-perspective-matrix-vs-opengl-perspective-matrix
+      
+        //https://github.com/SaschaWillems/Vulkan/blob/master/base/camera.hpp
     }
-    public void Translate(Vector3 delta)
+
+    public static void Update(ref CameraData data )
     {
-        _position += delta;
-    UpdateViewMatrix();
+        if ( !data.IsUpdated)return ;
+        
+        data.IsUpdated =false;
+
+        UpdateViewMatrix(ref data);
+       
     }
 
-    // public float[] ToArray => new float[ ]
-    // {
-    //     World[0],World[1],World[2],World[3],World[4],World[5],World[6],World[7],World[8],World[9],World[10],World[11],World[12],World[13],World[14],World[15],
-    //     View[0],View[1],View[2],View[3],View[4],View[5],View[6],View[7],View[8],View[9],View[10],View[11],View[12],View[13],View[14],View[15],
-    //     Projection[0],Projection[1],Projection[2],Projection[3],Projection[4],Projection[5],Projection[6],Projection[7],Projection[8],Projection[9],Projection[10],Projection[11],Projection[12],Projection[13],Projection[14],Projection[15],
-    // };
+    public static void UpdateFirstPerson(ref CameraData data)
+    {
+        // data.CamFront = default;
+        data.CamFront.X = - Helper.Cos( data.Rotation.X.ToRad()) * Helper.Sin(data.Rotation.Y.ToRad() );
+        data.CamFront.Y = Helper.Sin( data.Rotation.X.ToRad() );
+        data.CamFront.Z = Helper.Cos( data.Rotation.X.ToRad() ) * Helper.Cos(data.Rotation.Y.ToRad());
+        data.CamFront = Vector3.Normalize(data.CamFront);
 
+        // float moveSpeed = deltaTime * movementSpeed;
+
+        // // if (keys.up)
+        // data.Position += camFront * data.MoveSpeed;
+        // // if (keys.down)
+        // data.Position -= camFront * data.MoveSpeed;
+        // // if (keys.left)
+        // data.Position -=  Vector3.Normalize(Vector3.Cross(ref camFront,ref  data.Up)) * data.MoveSpeed;
+        // // if (keys.right)
+        // data.Position += Vector3.Normalize(Vector3.Cross(ref camFront, ref data.Up)) * data.MoveSpeed;
+
+        data.IsUpdated =true;
+    }
+
+    public static void Strafe(ref CameraData data,float distance)
+    {
+        UpdateFirstPerson(ref data);
+        data.Position += data.CamFront * distance/*data.MoveSpeed*/ ;
+    }
+        
+    /// <summary>
+    /// // y movement UP DOWN ( for jump )
+    /// </summary>
+    /// <param name="distance"></param>
+    public static void Ascend(float distance)
+    {
+        // _cameraPosition += _cameraUp * distance;
+        // _lookatChange = true;
+        // _positionChange = true;
+    }
+        
+
+    /// <summary>
+    ///z movement FORWARD => positif distance BACKWARD => negatif distance
+    /// </summary>
+    /// <param name="distance"></param>
+    public static void Advance(float distance)
+    {
+            // => camera.Position += camera.Direction * -distance;
+        // _cameraPosition += (distance * _cameraFront) ;
+        // _lookatChange = true;
+        // _positionChange = true;
+    }
+
+
+}
+
+
+[ StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
+public struct CameraData :IEquatable<CameraData>
+{
+    public Matrix World = Matrix.Identity;
+    public Matrix View=Matrix.Identity;
+    public Matrix Projection=Matrix.Identity;
+    public Vector3 Position =new(0.0f,-0.12f,-2.0f);
+    /// <summary>
+    /// X yaw , Y pitch , Z roll 
+    /// </summary>
+    /// <returns></returns>
+    public Vector3 Rotation = new(0.0f,10.0f, 00.0f);
+    public Vector3 Target =new(0.00f,0.00f,0.00f);
+    public  Vector3 CamFront = new(0.0f);
+    public Vector3 Up =new(0.0f,1.0f,0.0f);
+    public float FieldOfViewInDegree = 45.0f;
+    public float AspectRatio =16.9f;
+    public float Width =1280.0f;
+    public float Height = 720.0f;
+    public float ZNear =0.1f;
+    public float ZFar = 100.0f;
+    public float FlipY = -1.0f;
+    public float MoveSpeed = 1.0f;
+    public CameraType Type = CameraType.LookAt;
+    public bool IsUpdated = false;
+
+    public CameraData() { }
     public float[] ToArray()
     {
         float[] result = {
@@ -110,25 +222,24 @@ public struct Camera :IEquatable<Camera>
         };
         return result;
     }
+        // public float[] ToArray => new float[ ]
+    // {
+    //     World[0],World[1],World[2],World[3],World[4],World[5],World[6],World[7],World[8],World[9],World[10],World[11],World[12],World[13],World[14],World[15],
+    //     View[0],View[1],View[2],View[3],View[4],View[5],View[6],View[7],View[8],View[9],View[10],View[11],View[12],View[13],View[14],View[15],
+    //     Projection[0],Projection[1],Projection[2],Projection[3],Projection[4],Projection[5],Projection[6],Projection[7],Projection[8],Projection[9],Projection[10],Projection[11],Projection[12],Projection[13],Projection[14],Projection[15],
+    // };
 
-    public void Release()
-    {
-        
-    }
+    public void Release(){ }
 
     #region OVERRIDE    
-    public override string ToString() => string.Format($"Camera Manager? " );
-    public override int GetHashCode() => HashCode.Combine(  _position, Target );
-    public override bool Equals(object? obj) => obj is Camera  camera && this.Equals(camera) ;
-    public bool Equals(Camera other)=>  _position.Equals(other._position) ;
-    public static bool operator ==(Camera  left,Camera right) => left.Equals(right);
-    public static bool operator !=(Camera  left,Camera right) => !left.Equals(right);
+    public override string ToString() => string.Format($"Camera Data" );
+    public override int GetHashCode() => HashCode.Combine(  Position, Target, Up, Rotation );
+    public override bool Equals(object? obj) => obj is CameraData  camera && this.Equals(camera) ;
+    public bool Equals(CameraData other)=>  Position.Equals(other.Position) && Target.Equals(other.Target) && Up.Equals(other.Up) && Rotation.Equals(other.Rotation);
+    public static bool operator ==(CameraData  left,CameraData right) => left.Equals(right);
+    public static bool operator !=(CameraData  left,CameraData right) => !left.Equals(right);
     #endregion
 }
-
-
-
-
 
 // // namespace MCJ.Engine.Math
 // // {

@@ -55,7 +55,7 @@ public struct Clock: IEquatable<Clock>
             ? (float)((_data.StopTime - _data.PausedTime - _data.BaseTime) * _data.SecondPerCycle) 
             : (float)((ClockImplement.GetTick( ref _funcs) - _data.PausedTime - _data.BaseTime) * _data.SecondPerCycle);
 
-    public double DeltaTime => _data.ElapsedInMiliSec;
+    public float DeltaTime => (float) _data.ElapsedInMiliSec;
 
     #region OVERRIDE    
     public override string ToString() => string.Format($"Clock" );
