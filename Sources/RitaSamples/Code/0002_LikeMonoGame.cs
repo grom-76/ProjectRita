@@ -3,6 +3,7 @@ namespace RitaSamples;
 
 using RitaEngine.Base;
 using RitaEngine.Base.Math;
+using RitaEngine.Base.Platform;
 using RitaEngine.Base.Platform.Config;
 
 
@@ -23,8 +24,7 @@ public static class Sample_0002
     {
 
         RitaEngine.Base.Audio.PlayerSound2D snd = new();
-        Vector3 delta =new(0.0f);
-     
+   
         
         public MyGame()
         {
@@ -69,8 +69,8 @@ public static class Sample_0002
             RenderConfig.FragmentShaderFileNameSPV =  "shader_depth_frag.spv";
             RenderConfig.VertexShaderFileNameSPV =  "shader_depth_vert.spv";
             RenderConfig.TextureName = "grid.png";
-            RenderConfig.Camera.FieldOfViewInDegree = 45.0f;
-            // RenderConfig.Camera.Position = new(2.0f,2.0f,20.0f);
+            RenderConfig.Camera.AddLookAkCamera(new(0.0f,-0.10f,-4.0f), new(0.0f,15.0f, 00.0f),new(0.0f,1.0f,0.0f),45.0f,(float)1280.0f/720.0f, 0.1f,100.0f );
+            // RenderConfig.Camera.AddFirstPersonCamera(new(0.0f,-0.1f,-4.0f), new(0.0f,0.0f,0.0f),new(0.0f,1.0f,0.0f),45.0f,(float)1280.0f/720.0f, 0.1f,100.0f );
             RenderConfig.Primitive = RitaEngine.Base.Math.GeometricPrimitive.CreateCube(1.0f,1.0f,2.0f);
 
            GraphicDevice.BuildRender( RenderConfig);
@@ -88,34 +88,50 @@ public static class Sample_0002
 
         protected override void UpdateInputs()
         {
-            if ( Input.IsKeyPressed( RitaEngine.Base.Platform.InputKeys.Escape ))
+            if ( Input.IsKeyPressed(InputKeys.Escape ))
             {
                 Window.RequestClose();
             }
 
-            if (Input.IsKeyPressed( RitaEngine.Base.Platform.InputKeys.Space ))
+            if (Input.IsKeyPressed(InputKeys.Space ))
             {
                 snd.PlaySource();
             }
 
-            if ( Input.IsKeyDown( RitaEngine.Base.Platform.InputKeys.Up ))
+            if ( Input.IsKeyPressed( InputKeys.Left ))
             {
-                delta.X += 0.01f;
-                RenderConfig.Camera.Translate( delta);
+                RenderConfig.Camera.TranslateLookAt( 0.1f,0.0f,0.0f);
             }
-            if ( Input.IsKeyDown( RitaEngine.Base.Platform.InputKeys.Down))
+            if ( Input.IsKeyPressed( InputKeys.Right))
             {
-                delta.X -= 0.01f;
-                RenderConfig.Camera.Translate( delta);
+                RenderConfig.Camera.TranslateLookAt( -0.1f ,0.0f,0.0f);
             }
+
+            if ( Input.IsKeyPressed( InputKeys.P))
+            {
+                RenderConfig.Camera.PoorZoom( +1.0f);
+            }
+            if ( Input.IsKeyPressed( InputKeys.O))
+            {   
+                RenderConfig.Camera.PoorZoom( -1.0f);
+            }
+
+            if ( Input.IsKeyPressed( InputKeys.Q))
+            {
+                RenderConfig.Camera.Strafe( 0.1f);
+            }
+            if ( Input.IsKeyPressed( InputKeys.D))
+            {
+                RenderConfig.Camera.Strafe( -0.1f);
+            }
+
             
         }
 
         protected override void UpdatePhysics()
         {
-           
-            // RenderConfig.Camera.ScalingWorld( scale);
-            RenderConfig.Camera.UpdateViewMatrix();
+
+            RenderConfig.Camera.Update(Clock.DeltaTime);
             GraphicDevice.UpdateRender(RenderConfig);
         }
 
