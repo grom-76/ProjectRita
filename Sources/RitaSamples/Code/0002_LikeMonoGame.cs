@@ -23,7 +23,7 @@ public static class Sample_0002
     {
 
         RitaEngine.Base.Audio.PlayerSound2D snd = new();
-        Vector3 delta =new(1.0f);
+        Vector3 delta =new(0.0f);
      
         
         public MyGame()
@@ -70,7 +70,7 @@ public static class Sample_0002
             RenderConfig.VertexShaderFileNameSPV =  "shader_depth_vert.spv";
             RenderConfig.TextureName = "grid.png";
             RenderConfig.Camera.FieldOfViewInDegree = 45.0f;
-            RenderConfig.Camera.Position = new(2.0f,2.0f,20.0f);
+            // RenderConfig.Camera.Position = new(2.0f,2.0f,20.0f);
             RenderConfig.Primitive = RitaEngine.Base.Math.GeometricPrimitive.CreateCube(1.0f,1.0f,2.0f);
 
            GraphicDevice.BuildRender( RenderConfig);
@@ -100,13 +100,15 @@ public static class Sample_0002
 
             if ( Input.IsKeyDown( RitaEngine.Base.Platform.InputKeys.Up ))
             {
-                delta.X += 0.1f;
+                delta.X += 0.01f;
+                RenderConfig.Camera.Translate( delta);
             }
             if ( Input.IsKeyDown( RitaEngine.Base.Platform.InputKeys.Down))
             {
-                delta.X -= 0.1f;
+                delta.X -= 0.01f;
+                RenderConfig.Camera.Translate( delta);
             }
-            RenderConfig.Camera.Translate( delta);
+            
         }
 
         protected override void UpdatePhysics()

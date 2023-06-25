@@ -1,9 +1,7 @@
 namespace RitaEngine.Base.Graphic;
 
-
 using RitaEngine.Base.Math;
-
-
+using RitaEngine.Base.Platform;
 
 public struct Camera :IEquatable<Camera>
 {
@@ -15,29 +13,35 @@ public struct Camera :IEquatable<Camera>
     /// Called too Position
     /// </summary>
     /// <returns></returns>
-    public Vector3 Position =new(2.0f,2.0f,2.0f);
-    private Vector3 _rotation = new(0.0f);
+    public Vector3 _position =new(0.0f,-0.12f,-2.0f);
+    private Vector3 _rotation = new(0.0f, 45.0f, 00.0f);
     public Vector3 Target =new(0.00f,0.00f,0.00f);
     public Vector3 Up =new(0.0f,1.0f,0.0f);
     public float FieldOfViewInDegree = 45.0f;
+    private CameraType _type = CameraType.LookAt;
 
 
     public Camera() { }
 
-    public void BuildCamera( )
+    public void AddLookAkCamera(Vector3 position,Vector3 rotation, Vector3 up , float fov, float ratio , float near , float far )
     {
+        _type = CameraType.LookAt;
         World =  RitaEngine.Base.Math.Matrix.Identity;
-        Matrix.CreateLookAt( ref Position ,ref Target, ref Up, out View);
+        Matrix.CreatePerspectiveFieldOfView( Helper.ToRadians( FieldOfViewInDegree) ,(1280.0f/720.0f), 0.1f,100.0f,out Projection );
+        Projection.M22 *= -1;
+        UpdateViewMatrix();
+    }
+
+    public void AddFirstPersonCamera( Vector3 position,Vector3 target, Vector3 up , float fov, float ratio , float near , float far)
+    {
+        _type = CameraType.FirstPerson;
+        World =  RitaEngine.Base.Math.Matrix.Identity;
+        Matrix.CreateLookAt( ref _position ,ref Target, ref Up, out View);
         Matrix.CreatePerspectiveFieldOfView( Helper.ToRadians( FieldOfViewInDegree) ,(1280.0f/720.0f), 0.1f,100.0f,out Projection );
         Projection.M22 *= -1;
         //https://computergraphics.stackexchange.com/questions/12448/vulkan-perspective-matrix-vs-opengl-perspective-matrix
         // Matrix.MakeProjectionMatrixWithoutFlipYAxis( Helper.ToRadians( FieldOfViewInDegree) ,(1280.0f/720.0f), 0.1f,100.0f,out Projection );
     }
-
-    // public void ScalingWorld( Vector3 scale)
-    // {
-    //     World= RitaEngine.Base.Math.Matrix.Scaling(scale);
-    // }
 
     /// <summary>
     ///  Update Camera per Frame 
@@ -48,30 +52,46 @@ public struct Camera :IEquatable<Camera>
         //Rotation
         //Translation
         //Scale
-
     }
 
-    public void UpdateViewMatrix()
+
+    public void Update(float deltaTime)
+    {
+        _ = _type switch{
+            CameraType.LookAt => UpdateViewMatrix(),
+            CameraType.FirstPerson => UpdateFirstPerson(),
+            _=> UpdateViewMatrix()
+        };
+    }
+
+    private void UpdateViewMatrix()
     {
         Matrix rotM = Matrix.Identity;
         Matrix transM;
         
-        rotM = Matrix.RotationX(Math.Helper.ToRadians(_rotation.X)) * rotM;
+        rotM = Matrix.RotationX(Math.Helper.ToRadians(_rotation.X*-1.0f)) * rotM;
         rotM = Matrix.RotationY(Math.Helper.ToRadians(_rotation.Y)) * rotM;
         rotM = Matrix.RotationZ(Math.Helper.ToRadians(_rotation.Z)) * rotM;
+        // rotM = Matrix.RotationAxis(_rotation, 1.0f);
 
-        transM = Matrix.Translation(Position);
+       Vector3 translation = _position;
+        translation.Y *= -1.0f;
+        transM = Matrix.Translation(translation);
 
-        View = rotM * transM;
+        // View = rotM * transM;
+        View =  transM * rotM;
     }
+
+    private void UpdateFirstPerson(){}
 
     public void Translate(float x , float y , float z)
     {
-        Position.X += x;  Position.Y += y;  Position.Z += z;
+        _position.X += x;  _position.Y += y;  _position.Z += z;
     }
     public void Translate(Vector3 delta)
     {
-        Position += delta;
+        _position += delta;
+    UpdateViewMatrix();
     }
 
     // public float[] ToArray => new float[ ]
@@ -98,9 +118,9 @@ public struct Camera :IEquatable<Camera>
 
     #region OVERRIDE    
     public override string ToString() => string.Format($"Camera Manager? " );
-    public override int GetHashCode() => HashCode.Combine(  Position, Target );
+    public override int GetHashCode() => HashCode.Combine(  _position, Target );
     public override bool Equals(object? obj) => obj is Camera  camera && this.Equals(camera) ;
-    public bool Equals(Camera other)=>  Position.Equals(other.Position) ;
+    public bool Equals(Camera other)=>  _position.Equals(other._position) ;
     public static bool operator ==(Camera  left,Camera right) => left.Equals(right);
     public static bool operator !=(Camera  left,Camera right) => !left.Equals(right);
     #endregion
@@ -123,7 +143,7 @@ public struct Camera :IEquatable<Camera>
 // //     ///     Camera cam = new(0); // 0  obligatoire sinon error
 // //     ///     cam.Update() ; a chaque frame 
 // //     ///  Propriete pour config :
-// //     ///     Position
+// //     ///     _position
 // //     ///     
 // //     /// </summary>
 // //     [StructLayout(LayoutKind.Sequential, Pack = 4)]
