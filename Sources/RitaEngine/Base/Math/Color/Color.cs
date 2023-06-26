@@ -1,5 +1,8 @@
 namespace RitaEngine.Base.Math.Color;
-  
+
+/// <summary>
+///  Universel format 
+/// </summary>  
 public struct Color
 {
 
@@ -42,6 +45,7 @@ public struct RGBA
     public byte G;
     public byte B;
     public byte A;
+
 }
 public enum ColorFormat
 {

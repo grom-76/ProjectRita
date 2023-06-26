@@ -35,7 +35,7 @@ public struct Vertex
         TexCoord = new Vector2(u, v);
     }
 
-    public float[] ToArray => new float[]{ Position.X,Position.Y, Position.Z, Normal.R,Normal.G,Normal.B ,TexCoord.X ,TexCoord.Y };
+    public float[] ToArray => new float[]{ Position.X,Position.Y, Position.Z, Normal.X,Normal.Y,Normal.Z ,TexCoord.X ,TexCoord.Y };
 }
 
 public class GeometricPrimitive : IDisposable
@@ -81,8 +81,9 @@ public class GeometricPrimitive : IDisposable
         return vertices;
     }
     
-    public static GeometricPrimitive CreateCube(float width, float height, float depth)
+    public static GeometricPrimitive CreateBox(float width, float height, float depth)
     {
+        //Code from Discosultan
         float w2 = 0.5f * width;
         float h2 = 0.5f * height;
         float d2 = 0.5f * depth;

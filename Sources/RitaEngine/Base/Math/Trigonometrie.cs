@@ -1,4 +1,11 @@
+namespace RitaEngine.Base.Math;
 
+
+[ StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
+public static class Transform
+{
+    
+}
 //     //  code take on github : https://github.com/FlaxEngine/FlaxAPI/blob/master/FlaxEngine/Math/Viewport.cs
 //     // /// <summary>
 //     // /// Projects a 3D vector from object space into screen space.
@@ -81,31 +88,6 @@
 //     //     // }
 //     // }
 // }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 // // namespace MCJ.Engine.Math

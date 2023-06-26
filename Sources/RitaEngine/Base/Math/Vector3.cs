@@ -5,23 +5,11 @@ using static RitaEngine.Base.Math.Helper;
 [StructLayout(LayoutKind.Sequential),SkipLocalsInit]
 public struct Vector3 : IEquatable<Vector3>
 {
-#region Default value        
     private static readonly Vector3 zero = new(0.0f,0.0f,0.0f);
     public static ref readonly Vector3 Zero => ref zero;
     public static readonly Vector3 one = new(1.0f,1.0f,1.0f);
     public static ref readonly Vector3 One  => ref one;
     public static readonly int SizeOf =sizeof(float) * 3 ;
-
-#endregion
-#region PRIVATE
-#endregion        
-#region ACCESSOR
-    /// <summary> Color R  </summary>
-    public  readonly float R => X;
-    /// <summary> Color G  </summary>
-    public readonly float G => Y;
-    /// <summary> Color B  </summary>
-    public readonly float B => Z; 
 
     /// <summary>Axe  Abcisse X  </summary>
     public float X ;
@@ -51,7 +39,7 @@ public struct Vector3 : IEquatable<Vector3>
             _ => float.NaN
         };
     }
-#endregion        
+
 #region OVERRIDE        
     public override string ToString()  => $"[X={X:G3};Y={Y:G3};Z={Z:G3}]";
     public override int GetHashCode() => HashCode.Combine(X,Y,Z);
@@ -60,10 +48,7 @@ public struct Vector3 : IEquatable<Vector3>
     public static bool operator ==(Vector3 left, Vector3 right) => left.Equals(right);
     public static bool operator !=(Vector3 left, Vector3 right) => !left.Equals(right);
 #endregion
-
 #region OPERATION BINAIRE
-
-    
 
     public static void Multiply(ref Vector3 result, ref Vector3 left, ref Vector3 right)
     => ( result.X,result.Y,result.Z )=(left.X * right.X, left.Y * right.Y, left.Z* right.Z);
@@ -266,17 +251,16 @@ public struct Vector3 : IEquatable<Vector3>
     /// retourn Vector3 sous forme de tableu de reel float[4] sans utiliser new
     /// </summary>
     /// <returns></returns>
-    public float[] ToArrayStackAlloc()
+    public float[] ToArray()
     {
         float[] r ={ X, Y, Z }; 
         return r;
     }
-    /// <summary>
-    /// retourn Vector3 sous forme de tableu de reel float[4]
-    /// </summary>
-    /// <value></value>
-    public float[] ToArray => new float[]{ X, Y, Z };
- 
+    // /// <summary>
+    // /// retourn Vector3 sous forme de tableu de reel float[4]
+    // /// </summary>
+    // /// <value></value>
+    // public float[] ToArray => new float[]{ X, Y, Z };
 #endregion        
 }
 

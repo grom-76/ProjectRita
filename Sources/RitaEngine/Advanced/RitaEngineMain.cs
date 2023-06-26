@@ -89,10 +89,12 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
             }
             #endif
 
-            UpdatePhysics();
+            
         
             input.Update();
             UpdateInputs();
+
+            UpdatePhysics();
 
             UpdateDraw();
             graphic.DrawRender(RenderConfig);

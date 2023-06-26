@@ -3,62 +3,44 @@ namespace RitaEngine.Base.Math;
 using static RitaEngine.Base.Math.Helper;
         
 [StructLayout(LayoutKind.Sequential ),SkipLocalsInit]
-public struct Vector4 : IEquatable<Vector4> , IDisposable
+public struct Vector4 : IEquatable<Vector4> 
 {
 #region Default value        
-    private static readonly Vector4 zero = AllocNew(0.0f,0.0f,0.0f,0.0f);
-    /// <summary>
-    /// 
-    /// </summary>
+    private static readonly Vector4 zero = new(0.0f,0.0f,0.0f,0.0f);
     public static ref readonly Vector4 Zero => ref zero;
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <returns></returns>
-    public static readonly Vector4 one = AllocNew(1.0f,1.0f,1.0f,1.0f);
-    /// <summary>
-    /// 
-    /// </summary>
+
+    public static readonly Vector4 one = new(1.0f,1.0f,1.0f,1.0f);
     public static ref readonly Vector4 One  => ref one;
+    //     /// <summary>
+//     /// vector 4  tous a 0.0f sauf X
+//     /// </summary>
+//     public static readonly Vector4 UnitX = new(1.0f, 0.0f, 0.0f, 0.0f);
+//     /// <summary>
+//     /// vector 4  tous a 0.0f sauf Y
+//     /// </summary>
+//     public static readonly Vector4 UnitY = new(0.0f, 1.0f, 0.0f, 0.0f);
+//     /// <summary>
+//     /// vector 4  tous a 0.0f sauf z
+//     /// </summary>
+//     public static readonly Vector4 UnitZ = new(0.0f, 0.0f, 1.0f, 0.0f);
+//     /// <summary>
+//     /// vector 4  tous a 0.0f sauf W
+//     /// </summary>
+//     public static readonly Vector4 UnitW = new(0.0f, 0.0f, 0.0f, 0.0f);
     /// <summary>
     /// 
     /// </summary>
     /// <returns></returns>
-    public static readonly int SizeOf = Marshal.SizeOf<Vector4>();
+    public static readonly int SizeOf = sizeof(float)* 4 ; // Marshal.SizeOf<Vector4>();
 #endregion
-#region PRIVATE
-    private float _x;
-    private float _y;
-    private float _z;
-    private float _w;
-#endregion        
-#region ACCESSOR
-    /// <summary> Color R  </summary>
-    public  readonly float R => _x;
-    /// <summary> Color G  </summary>
-    public readonly float G => _y;
-    /// <summary> Color B  </summary>
-    public readonly float B => _z;
-    /// <summary> Color Alpha  </summary>
-    public readonly float A => _w;
-
-    /// <summary>Viewport Left   </summary>
-    public readonly float Left => _x;
-    /// <summary>Viewport Top   </summary>
-    public readonly float Top => _y;
-    /// <summary>Viewport Width   </summary>
-    public readonly float Width => _z;
-    /// <summary>Viewport Left   </summary>
-    public readonly float Height => _w;
-
     /// <summary>Axe  Abcisse X  </summary>
-    public float X { get => _x; set => _x= value;}
-        /// <summary> Axe Ordonnée  </summary>
-    public float Y{ get => _y; set => _y= value;}
+    public float X;
+    /// <summary> Axe Ordonnée  </summary>
+    public float Y;
     /// <summary> Axe Z ( 3D )  </summary>
-    public float Z{ get => _z; set => _z= value;}
+    public float Z;
     /// <summary> Direction  </summary>
-    public float W{ get => _w; set => _w= value;}
+    public float W;
 
     /// <summary>
     /// Retourne la valeur abcisse ou ordonée utilisation comme un tableau  vecteur2[0] ou vecteur2[1]
@@ -68,7 +50,7 @@ public struct Vector4 : IEquatable<Vector4> , IDisposable
     {
         get => index switch
         {
-            0 => _x,
+            0 => X,
             1 => Y,
             2 => Z,
             3 => W,
@@ -76,25 +58,25 @@ public struct Vector4 : IEquatable<Vector4> , IDisposable
         };
         set => _ = index switch
         {
-            0 => _x = value,
+            0 => X = value,
             1 => Y = value,
             2 => Z = value,
             3 => W = value,
             _ => float.NaN
         };
     }
-#endregion        
+    
 #region OVERRIDE        
     /// <summary>
     /// Vector 4 sous forme de chaine de caractère avec  le mot Vector4 et passage a la ligne pour les valeurs
     /// </summary>
     /// <returns></returns>
-    public override string ToString()  => $"[X={_x:G3};Y={_y:G3};Z={_z:G3};W={_w:G3}]";
+    public override string ToString()  => $"[X={X:G3};Y={Y:G3};Z={Z:G3};W={W:G3}]";
     /// <summary>
     /// 
     /// </summary>
     /// <returns></returns>
-    public override int GetHashCode() => (this._x.GetHashCode() ) + this._y.GetHashCode() + this._z.GetHashCode() + this._w.GetHashCode();
+    public override int GetHashCode() => (this.X.GetHashCode() ) + this.Y.GetHashCode() + this.Z.GetHashCode() + this.W.GetHashCode();
     /// <summary>
     /// 
     /// </summary>
@@ -107,47 +89,30 @@ public struct Vector4 : IEquatable<Vector4> , IDisposable
     /// <param name="other"></param>
     /// <returns></returns>
     public bool Equals(Vector4 other) 
-        => (Abs(_x - other.X) <= ZeroTolerance) && (Abs(Y - other.Y) <= ZeroTolerance) && (Abs(Z - other.Z) <= ZeroTolerance) && (Abs(W - other.W) <= ZeroTolerance);
+        => (Abs(X - other.X) <= ZeroTolerance) && (Abs(Y - other.Y) <= ZeroTolerance) && (Abs(Z - other.Z) <= ZeroTolerance) && (Abs(W - other.W) <= ZeroTolerance);
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="left"></param>
-    /// <param name="right"></param>
-    /// <returns></returns>
     public static bool operator ==(Vector4 left, Vector4 right) => left.Equals(right);
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="left"></param>
-    /// <param name="right"></param>
-    /// <returns></returns>
     public static bool operator !=(Vector4 left, Vector4 right) => !(left.Equals(right));
 #endregion
 #region ALLLOCATE
     /// <summary>
     /// Allocation sur la pile
     /// </summary>
-    /// <param name="value_x"></param>
-    /// <param name="value_y"></param>
-    /// <param name="value_z"></param>
-    /// <param name="value_w"></param>
+    /// <param name="valueX"></param>
+    /// <param name="valueY"></param>
+    /// <param name="valueZ"></param>
+    /// <param name="valueW"></param>
     /// <returns></returns>
-    public static Vector4 Alloc( float value_x , float value_y , float value_z , float value_w)
+    public static Vector4 Alloc( float valueX , float valueY , float valueZ , float valueW)
     {
         Vector4 vec = default;
-        vec._x = value_x;
-        vec._y = value_y;
-        vec._z = value_z;
-        vec._w = value_w;
+        vec.X = valueX;
+        vec.Y = valueY;
+        vec.Z = valueZ;
+        vec.W = valueW;
         return vec;
     }
-    /// <summary>
-    /// Allocation sur le tas ( usage de new )
-    /// </summary>
-    /// <returns></returns>
-    public static Vector4 AllocNew( float value_x, float value_y, float value_z , float value_w)
-        => new(value_x,  value_y, value_z,value_w);
+
 #endregion        
 #region OPERATION BINAIRE
     /// <summary>
@@ -336,17 +301,7 @@ public struct Vector4 : IEquatable<Vector4> , IDisposable
     /// <param name="w"></param>
     /// <returns></returns>
     public Vector4(float x=0.0f, float y=0.0f, float z=0.0f, float w=0.0f) 
-        =>(_x,_y,_z,_w) = (x,y,z,w);
-
-    // /// <summary>
-    // /// Equivelent construteur de Copie
-    // /// </summary>
-    // /// <param name="v"></param>
-    // /// <param name="z"></param>
-    // /// <param name="w"></param>
-    // /// <returns></returns>
-    // public Vector4( Vector2 v, float z=0.0f, float w=0.0f)
-    //     =>(_x,_y,_z,_w)=( v.X,v.Y, z,w);
+        =>(X,Y,Z,W) = (x,y,z,w);
 
     /// <summary>
     /// Constrcuteur a partir d'un tableau de flotant
@@ -354,38 +309,38 @@ public struct Vector4 : IEquatable<Vector4> , IDisposable
     /// <param name="floats"></param>
     /// <returns></returns>
     public Vector4( float[] floats)
-        =>(_x,_y,_z,_w)=( floats[0],floats[1],floats[2],floats[3] );
+        =>(X,Y,Z,W)=( floats[0],floats[1],floats[2],floats[3] );
     
     /// <summary>
     /// Instanciate a partir d'un scalaire
     /// </summary>
     /// <param name="scalar"></param>
     public Vector4(float scalar)
-        =>(_x,_y,_z,_w) = ( scalar,scalar,scalar,scalar);
+        =>(X,Y,Z,W) = ( scalar,scalar,scalar,scalar);
 
     /// <summary>
     /// 
     /// </summary>
     /// <param name="vec4"></param>
     public Vector4( Vector4 vec4)
-        => (_x,_y,_z,_w) = ( vec4.X,vec4.Y,vec4.Z,vec4.W);
+        => (X,Y,Z,W) = ( vec4.X,vec4.Y,vec4.Z,vec4.W);
     /// <summary>
     /// Normalize un vecteur !!!! change les valeur du vecteur sinon utilisé ToNormalize
     /// </summary>
     public void Normalize()
     {
         float length = 1/ this.Length();
-        this._x *= length;
-        this._y *= length;
-        this._z *= length;
-        this._w *= length;
+        this.X *= length;
+        this.Y *= length;
+        this.Z *= length;
+        this.W *= length;
     }
 
     /// <summary>
     ///  le negatif de chaque valeurs
     /// </summary>
     public void Negate()
-        =>(_x,_y,_z,_w)=(-_x,-_y,-_z,-_w);
+        =>(X,Y,Z,W)=(-X,-Y,-Z,-W);
     
     /// <summary>
     /// To retrieve the length/magnitude of a vector we use the Pythagoras theorem that you may remember from your math classes. 
@@ -394,7 +349,7 @@ public struct Vector4 : IEquatable<Vector4> , IDisposable
     /// <returns>Magnitude</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public float Length()
-        =>  Sqrt((_x * _x) + (_y * _y) + (_z * _z) + (_w *_w));
+        =>  Sqrt((X * X) + (Y * Y) + (Z * Z) + (W *W));
 
     /// <summary>
     /// retourn vector4 sous forme de tableu de reel float[4] sans utiliser new
@@ -402,83 +357,17 @@ public struct Vector4 : IEquatable<Vector4> , IDisposable
     /// <returns></returns>
     public float[] ToArrayStaticalloc()
     {
-        float[] r ={_x,_y,_z,_w }; 
+        float[] r ={X,Y,Z,W }; 
         return r;
     }
     /// <summary>
     /// retourn vector4 sous forme de tableu de reel float[4]
     /// </summary>
     /// <value></value>
-    public float[] ToArray => new float[]{ _x,_y,_z,_w};
-    /// <summary>
-    /// normalement sa devrait pas marché car Suppressfinalize ne fonctionne pas sur une structure 
-    /// </summary>
-    public void Dispose()
-    {
-        #pragma warning disable CA1816 // Dispose methods should call SuppressFinalize
-        GC.SuppressFinalize(this);
-        #pragma warning restore CA1816 // Dispose methods should call SuppressFinalize
-    }
+    public float[] ToArray => new float[]{ X,Y,Z,W};
+
 #endregion  
 
-// namespace Rite.Engine.Math;
-
-// using System.Runtime.CompilerServices;
-// using System.Runtime.InteropServices;
-// using static Rita.Engine.Math.Helper;
-
-// /// <summary>
-// /// Algbre vecteur de 4
-// /// </summary>
-// [SkipLocalsInit][StructLayout(LayoutKind.Sequential,Pack = 4 )]
-// public struct Vector4 : IDisposable, IEquatable<Vector4>
-// {
-//     /// <summary>
-//     /// The size of the VECTOR 4 type, in bytes.
-//     /// </summary>
-//     public static readonly int SizeInBytes =System.Runtime.InteropServices.Marshal.SizeOf<Vector4>();
-//     /// <summary>
-//     /// vector 4  tous a 0.0f
-//     /// </summary>
-//     public static readonly Vector4 Zero = new();
-//     /// <summary>
-//     /// vector 4  tous a 0.0f sauf X
-//     /// </summary>
-//     public static readonly Vector4 UnitX = new(1.0f, 0.0f, 0.0f, 0.0f);
-//     /// <summary>
-//     /// vector 4  tous a 0.0f sauf Y
-//     /// </summary>
-//     public static readonly Vector4 UnitY = new(0.0f, 1.0f, 0.0f, 0.0f);
-//     /// <summary>
-//     /// vector 4  tous a 0.0f sauf z
-//     /// </summary>
-//     public static readonly Vector4 UnitZ = new(0.0f, 0.0f, 1.0f, 0.0f);
-//     /// <summary>
-//     /// vector 4  tous a 0.0f sauf W
-//     /// </summary>
-//     public static readonly Vector4 UnitW = new(0.0f, 0.0f, 0.0f, 0.0f);
-//     /// <summary>
-//     /// vector 4  tous a 1.0f
-//     /// </summary>
-//     public static readonly Vector4 One = new(1.0f, 1.0f, 1.0f, 1.0f);
-
-//     /// <summary>
-//     /// The X component of the vector.
-//     /// </summary>
-//     public float X;
-
-//     /// <summary>
-//     /// The Y component of the vector.
-//     /// </summary>
-//     public float Y;
-//     /// <summary>
-//     /// The Z component of the vector.
-//     /// </summary>
-//     public float Z;
-//     /// <summary>
-//     /// The W component of the vector.
-//     /// </summary>
-//     public float W;
 
 //     /// <summary>
 //     /// Initialise une nouvelle instance de ce vector avec toutes les valeurs a zero

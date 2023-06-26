@@ -69,9 +69,9 @@ public static class Sample_0002
             RenderConfig.FragmentShaderFileNameSPV =  "shader_depth_frag.spv";
             RenderConfig.VertexShaderFileNameSPV =  "shader_depth_vert.spv";
             RenderConfig.TextureName = "grid.png";
-            RenderConfig.Camera.AddLookAkCamera(new(0.0f,-0.10f,-4.0f), new(0.0f,15.0f, 00.0f),new(0.0f,1.0f,0.0f),45.0f,(float)1280.0f/720.0f, 0.1f,100.0f );
-            // RenderConfig.Camera.AddFirstPersonCamera(new(0.0f,-0.1f,-4.0f), new(0.0f,0.0f,0.0f),new(0.0f,1.0f,0.0f),45.0f,(float)1280.0f/720.0f, 0.1f,100.0f );
-            RenderConfig.Primitive = RitaEngine.Base.Math.GeometricPrimitive.CreateCube(1.0f,1.0f,2.0f);
+            // RenderConfig.Camera.AddLookAkCamera(new(0.0f,2f,-4.0f), new(350.0f,0.0f, 0.0f),new(0.0f,1.0f,0.0f),45.0f,(float)1280.0f/720.0f, 0.1f,100.0f );
+            RenderConfig.Camera.AddFirstPersonCamera(new(0.0f,2f,-4.0f), new(0.0f,0.0f,0.0f),new(0.0f,1.0f,0.0f),45.0f,(float)1280.0f/720.0f, 0.1f,100.0f );
+            RenderConfig.Primitive = RitaEngine.Base.Math.GeometricPrimitive.CreateBox(1.0f,1.0f,2.0f);
 
            GraphicDevice.BuildRender( RenderConfig);
         }
@@ -98,31 +98,31 @@ public static class Sample_0002
                 snd.PlaySource();
             }
 
-            if ( Input.IsKeyPressed( InputKeys.Left ))
+            if ( Input.IsKeyDown( InputKeys.Left ))
             {
-                RenderConfig.Camera.TranslateLookAt( 0.1f,0.0f,0.0f);
+                RenderConfig.Camera.RotateLookAt( 1.0f,0.0f,0.0f);
             }
-            if ( Input.IsKeyPressed( InputKeys.Right))
+            if ( Input.IsKeyDown( InputKeys.Right))
             {
-                RenderConfig.Camera.TranslateLookAt( -0.1f ,0.0f,0.0f);
+                RenderConfig.Camera.RotateLookAt( -1.0f ,0.0f,0.0f);
             }
 
             if ( Input.IsKeyPressed( InputKeys.P))
             {
-                RenderConfig.Camera.PoorZoom( +1.0f);
+                RenderConfig.Camera.Zoom( +1.0f);
             }
             if ( Input.IsKeyPressed( InputKeys.O))
             {   
-                RenderConfig.Camera.PoorZoom( -1.0f);
+                RenderConfig.Camera.Zoom( -1.0f);
             }
 
-            if ( Input.IsKeyPressed( InputKeys.Q))
+            if ( Input.IsKeyDown( InputKeys.Q))
             {
-                RenderConfig.Camera.Strafe( 0.1f);
+                RenderConfig.Camera.Pitch( 1.0f);
             }
-            if ( Input.IsKeyPressed( InputKeys.D))
+            if ( Input.IsKeyDown( InputKeys.D))
             {
-                RenderConfig.Camera.Strafe( -0.1f);
+                RenderConfig.Camera.Pitch( -1.0f);
             }
 
             
