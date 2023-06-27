@@ -18,7 +18,8 @@
 
 ### Get started  like monogame
 
-```c#
+    ```c#
+
     program.cs
         using game = g new();
         g.Run();
@@ -47,11 +48,11 @@
 
         }
     }
-```
+    ```
 
 ### get started like Viking:  c++ as sdl / raylib / glfw / sfml /
 
-```c#
+    ```c#
 // program.cs
     RitaEngine.Base.Log.Config(Log.Display.OnConsole);
         string path = @"C:\Users\Administrator\Documents\ProjectRita\Assets\";
@@ -86,7 +87,7 @@
 
             RitaEngine.Audio.PlayerSound2D snd = new( audio, path+  "demo.wav");
 
-            graphic.Render.BackColorARGB = RitaEngine.Base.Math.Color.Palette.Lavender ;
+            graphic.Render.BackColorARGB = RitaEngine.Math.Color.Palette.Lavender ;
             graphic.Render.FragmentEntryPoint ="main";
             graphic.Render.VertexEntryPoint ="main";
             graphic.Render.FragmentShaderFileNameSPV = path + "fragment_base.spv";
@@ -128,7 +129,7 @@
             clock.Release();
             Log.Release();
         }
-```
+    ```
 
 ### Compilation / Execution
 

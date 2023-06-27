@@ -1,7 +1,7 @@
 namespace RitaEngine.Graphic;
 
-using RitaEngine.Base.Math.Color;
-using RitaEngine.Base.Math;
+using RitaEngine.Math.Color;
+using RitaEngine.Math;
 
 /// <summary>
 /// RENAME WITH PIPELINE

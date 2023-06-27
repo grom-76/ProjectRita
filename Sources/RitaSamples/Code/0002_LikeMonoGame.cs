@@ -62,7 +62,7 @@ public static class Sample_0002
         {
             snd.Init( AudioDevice ,   "demo.wav" );
 
-            RenderConfig.BackColorARGB = RitaEngine.Base.Math.Color.Palette.Lavender;
+            RenderConfig.BackColorARGB = RitaEngine.Math.Color.Palette.Lavender;
             RenderConfig.FragmentEntryPoint ="main";
             RenderConfig.VertexEntryPoint ="main";
             RenderConfig.FragmentShaderFileNameSPV =  "shader_depth_frag.spv";
@@ -70,7 +70,7 @@ public static class Sample_0002
             RenderConfig.TextureName = "grid.png";
             // RenderConfig.Camera.AddLookAkCamera(new(0.0f,2f,-4.0f), new(-27.0f,0.0f, 0.0f),new(0.0f,1.0f,0.0f),45.0f,(float)1280.0f/720.0f, 0.1f,100.0f );
             RenderConfig.Camera.AddFirstPersonCamera(new(0.0f,2f,-4.0f), new(0.0f,0.0f,0.0f),new(0.0f,1.0f,0.0f),45.0f,(float)1280.0f/720.0f, 0.1f,100.0f );
-            RenderConfig.Primitive = RitaEngine.Base.Math.GeometricPrimitive.CreateBox(1.0f,1.0f,2.0f);
+            RenderConfig.Primitive = RitaEngine.Math.GeometricPrimitive.CreateBox(1.0f,1.0f,2.0f);
 
            GraphicDevice.BuildRender( RenderConfig);
         }

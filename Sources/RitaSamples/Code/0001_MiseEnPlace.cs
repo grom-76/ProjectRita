@@ -47,12 +47,12 @@ public static class Sample_0001
             
             snd.Init( audio,  "demo.wav");
 
-            renderConfig.BackColorARGB = RitaEngine.Base.Math.Color.Palette.AliceBlue;
+            renderConfig.BackColorARGB = RitaEngine.Math.Color.Palette.AliceBlue;
             renderConfig.FragmentEntryPoint ="main";
             renderConfig.VertexEntryPoint ="main";
             renderConfig.FragmentShaderFileNameSPV =  "fragment_base.spv";
             renderConfig.VertexShaderFileNameSPV = "vertex_base.spv";
-            renderConfig.Primitive = RitaEngine.Base.Math.GeometricPrimitive.CreateQuad(1.0f,1.0f);
+            renderConfig.Primitive = RitaEngine.Math.GeometricPrimitive.CreateQuad(1.0f,1.0f);
             graphic.BuildRender(renderConfig);
             // BEGIN LOOP
             window.Show();

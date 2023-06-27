@@ -1,7 +1,7 @@
 namespace RitaEngine.Graphic;
 
 using RitaEngine.Base;
-using RitaEngine.Base.Math;
+using RitaEngine.Math;
 using RitaEngine.Base.Platform;
 
 [ StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
@@ -127,14 +127,14 @@ public static class CameraImplement
     
     public static void LookAkCamera(ref CameraData data)
     {
-        data.World =  RitaEngine.Base.Math.Matrix.Identity;
+        data.World =  RitaEngine.Math.Matrix.Identity;
         UpdateProjection(ref data);
         UpdateViewMatrix(ref data);
     }
 
     public static void FirstPerson(ref CameraData data)
     {
-        data.World =  RitaEngine.Base.Math.Matrix.Identity;
+        data.World =  RitaEngine.Math.Matrix.Identity;
         data.CamFront =   data.Target  - data.Position;
         Matrix.CreateLookAt( ref data.Position ,ref data.CamFront, ref data.Up, out data.View);
       

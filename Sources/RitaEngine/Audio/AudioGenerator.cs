@@ -30,10 +30,10 @@ public static class AudioGenerator // TODO : Rename AudioGenerator en AudioNoise
         short[] buffer = new short[_sampleRate * durationInSec];
         float _amplitude = amplitude * short.MaxValue;
         float frequency = frequence;
-        float dt = RitaEngine.Base.Math.Helper.TWOPI  / (float) _sampleRate ;
+        float dt = RitaEngine.Math.Helper.TWOPI  / (float) _sampleRate ;
         for (int n = 0; n < buffer.Length; n++)
         {
-            buffer[n] = (short)(_amplitude *  RitaEngine.Base.Math.Helper.Sin( n * dt * frequency ));
+            buffer[n] = (short)(_amplitude *  RitaEngine.Math.Helper.Sin( n * dt * frequency ));
         }
         return buffer;
     }  

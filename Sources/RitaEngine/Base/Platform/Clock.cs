@@ -177,7 +177,7 @@ public static partial class ClockImplement
 
 
     public static int GetApproximativFPS(ref ClockData data ,ref ClockFunctions func )
-        => (int)  RitaEngine.Base.Math.Helper.Round(   ( 1.0/  GetElapsedInMiliSec( ref  data ,ref  func) ));
+        => (int)  RitaEngine.Math.Helper.Round(   ( 1.0/  GetElapsedInMiliSec( ref  data ,ref  func) ));
 
     public unsafe static void Update_Default( ref ClockData data ,ref ClockFunctions func  )
     {

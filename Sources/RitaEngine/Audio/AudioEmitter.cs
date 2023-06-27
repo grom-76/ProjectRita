@@ -2,7 +2,7 @@
 
 namespace RitaEngine.Audio;
 
-using RitaEngine.Base.Math;
+using RitaEngine.Math;
 /// <summary>
 ///  AUdio source see limit ? 
 /// </summary>

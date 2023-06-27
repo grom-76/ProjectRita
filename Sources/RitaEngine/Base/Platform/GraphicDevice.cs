@@ -2,11 +2,11 @@ namespace RitaEngine.Base.Platform;
 
 using System.IO;
 using RitaEngine.Base.Debug;
-using RitaEngine.Base.Math.Color;
+using RitaEngine.Math.Color;
 using RitaEngine.Base.Platform.API.Vulkan;
 using RitaEngine.Base.Platform.Structures;
 using RitaEngine.Base.Strings;
-using RitaEngine.Base.Math;
+using RitaEngine.Math;
 
 using VkDeviceSize = UInt64;
 using RitaEngine.Base.Resources.Images;
