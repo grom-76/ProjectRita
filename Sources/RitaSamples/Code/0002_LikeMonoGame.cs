@@ -37,8 +37,8 @@ public static class Sample_0002
             Config.Audio_Category = AudioCategory.GameMedia;
             Config.Audio_Channels = AudioChannels.stereo;
             Config.GraphicDevice_EnableDebugMode = true;
-            // RitaEngine.Base.Resources.Shaders. CreateSPIRV(path, "shader_depth.vert","shader_depth_vert.spv", RitaEngine.Base.Resources.Shaders.ShaderType.VertexShader , "main");
-            // RitaEngine.Base.Resources.Shaders. CreateSPIRV(path, "shader_depth.frag","shader_depth_frag.spv", RitaEngine.Base.Resources.Shaders.ShaderType.FragmentShader , "main");
+            // RitaEngine.Resources.Shaders. CreateSPIRV(path, "shader_depth.vert","shader_depth_vert.spv", RitaEngine.Resources.Shaders.ShaderType.VertexShader , "main");
+            // RitaEngine.Resources.Shaders. CreateSPIRV(path, "shader_depth.frag","shader_depth_frag.spv", RitaEngine.Resources.Shaders.ShaderType.FragmentShader , "main");
             Window.Events.OnKillFocus = onkillFocus;
             Window.Events.OnSetFocus = onSetFocus;
         }

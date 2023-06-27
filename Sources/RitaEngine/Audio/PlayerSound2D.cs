@@ -5,7 +5,7 @@ using RitaEngine.Base;
 using RitaEngine.Platform;
 using RitaEngine.Platform.API.DirectX;
 using RitaEngine.Platform.API.DirectX.XAudio;
-using RitaEngine.Base.Resources.Sound;
+using RitaEngine.Resources.Sound;
 
 /// <summary>
 /// Class de base pour jouer un son stéréo à valeur de test
