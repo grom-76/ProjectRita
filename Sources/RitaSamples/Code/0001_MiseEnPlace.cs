@@ -13,7 +13,7 @@ public static class Sample_0001
     {   
         //ALL CODE TO CREATE INITIALIZE PLATFORM SYSTEM
         RitaEngine.Base.PlatformConfig config = new();
-        RitaEngine.Base.Platform.GraphicRenderConfig renderConfig = new();
+        RitaEngine.Graphic. GraphicRenderConfig renderConfig = new();
         
         RitaEngine.Base.Platform.Clock clock = new();
         RitaEngine.Base.Platform.Window window = new();
@@ -21,7 +21,7 @@ public static class Sample_0001
         RitaEngine.Base.Platform.AudioDevice audio = new();
         RitaEngine.Base.Platform.GraphicDevice graphic = new();
 
-        RitaEngine.Base.Audio.PlayerSound2D snd = new( );
+        RitaEngine.Audio.PlayerSound2D snd = new( );
         
         try
         {

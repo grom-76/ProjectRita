@@ -1,4 +1,4 @@
-namespace RitaEngine.Base.Audio.Concurrency;
+namespace RitaEngine.Audio.Concurrency;
     
 
 public static class Signal

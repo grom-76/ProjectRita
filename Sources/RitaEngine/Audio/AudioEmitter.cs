@@ -1,6 +1,6 @@
 
 
-namespace RitaEngine.Base.Audio;
+namespace RitaEngine.Audio;
 
 using RitaEngine.Base.Math;
 /// <summary>

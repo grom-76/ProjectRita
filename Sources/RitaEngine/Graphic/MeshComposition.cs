@@ -1,4 +1,4 @@
-namespace RitaEngine.Base.Graphic;
+namespace RitaEngine.Graphic;
 
 public struct GraphicBuffersVerticesManager
 {

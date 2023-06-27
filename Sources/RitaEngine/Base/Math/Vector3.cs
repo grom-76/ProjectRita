@@ -93,6 +93,15 @@ public struct Vector3 : IEquatable<Vector3>
     public static Vector3 operator /(Vector3 left,Vector3 right)
         => new( left.X/ right.X , left.Y / right.Y , left.Z / right.Z  );
 
+    public static void Substract(ref Vector3 result, ref Vector3 left, float scalar)
+        => ( result.X,result.Y,result.Z)=(left.X - scalar, left.Y - scalar, left.Z - scalar);
+
+    public static void Substract(ref Vector3 result,  float scalar, ref Vector3 right)
+        => ( result.X,result.Y,result.Z)=(scalar - right.X, scalar - right.Y, scalar- right.Z);
+    
+    public static void Substract(ref Vector3 result,  ref Vector3 left, ref Vector3 right)
+        => ( result.X,result.Y,result.Z)=(left.X - right.X, left.Y - right.Y,  left.Z - right.Z);
+
     public static Vector3 operator -(Vector3 value, float scalar)
         => new(value.X - scalar, value.Y - scalar, value.Z - scalar);
 
@@ -132,28 +141,28 @@ public struct Vector3 : IEquatable<Vector3>
                 left.Z * right.X - left.X * right.Z, 
                 left.X * right.Y - left.Y * right.X);
     
-//code source from :         https://github.com/Philip-Trettner/GlmSharp/blob/master/GlmSharp/GlmSharp/Vec3/vec3.cs
-        /// <summary>
-        /// Calculate the reflection direction for an incident vector (N should be normalized in order to achieve the desired result).
-        /// </summary>
-        public static Vector3 Reflect(ref Vector3 I,ref Vector3 N) => I - 2 * Dot(ref N,ref I) * N;
-        
-        /// <summary>
-        /// Calculate the refraction direction for an incident vector (The input parameters I and N should be normalized in order to achieve the desired result).
-        /// </summary>
-        public static Vector3 Refract(ref Vector3 I,ref Vector3 N, float eta)
-        {
-            var dNI = Dot(ref N,ref I);
-            var k = 1 - eta * eta * (1 - dNI * dNI);
-            if (k < 0) return Zero;
-            return eta * I - (eta * dNI + (float)Helper.Sqrt(k)) * N;
-        }
-        
-        /// <summary>
-        /// Returns a vector pointing in the same direction as another (faceforward orients a vector to point away from a surface as defined by its normal. If dot(Nref, I) is negative faceforward returns N, otherwise it returns -N).
-        /// </summary>
-        public static Vector3 FaceForward(ref Vector3 N,ref Vector3 I,ref Vector3 Nref) => Dot(ref Nref,ref I) < 0 ? N : -N;
-        
+    //code source from :         https://github.com/Philip-Trettner/GlmSharp/blob/master/GlmSharp/GlmSharp/Vec3/vec3.cs
+    /// <summary>
+    /// Calculate the reflection direction for an incident vector (N should be normalized in order to achieve the desired result).
+    /// </summary>
+    public static Vector3 Reflect(ref Vector3 I,ref Vector3 N) => I - 2 * Dot(ref N,ref I) * N;
+    
+    /// <summary>
+    /// Calculate the refraction direction for an incident vector (The input parameters I and N should be normalized in order to achieve the desired result).
+    /// </summary>
+    public static Vector3 Refract(ref Vector3 I,ref Vector3 N, float eta)
+    {
+        var dNI = Dot(ref N,ref I);
+        var k = 1 - eta * eta * (1 - dNI * dNI);
+        if (k < 0) return Zero;
+        return eta * I - (eta * dNI + (float)Helper.Sqrt(k)) * N;
+    }
+    
+    /// <summary>
+    /// Returns a vector pointing in the same direction as another (faceforward orients a vector to point away from a surface as defined by its normal. If dot(Nref, I) is negative faceforward returns N, otherwise it returns -N).
+    /// </summary>
+    public static Vector3 FaceForward(ref Vector3 N,ref Vector3 I,ref Vector3 Nref) => Dot(ref Nref,ref I) < 0 ? N : -N;
+    
    
     /// <summary>
     /// dot product cosinus de l'angle entre les deux vecteurs

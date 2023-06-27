@@ -1,23 +1,52 @@
-﻿
+﻿//------------------------------------------------------------------
+/*
+    FOLDERS 
+        API 
+            Audio(Xaudio)
+
+            Graphic(vulkn)
+
+            Web
+
+            Win32
+
+            Linux
+        AI
+        
+        Physics
+            Collide
+
+        Math
+            Algo
+        Audio
+        Events
+        Graphic
+        Online
+        Inputs
+        Scenes
+            Patterns
+                -Dispatcher
+                -FiniteStateMachine // USE DESIGN PATTERN see : http://gameprogrammingpatterns.com/
+                -ServiceLocator
 
 
+ //https://github.com/Syncaidius/MoltenEngine/tree/master/Molten.Engine/Settings
 
-
-
+*/
 //---------------------------------------------------------------------------------------------------------------------------------------------
-
+/*
 namespace RitaEngine.Advanced
 {
     namespace IA
     {
         public static class PathFinding{}
         public static class FinitStateMachine{}
+
     }
     
-    namespace Physic
-    {
+
         public class Physics{} //see :https://github.com/bepu/bepuphysics2
-    }
+
     namespace Scene
     {
         public struct Scene{} //Manage block
@@ -194,3 +223,4 @@ namespace RitaEngine.Advanced
         // Animation retargeting
     }
 }
+*/

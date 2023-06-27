@@ -1,7 +1,7 @@
 
 
 
-namespace RitaEngine.Base.Audio;
+namespace RitaEngine.Audio;
 
 // see  AudioEmitter  :  https://www.maxicours.com/se/cours/caracteristiques-des-sons-musicaux/
 public struct AudioHelper

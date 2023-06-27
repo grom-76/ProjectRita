@@ -1,5 +1,6 @@
-namespace RitaEngine.Base.Graphic;
+namespace RitaEngine.Graphic;
 
+using RitaEngine.Base;
 using RitaEngine.Base.Math;
 using RitaEngine.Base.Platform;
 
@@ -42,7 +43,7 @@ public struct Camera :IEquatable<Camera>
     public void Zoom( float advance )
     {
         _data.FieldOfViewInDegree += advance;
-        _data.FieldOfViewInDegree =  Math.Helper.Clamp( _data.FieldOfViewInDegree,0.01f,89.99f)  ;
+        _data.FieldOfViewInDegree =  Helper.Clamp( _data.FieldOfViewInDegree,0.01f,89.99f)  ;
         CameraImplement.UpdateProjection(ref _data );
     }
     
@@ -134,27 +135,23 @@ public static class CameraImplement
     public static void FirstPerson(ref CameraData data)
     {
         data.World =  RitaEngine.Base.Math.Matrix.Identity;
-        data.CamFront =  Vector3.Normalize(data.Position - data.Target) ;
+        data.CamFront =   data.Target  - data.Position;
         Matrix.CreateLookAt( ref data.Position ,ref data.CamFront, ref data.Up, out data.View);
-        //   var vector = Vector3.Normalize(cameraPosition - cameraTarget);
-        //     var vector2 = Vector3.Normalize(Vector3.Cross(ref cameraUpVector,ref vector));
-        //     var vector3 = Vector3.Cross( ref vector, ref vector2);
-		//     result.M11 = vector2.X;
-		//     result.M12 = vector3.X;
-		//     result.M13 = vector.X;
-		//     result.M14 = 0f;
-		//     result.M21 = vector2.Y;
-		//     result.M22 = vector3.Y;
-		//     result.M23 = vector.Y;
-		//     result.M24 = 0f;
-		//     result.M31 = vector2.Z;
-		//     result.M32 = vector3.Z;
-		//     result.M33 = vector.Z;
-		//     result.M34 = 0f;
-		//     result.M41 = -Vector3.Dot(ref vector2, ref  cameraPosition);
-		//     result.M42 = -Vector3.Dot(ref vector3, ref  cameraPosition);
-		//     result.M43 = -Vector3.Dot(ref vector,  ref cameraPosition);
-		//     result.M44 = 1f;
+      
+
+        Vector3 targetDir = data.Position - data.View.TranslationVector ;
+        Vector3 forward =  data.View.Forward;
+        Vector3 up =  data.View.Up;
+        Vector3 left =  data.View.Left;
+
+        data.Rotation.X = Helper.ToDegree( Vector3.Dot(ref targetDir , ref forward) );
+        float angleYAxis = Helper.ToDegree( Vector3.Dot(ref targetDir , ref up) );
+        float angleZAxis = Helper.ToDegree( Vector3.Dot(ref targetDir , ref left) );
+
+        float angleX =  Helper.ToDegree( Helper.ACos(targetDir.X / targetDir.Length) );
+        float angleZ =  Helper.ToDegree( Helper.ACos(targetDir.Z / targetDir.Length) );
+        float angleY = Helper.ToDegree(  Helper.ACos(targetDir.Y / targetDir.Length) );
+
         UpdateProjection(ref data);
     }
 
@@ -163,9 +160,9 @@ public static class CameraImplement
         Matrix rotM = Matrix.Identity;
         Matrix transM;
         
-        rotM = Matrix.RotationX(Math.Helper.ToRadians(data.Rotation.X* data.FlipY)) * rotM;
-        rotM = Matrix.RotationY(Math.Helper.ToRadians(data.Rotation.Y)) * rotM;
-        rotM = Matrix.RotationZ(Math.Helper.ToRadians(data.Rotation.Z)) * rotM;
+        rotM = Matrix.RotationX(Helper.ToRadians(data.Rotation.X* data.FlipY)) * rotM;
+        rotM = Matrix.RotationY(Helper.ToRadians(data.Rotation.Y)) * rotM;
+        rotM = Matrix.RotationZ(Helper.ToRadians(data.Rotation.Z)) * rotM;
 
         Vector3 translation = data.Position;
         translation.Y *=  data.FlipY;
@@ -268,7 +265,7 @@ public struct CameraData :IEquatable<CameraData>
     public Matrix View=Matrix.Identity;
     public Matrix Projection=Matrix.Identity;
     public Vector3 Position =new(0.0f,-0.12f,-2.0f);
-    public Vector3 Rotation = new(0.0f,10.0f, 00.0f);
+    public Vector3 Rotation = new(0.0f,00.0f, 00.0f);
     public Vector3 Target =new(0.00f,0.00f,0.00f);
     public  Vector3 CamFront = new(0.0f);
     public Vector3 Up =new(0.0f,1.0f,0.0f);
@@ -293,12 +290,6 @@ public struct CameraData :IEquatable<CameraData>
         };
         return result;
     }
-    // public float[] ToArray => new float[ ]
-    // {
-    //     World[0],World[1],World[2],World[3],World[4],World[5],World[6],World[7],World[8],World[9],World[10],World[11],World[12],World[13],World[14],World[15],
-    //     View[0],View[1],View[2],View[3],View[4],View[5],View[6],View[7],View[8],View[9],View[10],View[11],View[12],View[13],View[14],View[15],
-    //     Projection[0],Projection[1],Projection[2],Projection[3],Projection[4],Projection[5],Projection[6],Projection[7],Projection[8],Projection[9],Projection[10],Projection[11],Projection[12],Projection[13],Projection[14],Projection[15],
-    // };
 
     public void Release(){ }
 

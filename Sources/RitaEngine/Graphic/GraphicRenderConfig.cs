@@ -1,10 +1,7 @@
-namespace RitaEngine.Base.Platform; //https://github.com/Syncaidius/MoltenEngine/tree/master/Molten.Engine/Settings
+namespace RitaEngine.Graphic;
 
-using System.Collections.Generic;
 using RitaEngine.Base.Math.Color;
 using RitaEngine.Base.Math;
-using RitaEngine.Base.Graphic;
-using RitaEngine.Base.Platform.API.Vulkan;
 
 /// <summary>
 /// RENAME WITH PIPELINE

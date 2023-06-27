@@ -1,6 +1,4 @@
-namespace RitaEngine.Advanced;
-
-using RitaEngine.Base;
+namespace RitaEngine.Base;
 
 
 [SkipLocalsInit, StructLayout(LayoutKind.Sequential)]
@@ -8,7 +6,6 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
 {
     #region PUBLIC ACCESS 
 
-    
     /// <summary> Ctor Empty for settings game use each instance </summary>
     public RitaEngineMain()
     {     
@@ -88,8 +85,6 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
                 continue;
             }
             #endif
-
-            
         
             input.Update();
             UpdateInputs();
@@ -130,16 +125,13 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
 
     #endregion
     public RitaEngine.Base.PlatformConfig Config = new();
-    public RitaEngine.Base.Platform.GraphicRenderConfig RenderConfig = new();
+    public RitaEngine.Graphic.GraphicRenderConfig RenderConfig = new();
 
     public ref readonly RitaEngine.Base.Platform.Clock Clock => ref clock;
     public ref RitaEngine.Base.Platform.Window Window => ref window;
     public ref readonly RitaEngine.Base.Platform.Inputs Input => ref input;
     public ref readonly RitaEngine.Base.Platform.AudioDevice AudioDevice => ref  audio;
     public ref RitaEngine.Base.Platform.GraphicDevice GraphicDevice => ref graphic;
-    
-   
-    
 
     #region [ Abstract to override ]
 

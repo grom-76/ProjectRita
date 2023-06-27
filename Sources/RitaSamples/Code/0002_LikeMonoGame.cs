@@ -2,7 +2,6 @@ namespace RitaSamples;
 
 
 using RitaEngine.Base;
-using RitaEngine.Base.Math;
 using RitaEngine.Base.Platform;
 using RitaEngine.Base.Platform.Config;
 
@@ -16,14 +15,14 @@ public static class Sample_0002
     {   
        using MyGame game = new();
        game.Run();
-   
+    
     }
     
 
-    public class MyGame : RitaEngine.Advanced.RitaEngineMain
+    public class MyGame : RitaEngine.Base.RitaEngineMain
     {
 
-        RitaEngine.Base.Audio.PlayerSound2D snd = new();
+        RitaEngine.Audio.PlayerSound2D snd = new();
    
         
         public MyGame()
@@ -69,7 +68,7 @@ public static class Sample_0002
             RenderConfig.FragmentShaderFileNameSPV =  "shader_depth_frag.spv";
             RenderConfig.VertexShaderFileNameSPV =  "shader_depth_vert.spv";
             RenderConfig.TextureName = "grid.png";
-            // RenderConfig.Camera.AddLookAkCamera(new(0.0f,2f,-4.0f), new(350.0f,0.0f, 0.0f),new(0.0f,1.0f,0.0f),45.0f,(float)1280.0f/720.0f, 0.1f,100.0f );
+            // RenderConfig.Camera.AddLookAkCamera(new(0.0f,2f,-4.0f), new(-27.0f,0.0f, 0.0f),new(0.0f,1.0f,0.0f),45.0f,(float)1280.0f/720.0f, 0.1f,100.0f );
             RenderConfig.Camera.AddFirstPersonCamera(new(0.0f,2f,-4.0f), new(0.0f,0.0f,0.0f),new(0.0f,1.0f,0.0f),45.0f,(float)1280.0f/720.0f, 0.1f,100.0f );
             RenderConfig.Primitive = RitaEngine.Base.Math.GeometricPrimitive.CreateBox(1.0f,1.0f,2.0f);
 

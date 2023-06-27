@@ -1,4 +1,4 @@
-namespace RitaEngine.Base.Audio;
+namespace RitaEngine.Audio;
 
 
 public struct AudioBuffer<TDataFormat>

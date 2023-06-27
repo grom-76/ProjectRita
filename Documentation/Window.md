@@ -84,7 +84,7 @@
             graphic.Init( win);
             // END INITIALIZE SYSTEM
 
-            RitaEngine.Base.Audio.PlayerSound2D snd = new( audio, path+  "demo.wav");
+            RitaEngine.Audio.PlayerSound2D snd = new( audio, path+  "demo.wav");
 
             graphic.Render.BackColorARGB = RitaEngine.Base.Math.Color.Palette.Lavender ;
             graphic.Render.FragmentEntryPoint ="main";

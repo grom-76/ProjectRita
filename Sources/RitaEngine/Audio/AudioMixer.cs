@@ -1,4 +1,4 @@
-namespace RitaEngine.Base.Audio;
+namespace RitaEngine.Audio;
 
 // multiply add substract multi sources/format
 public static class AudioMixer{

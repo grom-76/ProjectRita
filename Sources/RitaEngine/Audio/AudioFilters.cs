@@ -1,5 +1,5 @@
 
-namespace RitaEngine.Base.Audio;
+namespace RitaEngine.Audio;
 
 
 /// <summary>

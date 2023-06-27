@@ -1,4 +1,4 @@
-namespace RitaEngine.Base.Audio;
+namespace RitaEngine.Audio;
 
 public static class AudioGenerator // TODO : Rename AudioGenerator en AudioNoise  ?
 {
