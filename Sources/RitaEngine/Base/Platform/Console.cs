@@ -1,4 +1,4 @@
-namespace RitaEngine.Base.Platform;
+namespace RitaEngine.Platform;
 
 
 //https://github.com/TasThief/ConsoleRenderingSystem/tree/master/FinalGame

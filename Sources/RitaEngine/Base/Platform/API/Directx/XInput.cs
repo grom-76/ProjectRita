@@ -1,4 +1,4 @@
-namespace RitaEngine.Base.Platform.API.DirectX.XInput;
+namespace RitaEngine.Platform.API.DirectX.XInput;
 
 
 

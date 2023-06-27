@@ -1,6 +1,6 @@
-namespace RitaEngine.Base.Platform.Structures;
+namespace RitaEngine.Platform.Structures;
 
-using RitaEngine.Base.Platform.API.DirectX.XInput;
+using RitaEngine.Platform.API.DirectX.XInput;
 
 
 [StructLayout(LayoutKind.Sequential, Pack =4),SkipLocalsInit]

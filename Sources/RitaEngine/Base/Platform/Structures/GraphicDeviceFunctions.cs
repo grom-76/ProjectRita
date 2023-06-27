@@ -1,10 +1,10 @@
 
 
-namespace RitaEngine.Base.Platform.Structures;
+namespace RitaEngine.Platform.Structures;
 
-using RitaEngine.Base.Platform.API.Vulkan;
+using RitaEngine.Platform.API.Vulkan;
 using ConstChar = System.Byte;
-using RitaEngine.Base.Platform.Structures;
+using RitaEngine.Base;
 
 public unsafe delegate void* PFN_vkGetInstanceProcAddr(VkInstance module , string name);
 

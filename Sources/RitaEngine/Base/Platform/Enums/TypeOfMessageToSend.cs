@@ -1,4 +1,4 @@
-namespace RitaEngine.Base.Platform;
+namespace RitaEngine.Platform;
 
 public enum TypeOfMessageToSend
 {

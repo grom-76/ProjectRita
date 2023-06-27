@@ -1,3 +1,3 @@
-namespace RitaEngine.Base.Platform.API.Net;
+namespace RitaEngine.Platform.API.Net;
 
 // LiteNetLib

@@ -1,4 +1,4 @@
-namespace RitaEngine.Base.Platform.Config;
+namespace RitaEngine.Platform.Config;
 
 public enum AudioDeviceBackEnd
 {

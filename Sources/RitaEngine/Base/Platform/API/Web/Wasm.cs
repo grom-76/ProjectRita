@@ -1,4 +1,4 @@
-namespace RitaEngine.Base.Platform.API.Web;
+namespace RitaEngine.Platform.API.Web;
 
 /*
 Before Runing 

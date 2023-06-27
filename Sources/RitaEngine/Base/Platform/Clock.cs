@@ -1,8 +1,9 @@
 
-namespace RitaEngine.Base.Platform;
+namespace RitaEngine.Platform;
 
-using RitaEngine.Base.Platform.Config;
-using RitaEngine.Base.Platform.Structures;
+using RitaEngine.Base;
+using RitaEngine.Platform.Config;
+using RitaEngine.Platform.Structures;
 
 [ StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public struct Clock: IEquatable<Clock>

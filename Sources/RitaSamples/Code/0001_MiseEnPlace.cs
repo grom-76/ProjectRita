@@ -1,7 +1,7 @@
 namespace RitaSamples;
 
 using RitaEngine.Base;
-using RitaEngine.Base.Platform.Config;
+using RitaEngine.Platform.Config;
 
 
 public static class Sample_0001
@@ -12,14 +12,14 @@ public static class Sample_0001
     public static void Run()
     {   
         //ALL CODE TO CREATE INITIALIZE PLATFORM SYSTEM
-        RitaEngine.Base.PlatformConfig config = new();
+        RitaEngine.Platform. PlatformConfig config = new();
         RitaEngine.Graphic. GraphicRenderConfig renderConfig = new();
         
-        RitaEngine.Base.Platform.Clock clock = new();
-        RitaEngine.Base.Platform.Window window = new();
-        RitaEngine.Base.Platform.Inputs input = new();
-        RitaEngine.Base.Platform.AudioDevice audio = new();
-        RitaEngine.Base.Platform.GraphicDevice graphic = new();
+        RitaEngine.Platform.Clock clock = new();
+        RitaEngine.Platform.Window window = new();
+        RitaEngine.Platform.Inputs input = new();
+        RitaEngine.Platform.AudioDevice audio = new();
+        RitaEngine.Platform.GraphicDevice graphic = new();
 
         RitaEngine.Audio.PlayerSound2D snd = new( );
         
@@ -31,7 +31,7 @@ public static class Sample_0001
             config.Log(Log.Display.OnConsole);
             // config.Garbage(GarbageCollectionPriority.Interactive, 1024*1024*60);
             config.Clock_FixedTimeStep = 0.033;
-            config.Clock_LoopMode = RitaEngine.Base.Platform.Config.ClockLoopMode.Default;
+            config.Clock_LoopMode = RitaEngine.Platform.Config.ClockLoopMode.Default;
             config.Input_ShowCursor = true;
             config.Audio_Category = AudioCategory.GameMedia;
             config.Audio_Channels = AudioChannels.stereo;
@@ -59,12 +59,12 @@ public static class Sample_0001
             clock.Reset();
             while(window.ShouldClose())
             {
-                if ( input.IsKeyPressed( RitaEngine.Base.Platform.InputKeys.Escape ))
+                if ( input.IsKeyPressed( RitaEngine.Platform.InputKeys.Escape ))
                 {
                     window.RequestClose();
                 }
 
-                if (input.IsKeyPressed( RitaEngine.Base.Platform.InputKeys.Space ))
+                if (input.IsKeyPressed( RitaEngine.Platform.InputKeys.Space ))
                 {
                     snd.PlaySource();
                 }

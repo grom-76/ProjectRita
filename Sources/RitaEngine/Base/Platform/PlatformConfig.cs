@@ -1,7 +1,7 @@
-namespace RitaEngine.Base;
+namespace RitaEngine.Platform;
 
 using System.Runtime;
-using RitaEngine.Base.Platform.Config;
+using RitaEngine.Platform.Config;
 using static RitaEngine.Base.Log;
 
 
@@ -41,7 +41,7 @@ public sealed class PlatformConfig : IDisposable
 
     
 
-    public int Controller_MaxController =  RitaEngine.Base.Platform.API.DirectX.XInput.Constants.XUSER_MAX_COUNT;
+    public int Controller_MaxController =  RitaEngine.Platform.API.DirectX.XInput.Constants.XUSER_MAX_COUNT;
     public float Controller_DeadZone =0.24f; //Todo change dead zone ?
     public float Controller_Threshold = 0.2f;
     public double Controller_AcquireMiliSec = 0.033;
@@ -101,7 +101,7 @@ public sealed class PlatformConfig : IDisposable
 
     public void Log(Display output,string file="") => RitaEngine.Base.Log.Config(output,file );
 
-    public void AssetPath( string assetpath) => RitaEngine.Base.Platform.PlatformHelper.AssetsPath = assetpath;
+    public void AssetPath( string assetpath) => RitaEngine.Platform.PlatformHelper.AssetsPath = assetpath;
 
     private bool _useMemoryPressure = false;
     private int _memoryPressure = 1024*1024*100;

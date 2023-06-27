@@ -1,7 +1,7 @@
-namespace RitaEngine.Base.Platform.Structures;
+namespace RitaEngine.Platform.Structures;
 
 
-using RitaEngine.Base.Platform.API.DirectX.XInput;
+using RitaEngine.Platform.API.DirectX.XInput;
 
 [StructLayout(LayoutKind.Sequential), SkipLocalsInit]
 public unsafe struct ControllerDeviceData : IEquatable<ControllerDeviceData>

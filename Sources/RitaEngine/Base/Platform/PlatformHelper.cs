@@ -1,8 +1,7 @@
-
-
-namespace RitaEngine.Base.Platform;
+namespace RitaEngine.Platform;
 
 using System.IO;
+using RitaEngine.Base;
 
 public unsafe delegate nint PFN_WNDPROC(void* hWnd,uint msg,nuint wParam, nint lpParam );
 public unsafe delegate void* PFN_GetSymbolPointer(nint module , string name);

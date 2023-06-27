@@ -1,4 +1,4 @@
-namespace RitaEngine.Base.Platform.API.Pulse;
+namespace RitaEngine.Platform.API.Pulse;
 
 
 using HRESULT = System.UInt32;

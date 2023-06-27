@@ -1,6 +1,6 @@
 
 
-namespace RitaEngine.Base.Platform.Structures ;// OS SYSTEMS// LAUNCHER CONTEXT DEVICE MACHINE , User Interface , Output
+namespace RitaEngine.Platform.Structures ;// OS SYSTEMS// LAUNCHER CONTEXT DEVICE MACHINE , User Interface , Output
 
     // public static class Gesture{} // controller , 
     // public static class Haptic{} // controller , 

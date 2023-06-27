@@ -58,16 +58,16 @@
         string path = @"C:\Users\Administrator\Documents\ProjectRita\Assets\";
 
         //ALL CODE TO CREATE INITIALIZE PLATFORM SYSTEM
-        RitaEngine.Base.Platform.Clock clock = new();
-        RitaEngine.Base.Platform.Window win = new();
-        RitaEngine.Base.Platform.Inputs input = new();
-        RitaEngine.Base.Platform.AudioDevice audio = new();
-        RitaEngine.Base.Platform.GraphicDevice graphic = new();
+        RitaEngine.Platform.Clock clock = new();
+        RitaEngine.Platform.Window win = new();
+        RitaEngine.Platform.Inputs input = new();
+        RitaEngine.Platform.AudioDevice audio = new();
+        RitaEngine.Platform.GraphicDevice graphic = new();
 
         try
         {
             clock.Config.FixedTimeStep = 0.033;
-            clock.Config.LoopMode = RitaEngine.Base.Platform.Config.ClockLoopMode.Default;
+            clock.Config.LoopMode = RitaEngine.Platform.Config.ClockLoopMode.Default;
             clock.Init();
 
             win.Config.SetTitle("My Game");
@@ -98,12 +98,12 @@
 
             while(win.ShouldClose())
             {
-                if ( input.IsKeyPressed( RitaEngine.Base.Platform.InputKeys.Escape ))
+                if ( input.IsKeyPressed( RitaEngine.Platform.InputKeys.Escape ))
                 {
                     win.RequestClose();
                 }
 
-                if (input.IsKeyPressed( RitaEngine.Base.Platform.InputKeys.Space ))
+                if (input.IsKeyPressed( RitaEngine.Platform.InputKeys.Space ))
                 {
                     snd.PlaySource();
                 }

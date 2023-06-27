@@ -1,4 +1,6 @@
-namespace RitaEngine.Base.Platform;
+namespace RitaEngine.Platform;
+
+using RitaEngine.Base;
 
 /// <summary>
 ///  PORTABLE , STAND ALONE

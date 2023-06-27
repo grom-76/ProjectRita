@@ -1,7 +1,7 @@
-namespace RitaEngine.Base.Platform.Structures;
+namespace RitaEngine.Platform.Structures;
 
 using RitaEngine.Math;
-using RitaEngine.Base.Platform.API.Vulkan;
+using RitaEngine.Platform.API.Vulkan;
 
 [StructLayout(LayoutKind.Sequential, Pack = RitaEngine.Base.BaseHelper.FORCE_ALIGNEMENT), SkipLocalsInit]
 public struct GraphicDeviceData : IEquatable<GraphicDeviceData>

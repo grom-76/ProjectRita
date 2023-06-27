@@ -1,12 +1,13 @@
-namespace RitaEngine.Base.Platform;
+namespace RitaEngine.Platform;
 
 using System.IO;
 using RitaEngine.Base.Debug;
 using RitaEngine.Math.Color;
-using RitaEngine.Base.Platform.API.Vulkan;
-using RitaEngine.Base.Platform.Structures;
+using RitaEngine.Platform.API.Vulkan;
+using RitaEngine.Platform.Structures;
 using RitaEngine.Base.Strings;
 using RitaEngine.Math;
+using RitaEngine.Base;
 
 using VkDeviceSize = UInt64;
 using RitaEngine.Base.Resources.Images;
@@ -170,12 +171,12 @@ public static class GraphicDeviceImplement
         data.Info.Vertices = pipeline.Primitive.VertexToArray();
         data.Handles.IndicesSize =(uint) pipeline.Primitive.Indices.Length;
 
-        data.Info.TextureName =  RitaEngine.Base.Platform.PlatformHelper.AssetsPath + pipeline.TextureName;
+        data.Info.TextureName =  RitaEngine.Platform.PlatformHelper.AssetsPath + pipeline.TextureName;
         data.Info.MAX_FRAMES_IN_FLIGHT = pipeline.MAX_FRAMES_IN_FLIGHT;
         data.Info.FragmentEntryPoint = pipeline.FragmentEntryPoint;
         data.Info.VertexEntryPoint = pipeline.VertexEntryPoint;
-        data.Info.FragmentShaderFileNameSPV =RitaEngine.Base.Platform.PlatformHelper.AssetsPath + pipeline.FragmentShaderFileNameSPV;
-        data.Info.VertexShaderFileNameSPV =RitaEngine.Base.Platform.PlatformHelper.AssetsPath + pipeline.VertexShaderFileNameSPV;
+        data.Info.FragmentShaderFileNameSPV =RitaEngine.Platform.PlatformHelper.AssetsPath + pipeline.FragmentShaderFileNameSPV;
+        data.Info.VertexShaderFileNameSPV =RitaEngine.Platform.PlatformHelper.AssetsPath + pipeline.VertexShaderFileNameSPV;
 
         data.Info.RenderArea.extent = data.Info.VkSurfaceArea;
         data.Info.RenderArea.offset = data.Info.RenderAreaOffset;
@@ -196,7 +197,7 @@ public static class GraphicDeviceImplement
 
        data.Info.ValidationLayers = new  string[ layerCount ];
         for (int i = 0; i < layerCount; i++) {
-            var length = Strings.StrHelper.Strlen( layerProperties[i].layerName );
+            var length = StrHelper.Strlen( layerProperties[i].layerName );
            data.Info.ValidationLayers[i] = Encoding.UTF8.GetString(  layerProperties[i].layerName, (int) length );// new string(layerProperties[i].layerName); //Encoding.UTF8.GetString(  layerProperties[i].layerName, (int) length );
         }
 
@@ -217,7 +218,7 @@ public static class GraphicDeviceImplement
         data.Info.InstanceExtensions = new string[extCount ];
         for (int i = 0; i < extCount; i++)
         {
-            var length = Strings.StrHelper.Strlen( props[i].extensionName);
+            var length = StrHelper.Strlen( props[i].extensionName);
            data.Info.InstanceExtensions[i] =Encoding.UTF8.GetString(  props[i].extensionName, (int) length );
         }
 
@@ -300,7 +301,7 @@ public static class GraphicDeviceImplement
         VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
     {
 
-        string message= System.Text.Encoding.UTF8.GetString(pCallbackData->pMessage,(int) Strings.StrHelper.Strlen(pCallbackData->pMessage) );  //new string(pCallbackData->pMessage); //
+        string message= System.Text.Encoding.UTF8.GetString(pCallbackData->pMessage,(int) StrHelper.Strlen(pCallbackData->pMessage) );  //new string(pCallbackData->pMessage); //
         // string validation = (messageTypes == (uint)Vulkan.VkDebugUtilsMessageTypeFlagBitsEXT.VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)? "Validation : " : string.Empty;
 
         if (messageSeverity == VkDebugUtilsMessageSeverityFlagBitsEXT.VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
@@ -447,7 +448,7 @@ public static class GraphicDeviceImplement
         data.Info.DeviceExtensions = new string[propertyCount + 1];
 
         for (int i = 0; i < propertyCount; i++){
-            var length =  Strings.StrHelper.Strlen( properties[i].extensionName);
+            var length =  StrHelper.Strlen( properties[i].extensionName);
            data.Info.DeviceExtensions[i] = Encoding.UTF8.GetString( properties[i].extensionName, (int) length ); //new string(properties[i].extensionName); //
         }
         data.Info.DeviceExtensions[propertyCount] = VK.VK_KHR_SWAPCHAIN_EXTENSION_NAME ;

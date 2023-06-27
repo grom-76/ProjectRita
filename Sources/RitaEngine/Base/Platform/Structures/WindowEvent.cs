@@ -1,4 +1,6 @@
-namespace RitaEngine.Base.Platform.Structures;
+namespace RitaEngine.Platform.Structures;
+
+using RitaEngine.Base;
 
 [StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public  struct WindowEvent : IEquatable<WindowEvent>

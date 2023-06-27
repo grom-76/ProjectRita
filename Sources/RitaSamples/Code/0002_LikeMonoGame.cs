@@ -2,8 +2,8 @@ namespace RitaSamples;
 
 
 using RitaEngine.Base;
-using RitaEngine.Base.Platform;
-using RitaEngine.Base.Platform.Config;
+using RitaEngine.Platform;
+using RitaEngine.Platform.Config;
 
 
 public static class Sample_0002
@@ -30,7 +30,7 @@ public static class Sample_0002
             Config.Log( Log.Display.OnConsole);
             Config.AssetPath( @"C:\Users\Administrator\Documents\Repos\ProjectRita\Assets\" );
             Config.Clock_FixedTimeStep = 0.033;
-            Config.Clock_LoopMode = RitaEngine.Base.Platform.Config.ClockLoopMode.Default;
+            Config.Clock_LoopMode = RitaEngine.Platform.Config.ClockLoopMode.Default;
             Config.Game_Title ="My First game";
             Config.Window_Resolution = WindowResolution.HD_720p_1920x720;
             Config.Input_ShowCursor = true;

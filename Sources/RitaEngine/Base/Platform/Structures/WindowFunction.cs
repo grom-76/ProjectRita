@@ -1,6 +1,7 @@
-namespace RitaEngine.Base.Platform.Structures; // OS SYSTEMS// LAUNCHER CONTEXT DEVICE MACHINE , User Interface , Output
+namespace RitaEngine.Platform.Structures; // OS SYSTEMS// LAUNCHER CONTEXT DEVICE MACHINE , User Interface , Output
 
-using RitaEngine.Base.Platform.API.Window;
+using RitaEngine.Base;
+using RitaEngine.Platform.API.Window;
 
 [ StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public readonly struct WindowFunction : IEquatable<WindowFunction>

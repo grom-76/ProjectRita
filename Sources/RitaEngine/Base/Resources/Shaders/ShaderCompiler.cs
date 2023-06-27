@@ -8,7 +8,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using RitaEngine.Base.Platform;
+using RitaEngine.Platform;
 // using RitaEngine.Device.Implement;
 using static RitaEngine.Base.Resources.Shader.ShaderCompiler.Natives;
 

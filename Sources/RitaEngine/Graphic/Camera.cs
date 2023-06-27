@@ -2,7 +2,7 @@ namespace RitaEngine.Graphic;
 
 using RitaEngine.Base;
 using RitaEngine.Math;
-using RitaEngine.Base.Platform;
+using RitaEngine.Platform;
 
 [ StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public struct Camera :IEquatable<Camera>

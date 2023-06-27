@@ -3,7 +3,7 @@
 https://github.com/webgpu-native/webgpu-headers
 */
 
-namespace RitaEngine.Base.Platform.API.Web;
+namespace RitaEngine.Platform.API.Web;
 
 using System;
 using System.Runtime.InteropServices;

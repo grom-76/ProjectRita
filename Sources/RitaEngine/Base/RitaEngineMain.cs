@@ -116,22 +116,22 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
     #endregion
     
     #region Attributs
-    RitaEngine.Base.Platform.Clock clock = new();
-    RitaEngine.Base.Platform.Window window = new();
-    RitaEngine.Base.Platform.Inputs input = new();
-    RitaEngine.Base.Platform.AudioDevice audio = new();
-    RitaEngine.Base.Platform.GraphicDevice graphic =new();
+    RitaEngine.Platform.Clock clock = new();
+    RitaEngine.Platform.Window window = new();
+    RitaEngine.Platform.Inputs input = new();
+    RitaEngine.Platform.AudioDevice audio = new();
+    RitaEngine.Platform.GraphicDevice graphic =new();
     private bool _disposed = false ;
 
     #endregion
-    public RitaEngine.Base.PlatformConfig Config = new();
+    public RitaEngine.Platform.PlatformConfig Config = new();
     public RitaEngine.Graphic.GraphicRenderConfig RenderConfig = new();
 
-    public ref readonly RitaEngine.Base.Platform.Clock Clock => ref clock;
-    public ref RitaEngine.Base.Platform.Window Window => ref window;
-    public ref readonly RitaEngine.Base.Platform.Inputs Input => ref input;
-    public ref readonly RitaEngine.Base.Platform.AudioDevice AudioDevice => ref  audio;
-    public ref RitaEngine.Base.Platform.GraphicDevice GraphicDevice => ref graphic;
+    public ref readonly RitaEngine.Platform.Clock Clock => ref clock;
+    public ref RitaEngine.Platform.Window Window => ref window;
+    public ref readonly RitaEngine.Platform.Inputs Input => ref input;
+    public ref readonly RitaEngine.Platform.AudioDevice AudioDevice => ref  audio;
+    public ref RitaEngine.Platform.GraphicDevice GraphicDevice => ref graphic;
 
     #region [ Abstract to override ]
 

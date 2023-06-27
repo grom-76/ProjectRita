@@ -8,9 +8,9 @@ public struct Vertex
     public static readonly int OffsetPosition =  Marshal.OffsetOf<Vertex>( nameof(Position)).ToInt32();
     public static readonly int OffsetNormal =  Marshal.OffsetOf<Vertex>( nameof(Normal)).ToInt32();
     public static readonly int OffsetTexCoord =  Marshal.OffsetOf<Vertex>( nameof(TexCoord)).ToInt32();
-    public static readonly uint FormatPosition = (uint)RitaEngine.Base.Platform.API.Vulkan.VkFormat.VK_FORMAT_R32G32B32_SFLOAT;
-    public static readonly uint FormatNormal =(uint)RitaEngine.Base.Platform.API.Vulkan.VkFormat.VK_FORMAT_R32G32B32_SFLOAT;
-    public static readonly uint FormatUV =(uint)RitaEngine.Base.Platform.API.Vulkan.VkFormat.VK_FORMAT_R32G32_SFLOAT;
+    public static readonly uint FormatPosition = (uint)RitaEngine.Platform.API.Vulkan.VkFormat.VK_FORMAT_R32G32B32_SFLOAT;
+    public static readonly uint FormatNormal =(uint)RitaEngine.Platform.API.Vulkan.VkFormat.VK_FORMAT_R32G32B32_SFLOAT;
+    public static readonly uint FormatUV =(uint)RitaEngine.Platform.API.Vulkan.VkFormat.VK_FORMAT_R32G32_SFLOAT;
 
     public Vector3 Position;
     public Vector3 Normal;

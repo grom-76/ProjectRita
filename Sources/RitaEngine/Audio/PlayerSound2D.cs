@@ -2,9 +2,9 @@ namespace RitaEngine.Audio;
 
 using System;
 using RitaEngine.Base;
-using RitaEngine.Base.Platform;
-using RitaEngine.Base.Platform.API.DirectX;
-using RitaEngine.Base.Platform.API.DirectX.XAudio;
+using RitaEngine.Platform;
+using RitaEngine.Platform.API.DirectX;
+using RitaEngine.Platform.API.DirectX.XAudio;
 using RitaEngine.Base.Resources.Sound;
 
 /// <summary>
@@ -25,7 +25,7 @@ public unsafe sealed class PlayerSound2D : IDisposable
         Log.Info("Init Source Win32");
             var context = audiodevice.GetData();
             //  DECODE WAV 
-            WaveReader wav = new( RitaEngine.Base.Platform.PlatformHelper.AssetsPath + filename!);
+            WaveReader wav = new( RitaEngine.Platform.PlatformHelper.AssetsPath + filename!);
             wav.ReadHeader();
             //use own readfile wav ?
             // uint wavSizeInBytes = wav.DataSize;
