@@ -1,4 +1,4 @@
-namespace RitaEngine.Platform;
+namespace RitaEngine.Input;
 
 [SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack =1),SkipLocalsInit]
 public static class InputMouseButton 

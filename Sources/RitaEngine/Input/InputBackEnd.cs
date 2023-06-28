@@ -1,4 +1,4 @@
-namespace RitaEngine.Platform;
+namespace RitaEngine.Input;
 
 public enum InputBackEnd
 {

@@ -2,7 +2,7 @@ namespace RitaSamples;
 
 using RitaEngine.Audio;
 using RitaEngine.Base;
-using RitaEngine.Platform;
+using RitaEngine.Input;
 using RitaEngine.Platform;
 
 

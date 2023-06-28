@@ -19,7 +19,7 @@ public static class Sample_0001
         
         RitaEngine.Platform.Clock clock = new();
         RitaEngine.Platform.Window window = new();
-        RitaEngine.Platform.Inputs input = new();
+        RitaEngine.Input.Inputs input = new();
         RitaEngine.Audio.AudioDevice audio = new();
         RitaEngine.Graphic.GraphicDevice graphic = new();
 
@@ -62,12 +62,12 @@ public static class Sample_0001
             clock.Reset();
             while(window.ShouldClose())
             {
-                if ( input.IsKeyPressed( RitaEngine.Platform.InputKeys.Escape ))
+                if ( input.IsKeyPressed( RitaEngine.Input.InputKeys.Escape ))
                 {
                     window.RequestClose();
                 }
 
-                if (input.IsKeyPressed( RitaEngine.Platform.InputKeys.Space ))
+                if (input.IsKeyPressed( RitaEngine.Input.InputKeys.Space ))
                 {
                     snd.PlaySource();
                 }

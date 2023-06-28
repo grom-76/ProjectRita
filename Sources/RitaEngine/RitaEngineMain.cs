@@ -120,7 +120,7 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
     #region Attributs
     RitaEngine.Platform.Clock clock = new();
     RitaEngine.Platform.Window window = new();
-    RitaEngine.Platform.Inputs input = new();
+    RitaEngine.Input.Inputs input = new();
     RitaEngine.Audio.AudioDevice audio = new();
     RitaEngine.Graphic.GraphicDevice graphic =new();
     private bool _disposed = false ;
@@ -131,7 +131,7 @@ public abstract class RitaEngineMain : IDisposable, IEquatable<RitaEngineMain>
 
     public ref readonly RitaEngine.Platform.Clock Clock => ref clock;
     public ref RitaEngine.Platform.Window Window => ref window;
-    public ref readonly RitaEngine.Platform.Inputs Input => ref input;
+    public ref readonly RitaEngine.Input.Inputs Input => ref input;
     public ref readonly RitaEngine.Audio.AudioDevice AudioDevice => ref  audio;
     public ref RitaEngine.Graphic.GraphicDevice GraphicDevice => ref graphic;
 

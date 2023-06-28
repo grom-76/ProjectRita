@@ -3,7 +3,7 @@ namespace RitaEngine.Platform;
 using System.Runtime;
 using RitaEngine.Audio;
 using RitaEngine.Graphic;
-using RitaEngine.Platform;
+using RitaEngine.Input;
 using static RitaEngine.Base.Log;
 
 

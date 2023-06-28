@@ -1,7 +1,7 @@
-namespace RitaEngine.Platform;
+namespace RitaEngine.Input;
 
 using RitaEngine.API.DirectX.XInput;
-
+using RitaEngine.Platform;
 
 [StructLayout(LayoutKind.Sequential, Pack =4),SkipLocalsInit]
 public readonly struct ControllerDeviceFunction

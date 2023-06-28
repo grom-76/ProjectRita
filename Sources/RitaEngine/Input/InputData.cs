@@ -1,6 +1,4 @@
-
-
-namespace RitaEngine.Platform;
+namespace RitaEngine.Input;
 
 using RitaEngine.Base;
 using RitaEngine.API.Window;
