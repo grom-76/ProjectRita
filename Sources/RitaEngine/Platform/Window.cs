@@ -103,7 +103,7 @@ public struct Window : IEquatable<Window>
 	/// <param name="Wm_messageType"></param>
 	/// <param name="highValue"></param>
 	/// <param name="lowValue"></param>
-	public unsafe void SendMessage( TypeOfMessageToSend Wm_messageType , uint highValue=0 , int lowValue=0)
+	public unsafe void SendMessage( WindowEventMessageType Wm_messageType , uint highValue=0 , int lowValue=0)
 	{
 		_funcs.SendMessageA( _data.Handle ,(uint)Wm_messageType,highValue, lowValue  );
 	}

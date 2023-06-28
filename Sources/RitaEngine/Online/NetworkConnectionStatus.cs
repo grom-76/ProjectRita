@@ -1,4 +1,4 @@
-namespace RitaEngine.Platform;
+namespace RitaEngine.Online;
 
 public enum NetworkConnectionStatus
 { 

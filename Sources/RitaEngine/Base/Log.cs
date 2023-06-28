@@ -3,12 +3,14 @@ namespace RitaEngine.Base;
 [SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack =BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public static class Log
 {
-    public enum Display {
+    public enum Display
+    {
         None,
         OnConsole,
         WithSystemDebug,
         InFile
     }
+
     private static string _file="log.txt";
     private delegate void PFN_Display(int color,string header, int line , string file, string method,string message);
     private static PFN_Display _display = ToNull;
@@ -114,7 +116,5 @@ public static class Log
         [DllImport("kernel32.dll", SetLastError = false)] [SuppressGCTransition][SuppressUnmanagedCodeSecurity]
         public static extern uint GetCurrentThreadId();
     }
-
-
 }
 
