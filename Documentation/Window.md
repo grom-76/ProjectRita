@@ -67,7 +67,7 @@
         try
         {
             clock.Config.FixedTimeStep = 0.033;
-            clock.Config.LoopMode = RitaEngine.Platform.Config.ClockLoopMode.Default;
+            clock.Config.LoopMode = RitaEngine.Platform.ClockLoopMode.Default;
             clock.Init();
 
             win.Config.SetTitle("My Game");

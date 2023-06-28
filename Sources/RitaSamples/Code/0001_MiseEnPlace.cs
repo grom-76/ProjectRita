@@ -1,7 +1,9 @@
 namespace RitaSamples;
 
+using RitaEngine.Audio;
 using RitaEngine.Base;
-using RitaEngine.Platform.Config;
+using RitaEngine.Platform;
+
 
 
 public static class Sample_0001
@@ -18,10 +20,11 @@ public static class Sample_0001
         RitaEngine.Platform.Clock clock = new();
         RitaEngine.Platform.Window window = new();
         RitaEngine.Platform.Inputs input = new();
-        RitaEngine.Platform.AudioDevice audio = new();
-        RitaEngine.Platform.GraphicDevice graphic = new();
+        RitaEngine.Audio.AudioDevice audio = new();
+        RitaEngine.Graphic.GraphicDevice graphic = new();
 
         RitaEngine.Audio.PlayerSound2D snd = new( );
+
         
         try
         {
@@ -31,7 +34,7 @@ public static class Sample_0001
             config.Log(Log.Display.OnConsole);
             // config.Garbage(GarbageCollectionPriority.Interactive, 1024*1024*60);
             config.Clock_FixedTimeStep = 0.033;
-            config.Clock_LoopMode = RitaEngine.Platform.Config.ClockLoopMode.Default;
+            config.Clock_LoopMode = RitaEngine.Platform.ClockLoopMode.Default;
             config.Input_ShowCursor = true;
             config.Audio_Category = AudioCategory.GameMedia;
             config.Audio_Channels = AudioChannels.stereo;

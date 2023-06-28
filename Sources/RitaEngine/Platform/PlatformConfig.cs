@@ -1,7 +1,9 @@
 namespace RitaEngine.Platform;
 
 using System.Runtime;
-using RitaEngine.Platform.Config;
+using RitaEngine.Audio;
+using RitaEngine.Graphic;
+using RitaEngine.Platform;
 using static RitaEngine.Base.Log;
 
 
@@ -41,7 +43,7 @@ public sealed class PlatformConfig : IDisposable
 
     
 
-    public int Controller_MaxController =  RitaEngine.Platform.API.DirectX.XInput.Constants.XUSER_MAX_COUNT;
+    public int Controller_MaxController =  RitaEngine.API.DirectX.XInput.Constants.XUSER_MAX_COUNT;
     public float Controller_DeadZone =0.24f; //Todo change dead zone ?
     public float Controller_Threshold = 0.2f;
     public double Controller_AcquireMiliSec = 0.033;

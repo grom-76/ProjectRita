@@ -4,7 +4,7 @@ namespace RitaEngine.Audio;
 using System;
 using RitaEngine.Base;
 using RitaEngine.Platform;
-using RitaEngine.Platform.API.DirectX.XAudio;
+using RitaEngine.API.DirectX.XAudio;
 
 
 [ StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]

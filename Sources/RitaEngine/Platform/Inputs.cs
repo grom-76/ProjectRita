@@ -1,7 +1,7 @@
 namespace RitaEngine.Platform;
 
-using RitaEngine.Platform.API.Window;
-using RitaEngine.Platform.Structures;
+using RitaEngine.API.Window;
+using RitaEngine.Platform;
 using RitaEngine.Base;
   
 

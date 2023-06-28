@@ -1,8 +1,8 @@
 namespace RitaEngine.Platform ;// OS SYSTEMS// LAUNCHER CONTEXT DEVICE MACHINE , User Interface , Output
 
-using RitaEngine.Platform.Config;
-using RitaEngine.Platform.API.DirectX.XInput;
-using RitaEngine.Platform.Structures;
+using RitaEngine.Platform;
+using RitaEngine.API.DirectX.XInput;
+using RitaEngine.Platform;
 
 
 public struct ControllerDevice

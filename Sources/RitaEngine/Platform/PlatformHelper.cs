@@ -11,7 +11,7 @@ public unsafe delegate void* PFN_GetSymbolPointer(nint module , string name);
 public static partial class PlatformHelper
 {
 
-    public enum PlatformDevice : int
+    public enum PlatformName : int
     {
         AutoDetect = -1,
         Unknow =0,
@@ -34,7 +34,7 @@ public static partial class PlatformHelper
     // public static string RootPath = Path.GetDirectoryName( System.Reflection.Assembly.GetExecutingAssembly().Location)!; // bug with AOT
     public static string WorkingDirectory = Environment.CurrentDirectory;
     //
-    public static PlatformDevice SelectedPlatform = PlatformDevice.AutoDetect ;
+    public static PlatformName SelectedPlatform = PlatformName.AutoDetect ;
 
     public static readonly bool IsBigEndian = !System.BitConverter.IsLittleEndian;
 
@@ -78,34 +78,34 @@ public static partial class PlatformHelper
                 _ => throw new ArgumentException("Unsupported architecture."),
         };
 
-    // public static string ToName(PlatformDevice platform)
+    // public static string ToName(PlatformName platform)
     //     => platform switch {
-    //         PlatformDevice.Unknow => StrUnknow,
-    //         PlatformDevice.Window=> StrWindow,
-    //         PlatformDevice.Linux=> StrLinux,
-    //         PlatformDevice.Mac=>StrMac,
-    //         PlatformDevice.IOS=> StrIOS,
-    //         PlatformDevice.Android=>StrAndroid,
-    //         PlatformDevice.WEB=>StrWEB,
-    //         PlatformDevice.PS2=>StrPS2,
-    //         PlatformDevice.NES=>StrNES ,
-    //         PlatformDevice.SWITCH=>StrSWITCH,
-    //         PlatformDevice.MEGADRIVE=>StrMEGADRIVE,
+    //         PlatformName.Unknow => StrUnknow,
+    //         PlatformName.Window=> StrWindow,
+    //         PlatformName.Linux=> StrLinux,
+    //         PlatformName.Mac=>StrMac,
+    //         PlatformName.IOS=> StrIOS,
+    //         PlatformName.Android=>StrAndroid,
+    //         PlatformName.WEB=>StrWEB,
+    //         PlatformName.PS2=>StrPS2,
+    //         PlatformName.NES=>StrNES ,
+    //         PlatformName.SWITCH=>StrSWITCH,
+    //         PlatformName.MEGADRIVE=>StrMEGADRIVE,
     //         _ => StrUnknow};
 
-    // public static PlatformDevice ToId( string platformName)
+    // public static PlatformName ToId( string platformName)
     //     => platformName switch{
-    //         StrUnknow => PlatformDevice.Unknow,
-    //         StrWindow =>PlatformDevice.Window,
-    //         StrLinux =>PlatformDevice.Linux,
-    //         StrMac =>PlatformDevice.Mac,
-    //         StrIOS =>PlatformDevice.IOS,
-    //         StrAndroid =>PlatformDevice.Android,
-    //         StrWEB =>PlatformDevice.WEB,
-    //         StrSWITCH  =>PlatformDevice.SWITCH,
-    //         StrNES =>PlatformDevice.NES,
-    //         StrMEGADRIVE => PlatformDevice.MEGADRIVE,
-    //         _ =>PlatformDevice.Unknow
+    //         StrUnknow => PlatformName.Unknow,
+    //         StrWindow =>PlatformName.Window,
+    //         StrLinux =>PlatformName.Linux,
+    //         StrMac =>PlatformName.Mac,
+    //         StrIOS =>PlatformName.IOS,
+    //         StrAndroid =>PlatformName.Android,
+    //         StrWEB =>PlatformName.WEB,
+    //         StrSWITCH  =>PlatformName.SWITCH,
+    //         StrNES =>PlatformName.NES,
+    //         StrMEGADRIVE => PlatformName.MEGADRIVE,
+    //         _ =>PlatformName.Unknow
     //     };
 
     // private const string StrUnknow ="Unknown";
@@ -158,20 +158,20 @@ public static partial class PlatformHelper
     }
     /// <summary> Get the os platform using </summary>
     /// <returns></returns>
-    public  static PlatformDevice AuoDetectPlatformUsed()
+    public  static PlatformName AuoDetectPlatformUsed()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            return PlatformDevice.Window;
+            return PlatformName.Window;
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            return PlatformDevice.Linux;
+            return PlatformName.Linux;
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            return PlatformDevice.Mac;
+            return PlatformName.Mac;
         else if( IsAndroid() )
-            return PlatformDevice.Android;
+            return PlatformName.Android;
         else if( IsIOS() )
-            return PlatformDevice.IOS;             
+            return PlatformName.IOS;             
         else 
-            return PlatformDevice.Unknow;
+            return PlatformName.Unknow;
     }
 
 

@@ -1,9 +1,9 @@
 namespace RitaSamples;
 
-
+using RitaEngine.Audio;
 using RitaEngine.Base;
 using RitaEngine.Platform;
-using RitaEngine.Platform.Config;
+using RitaEngine.Platform;
 
 
 public static class Sample_0002
@@ -19,7 +19,7 @@ public static class Sample_0002
     }
     
 
-    public class MyGame : RitaEngine.Base.RitaEngineMain
+    public class MyGame : RitaEngine.RitaEngineMain
     {
 
         RitaEngine.Audio.PlayerSound2D snd = new();
@@ -30,7 +30,7 @@ public static class Sample_0002
             Config.Log( Log.Display.OnConsole);
             Config.AssetPath( @"C:\Users\Administrator\Documents\Repos\ProjectRita\Assets\" );
             Config.Clock_FixedTimeStep = 0.033;
-            Config.Clock_LoopMode = RitaEngine.Platform.Config.ClockLoopMode.Default;
+            Config.Clock_LoopMode = RitaEngine.Platform.ClockLoopMode.Default;
             Config.Game_Title ="My First game";
             Config.Window_Resolution = WindowResolution.HD_720p_1920x720;
             Config.Input_ShowCursor = true;

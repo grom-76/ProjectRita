@@ -2,8 +2,8 @@ namespace RitaEngine.Platform ;
 
 using System.Collections.Generic;
 using RitaEngine.Base;
-using RitaEngine.Platform.API.Window;
-using RitaEngine.Platform.Structures;
+using RitaEngine.API.Window;
+using RitaEngine.Platform;
 using static RitaEngine.Base.MemoryHelper;
 
 [ StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
