@@ -5,7 +5,7 @@ using System;
 using RitaEngine.Base;
 using RitaEngine.Platform;
 using RitaEngine.API.DirectX.XAudio;
-
+using RitaEngine.API;
 
 [ StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public unsafe readonly struct AudioDeviceFunction : IEquatable<AudioDeviceFunction> 

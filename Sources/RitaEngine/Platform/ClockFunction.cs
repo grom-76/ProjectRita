@@ -1,5 +1,6 @@
 namespace RitaEngine.Platform;
 
+using RitaEngine.API;
 using RitaEngine.Base;
 
 [ StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]

@@ -1,4 +1,4 @@
-namespace RitaEngine.Platform;
+namespace RitaEngine.API;
 
 using RitaEngine.Base;
 

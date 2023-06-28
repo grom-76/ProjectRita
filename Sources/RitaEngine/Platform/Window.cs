@@ -1,10 +1,9 @@
 namespace RitaEngine.Platform ;
 
-using System.Collections.Generic;
 using RitaEngine.Base;
 using RitaEngine.API.Window;
-using RitaEngine.Platform;
 using static RitaEngine.Base.MemoryHelper;
+using RitaEngine.API;
 
 [ StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public struct Window : IEquatable<Window>

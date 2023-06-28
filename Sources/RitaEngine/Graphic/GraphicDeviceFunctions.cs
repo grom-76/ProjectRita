@@ -6,6 +6,7 @@ using RitaEngine.API.Vulkan;
 using ConstChar = System.Byte;
 using RitaEngine.Base;
 using RitaEngine.Platform;
+using RitaEngine.API;
 
 public unsafe delegate void* PFN_vkGetInstanceProcAddr(VkInstance module , string name);
 

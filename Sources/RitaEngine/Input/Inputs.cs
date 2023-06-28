@@ -3,7 +3,7 @@ namespace RitaEngine.Input;
 using RitaEngine.API.Window;
 using RitaEngine.Platform;
 using RitaEngine.Base;
-  
+using RitaEngine.API;
 
 [StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public struct Inputs
