@@ -1,8 +1,8 @@
-namespace RitaEngine.Platform.Structures;
+namespace RitaEngine.Audio;
 
+using RitaEngine.Audio;
 using RitaEngine.Base;
 using RitaEngine.Platform.API.DirectX.XAudio;
-using RitaEngine.Platform.Config;
 
 [ StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public struct AudioDeviceData: IEquatable<AudioDeviceData>

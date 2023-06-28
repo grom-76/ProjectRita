@@ -1,4 +1,4 @@
-namespace RitaEngine.Platform.Config;
+namespace RitaEngine.Audio;
 
 public enum AudioDeviceFormat
 {

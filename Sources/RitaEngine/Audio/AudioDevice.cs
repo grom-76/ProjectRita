@@ -1,12 +1,8 @@
-
-
-namespace RitaEngine.Platform ;
-
+namespace RitaEngine.Audio ;
 
 using RitaEngine.Platform.API.DirectX.XAudio;
-using RitaEngine.Platform.Structures;
-using RitaEngine.Platform.Config;
 using RitaEngine.Base;
+using RitaEngine.Platform;
 
 [ StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public struct AudioDevice: IEquatable<AudioDevice>
@@ -41,10 +37,7 @@ public struct AudioDevice: IEquatable<AudioDevice>
     /// <param name="volume">clamp between 0.0f - 1.0f</param>
     public void SetMasterVolume( float volume)=> SetVolume(ref _data,volume);
 
-    public AudioDevice()
-    {
-         
-    }
+    public AudioDevice() { }
   
     private unsafe static  void GetPerformance(ref AudioDeviceData data )
     {
@@ -60,11 +53,14 @@ public struct AudioDevice: IEquatable<AudioDevice>
     #endif
     }
     public static void SetVolume(ref AudioDeviceData data ,float volume)
-    #if WIN64
-        => _ = data.MasterVoice.SetVolume(volume < 0.0f ? 0.0f: volume > 1.0f? 1.0f: volume  );
-    #else
-        => _ = volume;
-    #endif
+    {
+        #if WIN64
+        _ = data.MasterVoice.SetVolume(volume < 0.0f ? 0.0f: volume > 1.0f? 1.0f: volume  );
+        #else
+        _ = volume;
+        #endif
+    }
+    
 
        #region OVERRIDE    
     public override string ToString() => string.Format($"Audio Device" );
