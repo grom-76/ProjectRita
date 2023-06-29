@@ -156,7 +156,7 @@ public static class CameraImplement
     {
         data.World =  RitaEngine.Math.Matrix.Identity;
         UpdateProjection(ref data);
-        UpdateViewMatrix(ref data);
+        UpdateLookAt(ref data);
     }
 
     public static void FirstPerson(ref CameraData data)
@@ -203,36 +203,7 @@ public static class CameraImplement
         UpdateProjection(ref data);
     }
 
-    public static int UpdateViewMatrix(ref CameraData data)
-    {
-        Matrix rotM = Matrix.Identity;
-        Matrix transM;
-        
-        // rotM = Matrix.RotationY(Helper.ToRadians(data.Rotation.Y)) * rotM;
-        // rotM = Matrix.RotationX(Helper.ToRadians(data.Rotation.X* data.FlipY)) * rotM;      
-        // rotM = Matrix.RotationZ(Helper.ToRadians(data.Rotation.Z)) * rotM;
-
-        rotM = Matrix.RotationY(Helper.ToRadians(data.Rotation.Y)) * Matrix.RotationX(Helper.ToRadians(data.Rotation.X* data.FlipY)) * Matrix.RotationZ(Helper.ToRadians(data.Rotation.Z)) ;
-
-        Vector3 translation = data.Position;
-        translation.Y *=  data.FlipY;
-        transM = Matrix.Translation(translation);
-
-        if( data.Type == CameraType.LookAt)
-        {
-            data.View =   transM * rotM  ;
-        }
-        else
-        {
-            data.View =    rotM  * transM;
-            
-            // Matrix.CreateLookAt( ref data.Position ,ref data.Target, ref data.Up, out data.View);
-        }
-       
-        return 0;
-    }
-   
-    public static void UpdateProjection(ref CameraData data )
+     public static void UpdateProjection(ref CameraData data )
     {
         Matrix.CreatePerspectiveFieldOfView( Helper.ToRadians( data.FieldOfViewInDegree) ,data.AspectRatio, data.ZNear,data.ZFar,out data.Projection );
         data.Projection.M22 *= data.FlipY;
@@ -245,69 +216,94 @@ public static class CameraImplement
         if ( !data.IsUpdated)return ;
         
         data.IsUpdated =false;
+        _=  data.Type  switch {
+            CameraType.LookAt =>  UpdateLookAt(ref data),
+            CameraType.FirstPerson => UpdateFirstPerson( ref data),
+            _ => UpdateLookAt(ref data)
+        };
 
-        UpdateViewMatrix(ref data);
     }
 
-    public static void UpdateFirstPerson(ref CameraData data)
+    public static int UpdateLookAt(ref CameraData data)
     {
-        data.Type = CameraType.FirstPerson;
+        Matrix rotM = Matrix.Identity;
+
+        rotM = Matrix.RotationY(Helper.ToRadians(data.Rotation.Y)) 
+             * Matrix.RotationX(Helper.ToRadians(data.Rotation.X* data.FlipY)) 
+             * Matrix.RotationZ(Helper.ToRadians(data.Rotation.Z)) ;
+
+        Vector3 translation =  data.Position ;       
+        translation.Y *=  data.FlipY;
+        Matrix  transM = Matrix.Translation(translation);
+      
+        data.View  =  data.Type == CameraType.LookAt ?   transM * rotM  : rotM * transM ;
+
+        return 0;
+    }
+   
+   
+
+    public static int UpdateFirstPerson(ref CameraData data)
+    {
+        // FOr yaw and pitch 
         data.CamFront.X = - Helper.Cos( data.Rotation.X.ToRad()) * Helper.Sin(data.Rotation.Y.ToRad() );
         data.CamFront.Y = Helper.Sin( data.Rotation.X.ToRad() );
         data.CamFront.Z = Helper.Cos( data.Rotation.X.ToRad() ) * Helper.Cos(data.Rotation.Y.ToRad());
         data.CamFront = Vector3.Normalize(data.CamFront);
-
+        // for ROLL
         data.CamRight = Vector3.Normalize( Vector3.Cross(ref data.CamFront,ref data.Up)  );
+        // data.CamRight = Vector3.Normalize(
+        //         ( Vector3.Cross( ref data.CamFront,ref data.Up ) * Helper.Cos((data.Rotation.Z ).ToRad()  )  ) 
+        //         + (  data.Up * Helper.Sin((data.Rotation.Z ).ToRad()  ))
+        //     );
+
         data.Up    =    Vector3.Normalize(  Vector3.Cross( ref data.CamRight, ref data.CamFront));
-        data.IsUpdated =true;
+        UpdateLookAt(ref data) ;
+        return 0;
     }
 
     public static void Strafe(ref CameraData data,float distance)
     {
-        UpdateFirstPerson(ref data);
-        data.Position += Vector3.Normalize(Vector3.Cross(ref data.CamFront, ref data.Up)) * distance;
+        data.Position += data.CamRight * distance;
+        data.Type = CameraType.FirstPerson;
+         data.IsUpdated = true;
+        
     }
         
     public static void Ascend(ref CameraData data,float distance)
     {
-        UpdateFirstPerson(ref data);
-        //TODO Ascend ( jump)
+        data.Position += data.Up * distance;
+       data.Type = CameraType.FirstPerson;
+         data.IsUpdated = true;
     }
        
     public static void Advance(ref CameraData data,float distance)
     {
-        UpdateFirstPerson(ref data);
         data.Position += data.CamFront * distance/*data.MoveSpeed*/ ;
+        data.Type = CameraType.FirstPerson;
+         data.IsUpdated = true;
+        
     }
     
     public static void Yaw(ref CameraData data,float angle)
     {
-        
-        UpdateFirstPerson(ref data);
-        // _yaw +=Maths.ClampFloat(angle,0,Maths.PI);
-        // _cameraDirection.X -= Maths.Cos( Maths.DegToRad(_yaw)) * Maths.Cos( Maths.DegToRad(_pitch) );
-        // _lookatChange = true;
-        // _positionChange = true;
+        data.Rotation.Y += angle ;
+       data.Type = CameraType.FirstPerson;
+         data.IsUpdated = true;
     }
 
     public static void Roll(ref CameraData data, float angle)
     {
         data.Rotation.Z += angle ;
-        UpdateFirstPerson(ref data);
-        // _roll += Maths.ClampFloat(angle,0,Maths.PI);
-        // // _cameraDirection.Z -= Maths.Sin( Maths.DegToRad(_yaw)) *  Maths.Cos( Maths.DegToRad(_pitch));
-        // //    _cameraRight = Vector3.Normalize(
-        // //     ( Vector3.Cross( ref _cameraFront,ref _up) * Maths.Cos(_roll * Maths.PIOVER180)) 
-        // //     + ( _up * Maths.Sin(_roll * Maths.PIOVER180))
-        // // );
+        data.Type = CameraType.FirstPerson;
+         data.IsUpdated = true;
     }
 
     public static void Pitch(ref CameraData data,float angle)
     {
-        data.Rotation.Y += angle ;
-        UpdateFirstPerson(ref data);   
-        // _cameraDirection.Y -= Maths.Sin( Maths.DegToRad(_pitch) ) ;
-      
+        data.Rotation.X += angle ;
+        data.Type = CameraType.FirstPerson;   
+        data.IsUpdated = true;
     }
 
     public static void TranslateLookAt(ref CameraData data,float x,float y,float z)

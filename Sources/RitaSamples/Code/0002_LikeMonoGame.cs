@@ -137,23 +137,42 @@ public static class Sample_0002
             }
 
 
-            if ( Input.IsKeyDown( InputKeys.Q)) {
+            if ( Input.IsKeyDown( InputKeys.Q)&& Input.IsKeyUp( InputKeys.LeftControl)) {
                 RenderConfig.Camera.Pitch( 1.0f);
             }
-            if ( Input.IsKeyDown( InputKeys.D)) {
+            if ( Input.IsKeyDown( InputKeys.D)&& Input.IsKeyUp( InputKeys.LeftControl)) {
                 RenderConfig.Camera.Pitch( -1.0f);
             }
-            if ( Input.IsKeyDown( InputKeys.Z)) {
+            if ( Input.IsKeyDown( InputKeys.Z)&& Input.IsKeyUp( InputKeys.LeftControl)) {
                 RenderConfig.Camera.Yaw( 1.0f);
             }
-            if ( Input.IsKeyDown( InputKeys.S)) {
+            if ( Input.IsKeyDown( InputKeys.S)&& Input.IsKeyUp( InputKeys.LeftControl)) {
                 RenderConfig.Camera.Yaw( -1.0f);
             }
-            if ( Input.IsKeyDown( InputKeys.R)) {
+            if ( Input.IsKeyDown( InputKeys.R)&& Input.IsKeyUp( InputKeys.LeftControl)) {
                 RenderConfig.Camera.Roll( 1.0f);
             }
-            if ( Input.IsKeyDown( InputKeys.F)) {
+            if ( Input.IsKeyDown( InputKeys.F)&& Input.IsKeyUp( InputKeys.LeftControl)) {
                 RenderConfig.Camera.Roll( -1.0f);
+            }
+            
+            if ( Input.IsKeyDown( InputKeys.Q)&& Input.IsKeyDown( InputKeys.LeftControl)) {
+                RenderConfig.Camera.Strafe( -0.10f);
+            }
+            if ( Input.IsKeyDown( InputKeys.D)&& Input.IsKeyDown( InputKeys.LeftControl)) {
+                RenderConfig.Camera.Strafe( 0.10f);
+            }
+            if ( Input.IsKeyDown( InputKeys.Z)&& Input.IsKeyDown( InputKeys.LeftControl)) {
+                RenderConfig.Camera.Ascend( 0.10f);
+            }
+            if ( Input.IsKeyDown( InputKeys.S)&& Input.IsKeyDown( InputKeys.LeftControl)) {
+                RenderConfig.Camera.Ascend( -0.10f);
+            }
+            if ( Input.IsKeyDown( InputKeys.R)&& Input.IsKeyDown( InputKeys.LeftControl)) {
+                RenderConfig.Camera.Advance( 0.10f);
+            }
+            if ( Input.IsKeyDown( InputKeys.F)&& Input.IsKeyDown( InputKeys.LeftControl)) {
+                RenderConfig.Camera.Advance( -0.1f);
             }
 
 
