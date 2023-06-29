@@ -33,16 +33,7 @@ public static  class Shaders
        
     }
 
-    public enum ShaderType
-    {
-        VertexShader,
-        FragmentShader,
-        ComputeShader,
-        GeometryShader,
-        TessControlShader,
-        TessEvaluationShader,
-    }
-
+    
     /*Exemple vertex buffer outside shader  => https://github.com/Overv/VulkanTutorial/blob/main/code/18_shader_vertexbuffer.vert*/
 
 
