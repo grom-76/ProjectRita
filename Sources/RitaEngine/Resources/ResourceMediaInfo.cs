@@ -1,13 +1,11 @@
+namespace RitaEngine.Resources;
 
-
-
-
-
-
-
-
-namespace RitaEngine.Resources
+public struct ResourceMediaInfo
 {
-    public struct ResourceMediaInfo{}
-
+    /*
+        LEcture flux video 
+        Data?
+    */
 }
+
+

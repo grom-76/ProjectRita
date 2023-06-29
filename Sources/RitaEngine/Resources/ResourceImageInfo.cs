@@ -1,13 +1,11 @@
+namespace RitaEngine.Resources ;
 
-
-
-
-
-
-
-
-namespace RitaEngine.Resources
+public struct ResourceImageInfo<T>
 {
-    public struct ResourceImageInfo{}
-
+    public T[] Raw;
+    public int Type; // RGB, RGBA
+    public int Width;
+    public int Height;
 }
+
+

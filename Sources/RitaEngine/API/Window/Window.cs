@@ -360,57 +360,31 @@ public enum DMDO : uint
 
 public enum DEVICE_CAP
 {
-    /// <summary>
-    /// Device driver version
-    /// </summary>
+    /// <summary> Device driver version </summary>
     DRIVERVERSION = 0,
-    /// <summary>
-    /// Device classification
-    /// </summary>
+    /// <summary> Device classification </summary>
     TECHNOLOGY = 2,
-    /// <summary>
-    /// Horizontal size in millimeters
-    /// </summary>
+    /// <summary> Horizontal size in millimeters </summary>
     HORZSIZE = 4,
-    /// <summary>
-    /// Vertical size in millimeters
-    /// </summary>
+    /// <summary> Vertical size in millimeters </summary>
     VERTSIZE = 6,
-    /// <summary>
-    /// Horizontal width in pixels
-    /// </summary>
+    /// <summary> Horizontal width in pixels </summary>
     HORZRES = 8,
-    /// <summary>
-    /// Vertical height in pixels
-    /// </summary>
+    /// <summary> Vertical height in pixels </summary>
     VERTRES = 10,
-    /// <summary>
-    /// Number of bits per pixel
-    /// </summary>
+    /// <summary> Number of bits per pixel </summary>
     BITSPIXEL = 12,
-    /// <summary>
-    /// Number of planes
-    /// </summary>
+    /// <summary> Number of planes </summary>
     PLANES = 14,
-    /// <summary>
-    /// Number of brushes the device has
-    /// </summary>
+    /// <summary> Number of brushes the device has </summary>
     NUMBRUSHES = 16,
-    /// <summary>
-    /// Number of pens the device has
-    /// </summary>
+    /// <summary> Number of pens the device has </summary>
     NUMPENS = 18,
-    /// <summary>
-    /// Number of markers the device has
-    /// </summary>
+    /// <summary> Number of markers the device has </summary>
     NUMMARKERS = 20,
-    /// <summary>
-    /// Number of fonts the device has
-    /// </summary>
+    /// <summary> Number of fonts the device has </summary>
     NUMFONTS = 22,
-    /// <summary>
-    /// Number of colors the device supports
-    /// </summary>
+    /// <summary> Number of colors the device supports </summary>
     NUMCOLORS = 24,
     /// <summary>
     /// Size required for device descriptor
