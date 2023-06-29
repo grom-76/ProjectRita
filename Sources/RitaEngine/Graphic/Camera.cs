@@ -10,6 +10,20 @@ public struct Camera :IEquatable<Camera>
     private CameraData _data = new();
     public Camera() { }
 
+    public void AddCamera(Vector3 position,Vector3 target, Vector3 up , float fov, float aspectRatio , float near , float far)
+    {
+        _data.Type = CameraType.LookAt;
+        _data.Position = position;
+        _data.Up = up;
+        _data.AspectRatio = aspectRatio;
+        _data.ZNear = near;
+        _data.ZFar = far ; 
+        _data.FieldOfViewInDegree = fov;
+        _data.Target = target;
+        
+        CameraImplement.AddCamera(ref _data);
+    }
+
     public void AddLookAkCamera(Vector3 position,Vector3 rotation, Vector3 up , float fov, float aspectRatio , float near , float far )
     {
         _data.Type = CameraType.LookAt;
@@ -36,6 +50,8 @@ public struct Camera :IEquatable<Camera>
         CameraImplement.FirstPerson(ref _data);
     }
 
+
+
     /// <summary>
     /// Poor Zoom juste change Field of View
     /// </summary>
@@ -51,8 +67,7 @@ public struct Camera :IEquatable<Camera>
     /// // y movement UP DOWN ( for jump )
     /// </summary>
     /// <param name="distance"></param>
-    public void Ascend(float distance) => CameraImplement.Ascend(ref _data , distance);
-        
+    public void Ascend(float distance) => CameraImplement.Ascend(ref _data , distance);   
 
     /// <summary>
     ///z movement FORWARD => positif distance BACKWARD => negatif distance
@@ -66,7 +81,7 @@ public struct Camera :IEquatable<Camera>
     /// <param name="distance speed">deltaTime * MoveSpeed</param>
     public void Strafe(float distance) => CameraImplement.Strafe(ref _data , distance);
 
-        /// <summary>
+    /// <summary>
     /// Rotate around Y axis with angle in radians
     /// </summary>
     /// <param name="angle">angle in radians</param>
@@ -104,6 +119,17 @@ public struct Camera :IEquatable<Camera>
     public void RotateLookAt(float angle_x,float angle_y,float angle_z)
         => CameraImplement.RotateLookAt( ref _data, angle_x,angle_y,angle_z);
 
+    /// <summary>
+    /// make sure the user stays at the ground level
+    /// POur les FPS  la caméra reste au niveau du sol 
+    /// execute befor update
+    /// </summary>
+    /// <param name="groundposition">0.0f by default </param>
+    public void StayAtGroundXZPlane( float groundposition=0.0f)
+    {
+       _data.Position.Y = groundposition  ; // <-- this one-liner keeps the user at the ground level (xz plane)
+    }
+
     public float[] ToArray => _data.ToArray();
 
     public void Release()
@@ -125,6 +151,7 @@ public struct Camera :IEquatable<Camera>
 public static class CameraImplement
 {
     
+    
     public static void LookAkCamera(ref CameraData data)
     {
         data.World =  RitaEngine.Math.Matrix.Identity;
@@ -136,22 +163,43 @@ public static class CameraImplement
     {
         data.World =  RitaEngine.Math.Matrix.Identity;
         data.CamFront =   data.Target  - data.Position;
-        Matrix.CreateLookAt( ref data.Position ,ref data.CamFront, ref data.Up, out data.View);
-      
-
+        Matrix.CreateLookAt( ref data.Position ,ref data.Target, ref data.Up, out data.View);
+     
         Vector3 targetDir = data.Position - data.View.TranslationVector ;
         Vector3 forward =  data.View.Forward;
-        Vector3 up =  data.View.Up;
-        Vector3 left =  data.View.Left;
-
         data.Rotation.X = Helper.ToDegree( Vector3.Dot(ref targetDir , ref forward) );
-        float angleYAxis = Helper.ToDegree( Vector3.Dot(ref targetDir , ref up) );
-        float angleZAxis = Helper.ToDegree( Vector3.Dot(ref targetDir , ref left) );
+        
+        UpdateProjection(ref data);
+    }
 
-        float angleX =  Helper.ToDegree( Helper.ACos(targetDir.X / targetDir.Length) );
-        float angleZ =  Helper.ToDegree( Helper.ACos(targetDir.Z / targetDir.Length) );
-        float angleY = Helper.ToDegree(  Helper.ACos(targetDir.Y / targetDir.Length) );
+    public static void  AddCamera(ref CameraData data)
+    {
+        data.World =  RitaEngine.Math.Matrix.Identity;
+        data.CamFront =   data.Target  - data.Position;
 
+        
+        var zAxis = Vector3.Normalize(data.Position - data.Target);
+        var xAxis = Vector3.Normalize(Vector3.Cross(ref data.Up,ref zAxis));
+        var yAxis = Vector3.Cross( ref zAxis, ref xAxis);
+
+        Matrix translation = Matrix.Identity;
+        
+        translation.M41 = -data.Position.X;
+        translation.M42 = -data.Position.Y ;
+        translation.M43 = -data.Position.Z;
+        Matrix rotation = new (
+            xAxis.X , yAxis.X , zAxis.X ,0.0f  ,
+            xAxis.Y , yAxis.Y , zAxis.Y ,0.0f  ,
+            xAxis.Z , yAxis.Z , zAxis.Z ,0.0f  ,
+            0.0f  , 0.0f ,  0.0f ,1.0f    );
+
+        float rmYaw =   Helper.ToDegree( Helper.ATan2(rotation.M13, rotation.M33)) -180 ;// Y
+        float rmPitch =  Helper.ToDegree( Helper.ACos(-rotation.M23 * data.FlipY)) -90 ; // X
+        float rmRoll =  Helper.ToDegree( Helper.ATan2(rotation.M21,rotation.M22)) ; // Z
+        data.Rotation = new( rmPitch,rmYaw, rmRoll);
+
+        data.View =  translation * rotation;
+        
         UpdateProjection(ref data);
     }
 
@@ -160,16 +208,27 @@ public static class CameraImplement
         Matrix rotM = Matrix.Identity;
         Matrix transM;
         
-        rotM = Matrix.RotationX(Helper.ToRadians(data.Rotation.X* data.FlipY)) * rotM;
-        rotM = Matrix.RotationY(Helper.ToRadians(data.Rotation.Y)) * rotM;
-        rotM = Matrix.RotationZ(Helper.ToRadians(data.Rotation.Z)) * rotM;
+        // rotM = Matrix.RotationY(Helper.ToRadians(data.Rotation.Y)) * rotM;
+        // rotM = Matrix.RotationX(Helper.ToRadians(data.Rotation.X* data.FlipY)) * rotM;      
+        // rotM = Matrix.RotationZ(Helper.ToRadians(data.Rotation.Z)) * rotM;
+
+        rotM = Matrix.RotationY(Helper.ToRadians(data.Rotation.Y)) * Matrix.RotationX(Helper.ToRadians(data.Rotation.X* data.FlipY)) * Matrix.RotationZ(Helper.ToRadians(data.Rotation.Z)) ;
 
         Vector3 translation = data.Position;
         translation.Y *=  data.FlipY;
         transM = Matrix.Translation(translation);
 
-        data.View = data.Type == CameraType.LookAt ?  transM * rotM  :  rotM * transM;
-      
+        if( data.Type == CameraType.LookAt)
+        {
+            data.View =   transM * rotM  ;
+        }
+        else
+        {
+            data.View =    rotM  * transM;
+            
+            // Matrix.CreateLookAt( ref data.Position ,ref data.Target, ref data.Up, out data.View);
+        }
+       
         return 0;
     }
    
@@ -192,10 +251,14 @@ public static class CameraImplement
 
     public static void UpdateFirstPerson(ref CameraData data)
     {
+        data.Type = CameraType.FirstPerson;
         data.CamFront.X = - Helper.Cos( data.Rotation.X.ToRad()) * Helper.Sin(data.Rotation.Y.ToRad() );
         data.CamFront.Y = Helper.Sin( data.Rotation.X.ToRad() );
         data.CamFront.Z = Helper.Cos( data.Rotation.X.ToRad() ) * Helper.Cos(data.Rotation.Y.ToRad());
         data.CamFront = Vector3.Normalize(data.CamFront);
+
+        data.CamRight = Vector3.Normalize( Vector3.Cross(ref data.CamFront,ref data.Up)  );
+        data.Up    =    Vector3.Normalize(  Vector3.Cross( ref data.CamRight, ref data.CamFront));
         data.IsUpdated =true;
     }
 
@@ -219,15 +282,18 @@ public static class CameraImplement
     
     public static void Yaw(ref CameraData data,float angle)
     {
+        
+        UpdateFirstPerson(ref data);
         // _yaw +=Maths.ClampFloat(angle,0,Maths.PI);
         // _cameraDirection.X -= Maths.Cos( Maths.DegToRad(_yaw)) * Maths.Cos( Maths.DegToRad(_pitch) );
-
         // _lookatChange = true;
         // _positionChange = true;
     }
 
     public static void Roll(ref CameraData data, float angle)
     {
+        data.Rotation.Z += angle ;
+        UpdateFirstPerson(ref data);
         // _roll += Maths.ClampFloat(angle,0,Maths.PI);
         // // _cameraDirection.Z -= Maths.Sin( Maths.DegToRad(_yaw)) *  Maths.Cos( Maths.DegToRad(_pitch));
         // //    _cameraRight = Vector3.Normalize(
@@ -246,15 +312,19 @@ public static class CameraImplement
 
     public static void TranslateLookAt(ref CameraData data,float x,float y,float z)
     {
+        data.Type = CameraType.LookAt;
         data.Position.X += x;data.Position.Y += y;data.Position.Z += z;
         data.IsUpdated = true;
     }
 
     public static void  RotateLookAt(ref CameraData data, float angle_x,float angle_y,float angle_z)
     {
+        data.Type = CameraType.LookAt;
         data.Rotation.X += angle_x;data.Rotation.Y += angle_y;data.Rotation.Z += angle_z;
         data.IsUpdated = true;
     }
+
+
 }
 
 
@@ -268,11 +338,10 @@ public struct CameraData :IEquatable<CameraData>
     public Vector3 Rotation = new(0.0f,00.0f, 00.0f);
     public Vector3 Target =new(0.00f,0.00f,0.00f);
     public  Vector3 CamFront = new(0.0f);
+    public  Vector3 CamRight = new(0.0f);
     public Vector3 Up =new(0.0f,1.0f,0.0f);
     public float FieldOfViewInDegree = 45.0f;
     public float AspectRatio =16.9f;
-    public float Width =1280.0f;
-    public float Height = 720.0f;
     public float ZNear =0.1f;
     public float ZFar = 100.0f;
     public float FlipY = -1.0f;

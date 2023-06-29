@@ -1981,25 +1981,54 @@ using static RitaEngine.Math.Helper;
 
         public static void CreateLookAt(ref Vector3 cameraPosition, ref Vector3 cameraTarget, ref Vector3 cameraUpVector, out Matrix result)
         {
-            var vector = Vector3.Normalize(cameraPosition - cameraTarget);
-            var vector2 = Vector3.Normalize(Vector3.Cross(ref cameraUpVector,ref vector));
-            var vector3 = Vector3.Cross( ref vector, ref vector2);
-		    result.M11 = vector2.X;
-		    result.M12 = vector3.X;
-		    result.M13 = vector.X;
+            var zAxis = Vector3.Normalize(cameraPosition - cameraTarget);
+            var xAxis = Vector3.Normalize(Vector3.Cross(ref cameraUpVector,ref zAxis));
+            var yAxis = Vector3.Cross( ref zAxis, ref xAxis);
+		    result.M11 = xAxis.X;
+		    result.M12 = yAxis.X;
+		    result.M13 = zAxis.X;
 		    result.M14 = 0f;
-		    result.M21 = vector2.Y;
-		    result.M22 = vector3.Y;
-		    result.M23 = vector.Y;
+		    result.M21 = xAxis.Y;
+		    result.M22 = yAxis.Y;
+		    result.M23 = zAxis.Y;
 		    result.M24 = 0f;
-		    result.M31 = vector2.Z;
-		    result.M32 = vector3.Z;
-		    result.M33 = vector.Z;
+		    result.M31 = xAxis.Z;
+		    result.M32 = yAxis.Z;
+		    result.M33 = zAxis.Z;
 		    result.M34 = 0f;
-		    result.M41 = -Vector3.Dot(ref vector2, ref  cameraPosition);
-		    result.M42 = -Vector3.Dot(ref vector3, ref  cameraPosition);
-		    result.M43 = -Vector3.Dot(ref vector,  ref cameraPosition);
+		    result.M41 = -Vector3.Dot(ref xAxis, ref  cameraPosition);
+		    result.M42 = -Vector3.Dot(ref yAxis, ref  cameraPosition);
+		    result.M43 = -Vector3.Dot(ref zAxis,  ref cameraPosition);
 		    result.M44 = 1f;
+        }
+
+        public static Matrix CreateLookAt(ref Vector3 position, ref Vector3 target, ref Vector3 up )
+        {
+            var zAxis = Vector3.Normalize(position - target);
+            var xAxis = Vector3.Normalize(Vector3.Cross(ref up,ref zAxis));
+            var yAxis = Vector3.Cross( ref zAxis, ref xAxis);
+            return new (xAxis.X , yAxis.X , zAxis.X ,0.0f  ,
+                        xAxis.Y , yAxis.Y , zAxis.Y ,0.0f  ,
+                        xAxis.Z , yAxis.Z , zAxis.Z ,0.0f  ,
+                        -Vector3.Dot(ref xAxis, ref  position)  , -Vector3.Dot(ref yAxis, ref  position) ,  -Vector3.Dot(ref zAxis,  ref position),1.0f    );
+        }
+        
+        public static Matrix CreateLookAtWithMatrixRotationTranslation(ref Vector3 position, ref Vector3 target, ref Vector3 up )
+        {
+            var zAxis = Vector3.Normalize(position - target);
+            var xAxis = Vector3.Normalize(Vector3.Cross(ref up,ref zAxis));
+            var yAxis = Vector3.Cross( ref zAxis, ref xAxis);
+            Matrix translation = Matrix.Identity;
+            translation.M41 = -position.X;
+            translation.M42 = -position.Y;
+            translation.M43 = -position.Z;
+            Matrix rotation = new (
+                xAxis.X , yAxis.X , zAxis.X ,0.0f  ,
+                xAxis.Y , yAxis.Y , zAxis.Y ,0.0f  ,
+                xAxis.Z , yAxis.Z , zAxis.Z ,0.0f  ,
+                0.0f  , 0.0f ,  0.0f ,1.0f    );
+            
+            return rotation * translation ;
         }
 
         public static void CreatePerspectiveFieldOfView(float fieldOfView, float aspectRatio, float nearPlaneDistance, float farPlaneDistance, out Matrix result)
