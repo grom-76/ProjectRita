@@ -7,7 +7,56 @@ using RitaEngine.Base;
 [ StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public static class Transform
 {
-    
+      
+// //         /// <summary>
+// //         /// https://github.com/raysan5/raylib/blob/master/src/rcore.c ligne : 
+// //         ///  retrouve les coordonnée ecran x,y de la postion de l'objet 3D 
+// //         /// Unproject in GLM
+// //         /// </summary>
+// //         /// <param name="position"></param>
+// //         /// <param name="camera"></param>
+// //         /// <param name="width"></param>
+// //         /// <param name="height"></param>
+// //         /// <returns></returns>
+// //         internal static Vector2 WorldToScreen(Vector3 position, Camera camera, float width, float height)
+// //         {
+// //             Vector4 worldPos = Matrix.Vector4Transform( new Vector4(position.X, position.Y, position.Z, 1.0f) , camera.View);
+// //             worldPos = Matrix.Vector4Transform( worldPos , camera.Projection);
+// //             Vector3 ndcPos = new Vector3(worldPos.X/worldPos.W, -worldPos.Y/worldPos.W, worldPos.Z/worldPos.W);
+
+// //             return new Vector2( (ndcPos.X + 1.0f)/2.0f* width  , (ndcPos.Y + 1.0f)/2.0f* height  );
+// //         }
+// //         /// <summary>
+// //         /// TODO A faire
+// //         /// </summary>
+// //         /// <param name="windowPosition"></param>
+// //         /// <param name="camera"></param>
+// //         /// <param name="viewport"></param>
+// //         /// <returns></returns>
+// //         internal static Vector3 ScreenToWorld(Vector2 windowPosition, Camera camera,Vector4 viewport)
+// //         {
+// //             // Store values in a vector (normalize )
+// //             Vector3 deviceCoords = new( (2.0f*windowPosition.X)/viewport[2] - 1.0f , 
+// //                                     1.0f - (2.0f*windowPosition.Y)/viewport[3]  ,
+// //                                     1.0f);
+// //              // Unproject far/near points
+// //             deviceCoords.Z =0.10f;
+// //             Vector3 nearPoint = Matrix.UnProject(deviceCoords, camera.View, camera.Projection,viewport);
+// //             deviceCoords.Z = 100.0f;
+// //             Vector3 farPoint = Matrix.UnProject(deviceCoords, camera.View, camera.Projection,viewport);
+
+// //             // Unproject the mouse cursor in the near plane.
+// //             // We need this as the source position because orthographic projects, compared to perspect doesn't have a
+// //             // convergence point, meaning that the "eye" of the camera is more like a plane than a point.
+// //             deviceCoords.Z =-1.0f;
+// //             Vector3 cameraPlanePointerPos = Matrix.UnProject(deviceCoords, camera.View, camera.Projection,viewport);
+
+// //             // Calculate normalized direction vector
+// //             Vector3 direction = Vector3.Normalize(farPoint- nearPoint) ;
+
+
+// //             return cameraPlanePointerPos;
+// //         }
 }
 //     //  code take on github : https://github.com/FlaxEngine/FlaxAPI/blob/master/FlaxEngine/Math/Viewport.cs
 //     // /// <summary>

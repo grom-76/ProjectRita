@@ -8,4 +8,5 @@ public enum CameraType
     ThirdPerson,
     Follow,
     Scrolling,
+    RotateAround,
 }

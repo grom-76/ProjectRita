@@ -180,6 +180,9 @@ public static class Sample_0002
                 RenderConfig.Camera.LookAround( Input.Mouse_Position_X, Input.Mouse_Position_Y , 0.1f );
             }
 
+            if (  Input.IsMouseButtonDown( InputMouseButton.Left ) ) {
+                RenderConfig.Camera.MoveAroundTarget(  new(0.0f,0.0f,0.0f), Input.Mouse_Delta_X,Input.Mouse_Delta_Y);
+            }
             
         }
 
