@@ -232,7 +232,7 @@ public static class CameraImplement
              * Matrix.RotationX(Helper.ToRadians(data.Rotation.X* data.FlipY)) 
              * Matrix.RotationZ(Helper.ToRadians(data.Rotation.Z)) ;
 
-        Vector3 translation =  data.Position ;       
+        Vector3 translation =data.Type == CameraType.LookAt ?  data.Position + data.Target : data.Position - (data.Position + data.CamFront);       
         translation.Y *=  data.FlipY;
         Matrix  transM = Matrix.Translation(translation);
       
@@ -240,8 +240,6 @@ public static class CameraImplement
 
         return 0;
     }
-   
-   
 
     public static int UpdateFirstPerson(ref CameraData data)
     {
@@ -251,14 +249,32 @@ public static class CameraImplement
         data.CamFront.Z = Helper.Cos( data.Rotation.X.ToRad() ) * Helper.Cos(data.Rotation.Y.ToRad());
         data.CamFront = Vector3.Normalize(data.CamFront);
         // for ROLL
-        data.CamRight = Vector3.Normalize( Vector3.Cross(ref data.CamFront,ref data.Up)  );
-        // data.CamRight = Vector3.Normalize(
-        //         ( Vector3.Cross( ref data.CamFront,ref data.Up ) * Helper.Cos((data.Rotation.Z ).ToRad()  )  ) 
-        //         + (  data.Up * Helper.Sin((data.Rotation.Z ).ToRad()  ))
-        //     );
-
+        // data.CamRight = Vector3.Normalize( Vector3.Cross(ref data.CamFront,ref data.Up)  );
+        data.CamRight = Vector3.Normalize(
+                ( Vector3.Cross( ref data.CamFront,ref data.Up ) * Helper.Cos((data.Rotation.Z * Helper.PIOVER180 ).ToRad()  )  ) 
+                + (  data.Up * Helper.Sin((data.Rotation.Z * Helper.PIOVER180).ToRad()  ))
+            );
         data.Up    =    Vector3.Normalize(  Vector3.Cross( ref data.CamRight, ref data.CamFront));
-        UpdateLookAt(ref data) ;
+        
+        var t = data.Position + data.CamFront;
+
+        var zAxis = Vector3.Normalize(data.Position - t);
+        var xAxis = Vector3.Normalize(Vector3.Cross(ref data.Up,ref zAxis));
+        var yAxis = Vector3.Cross( ref zAxis, ref xAxis);
+
+        Matrix translation = Matrix.Identity;
+        
+        translation.M41 = -data.Position.X;
+        translation.M42 = -data.Position.Y ;
+        translation.M43 = -data.Position.Z;
+        Matrix rotation = new (
+            xAxis.X , yAxis.X , zAxis.X ,0.0f  ,
+            xAxis.Y , yAxis.Y , zAxis.Y ,0.0f  ,
+            xAxis.Z , yAxis.Z , zAxis.Z ,0.0f  ,
+            0.0f  , 0.0f ,  0.0f ,1.0f    );
+
+        data.View =  translation * rotation;
+        
         return 0;
     }
 
