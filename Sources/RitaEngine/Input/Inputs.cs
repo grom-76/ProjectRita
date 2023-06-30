@@ -49,6 +49,11 @@ public struct Inputs
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int[]  GetKeysPressed()=> InputImplement.GetKeysPressed(ref _data);
 
+    public float Mouse_Position_X => _data.Mouse_CurrentFrame_Position_X;
+    public float Mouse_Position_Y => _data.Mouse_CurrentFrame_Position_Y;
+
+    public float Mouse_Delta_X => _data.Mouse_CurrentFrame_Delta_X;
+    public float Mouse_Delta_Y => _data.Mouse_CurrentFrame_Delta_Y;
 
 
     //TODO convert int[ ] to list of name key 

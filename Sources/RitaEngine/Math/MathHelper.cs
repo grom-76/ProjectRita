@@ -292,6 +292,8 @@ public static class Helper
     public static double ToDegree(double radian) => radian * 57.295779513082320876798154814105;
 
      public static float ToRad(this float degree) => degree * 0.01745329251994329576923690768489f;
+
+     public static float ToDeg(this float radian) => radian * 57.295779513082320876798154814105f;
 #endregion
 
 #region Approx

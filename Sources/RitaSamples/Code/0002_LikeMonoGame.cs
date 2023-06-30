@@ -175,7 +175,10 @@ public static class Sample_0002
                 RenderConfig.Camera.Advance( -0.1f);
             }
 
-
+            if ( Input.IsMouseButtonDown( InputMouseButton.Right ))
+            {
+                RenderConfig.Camera.LookAround( Input.Mouse_Position_X, Input.Mouse_Position_Y , 0.1f );
+            }
 
             
         }
