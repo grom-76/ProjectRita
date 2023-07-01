@@ -61,6 +61,13 @@ public static class Transforms
             return rotation * translation ;
         }
 
+
+        public static Matrix CreatePerspectiveFieldOfView(float fieldOfView, float aspectRatio, float nearPlaneDistance, float farPlaneDistance)
+        {
+            CreatePerspectiveFieldOfView( fieldOfView,  aspectRatio, nearPlaneDistance, farPlaneDistance, out Matrix result);
+           return result;
+        }
+
         public static void CreatePerspectiveFieldOfView(float fieldOfView, float aspectRatio, float nearPlaneDistance, float farPlaneDistance, out Matrix result)
         {
             Guard.Assert((fieldOfView <= 0f) || (fieldOfView >= 3.141593f), "fieldOfView <= 0 or >= PI");

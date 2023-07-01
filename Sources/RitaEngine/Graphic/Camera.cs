@@ -9,17 +9,24 @@ public struct Camera :IEquatable<Camera>
     private CameraData _data = new();
     public Camera() { }
 
-    public void AddCamera(Vector3 position,Vector3 target, Vector3 up , float fov, float aspectRatio , float near , float far)
+    public void AddCamera(Vector3 position,Vector3 target, Vector3 up  )
     {
         _data.Position = position;
         _data.Up = up;
+        _data.Target = target;    
+        _data.Type = CameraType.None;   
+        CameraImplement.AddCamera(ref _data);
+    }
+    public void AddProjection(CameraProjectionType projectionType,float fov, float aspectRatio , float near , float far )
+    {
+        _data.ProjectionType = projectionType;
         _data.AspectRatio = aspectRatio;
         _data.ZNear = near;
         _data.ZFar = far ; 
         _data.FieldOfViewInDegree = fov;
-        _data.Target = target;       
-        CameraImplement.AddCamera(ref _data);
+        CameraImplement. UpdateProjection(ref _data);
     }
+
     /// <summary>
     /// Regarder autour généralement a la souris ne bouge pas inclinaison de la caméra vers haut/bas ou gaauche droite
     /// </summary>
@@ -132,7 +139,6 @@ public static class CameraImplement
 
     public static void  AddCamera(ref CameraData data)
     {
-
         //ONly for find Yaw pitch roll
         var zAxis = Vector3.Normalize(data.Position - data.Target);
         var xAxis = Vector3.Normalize(Vector3.Cross(ref data.Up,ref zAxis));
@@ -155,10 +161,8 @@ public static class CameraImplement
         data.Rotation = new( rmPitch,rmYaw, rmRoll);
 
         data.View =  translation * rotation;
-        
-        UpdateProjection(ref data);
     }
-
+  
     public static void AddProjection( ref CameraData data , CameraProjectionType type )
     {
         data.ProjectionType = type;
@@ -166,7 +170,12 @@ public static class CameraImplement
 
     public static void UpdateProjection(ref CameraData data )
     {
-        Transforms.CreatePerspectiveFieldOfView( Helper.ToRadians( data.FieldOfViewInDegree) ,data.AspectRatio, data.ZNear,data.ZFar,out data.Projection );
+        data.Projection = data.ProjectionType switch{
+            CameraProjectionType.PerspectiveFOV => Transforms.CreatePerspectiveFieldOfView(Helper.ToRadians( data.FieldOfViewInDegree) ,data.AspectRatio, data.ZNear,data.ZFar),
+            _ => Transforms.CreatePerspectiveFieldOfView(Helper.ToRadians( data.FieldOfViewInDegree) ,data.AspectRatio, data.ZNear,data.ZFar)
+        };
+
+        
         data.Projection.M22 *= data.FlipY;
     }
     public static void MoveAroundTarget(ref CameraData data, Vector3 target , float leftRight , float upDown)
