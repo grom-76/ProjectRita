@@ -3,11 +3,918 @@
 namespace RitaEngine.Math;
 
 using RitaEngine.Base;
+using RitaEngine.Base.Debug;
 
 [ StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
-public static class Transform
+public static class Transforms
 {
       
+        // public static void CreateLookAt(ref Vector3 cameraPosition, ref Vector3 cameraTarget, ref Vector3 cameraUpVector, out Matrix result)
+        // {
+        //     var zAxis = Vector3.Normalize(cameraPosition - cameraTarget);
+        //     var xAxis = Vector3.Normalize(Vector3.Cross(ref cameraUpVector,ref zAxis));
+        //     var yAxis = Vector3.Cross( ref zAxis, ref xAxis);
+		//     result.M11 = xAxis.X;
+		//     result.M12 = yAxis.X;
+		//     result.M13 = zAxis.X;
+		//     result.M14 = 0f;
+		//     result.M21 = xAxis.Y;
+		//     result.M22 = yAxis.Y;
+		//     result.M23 = zAxis.Y;
+		//     result.M24 = 0f;
+		//     result.M31 = xAxis.Z;
+		//     result.M32 = yAxis.Z;
+		//     result.M33 = zAxis.Z;
+		//     result.M34 = 0f;
+		//     result.M41 = -Vector3.Dot(ref xAxis, ref  cameraPosition);
+		//     result.M42 = -Vector3.Dot(ref yAxis, ref  cameraPosition);
+		//     result.M43 = -Vector3.Dot(ref zAxis,  ref cameraPosition);
+		//     result.M44 = 1f;
+        // }
+
+        // public static Matrix CreateLookAt(ref Vector3 position, ref Vector3 target, ref Vector3 up )
+        // {
+        //     var zAxis = Vector3.Normalize(position - target);
+        //     var xAxis = Vector3.Normalize(Vector3.Cross(ref up,ref zAxis));
+        //     var yAxis = Vector3.Cross( ref zAxis, ref xAxis);
+        //     return new (xAxis.X , yAxis.X , zAxis.X ,0.0f  ,
+        //                 xAxis.Y , yAxis.Y , zAxis.Y ,0.0f  ,
+        //                 xAxis.Z , yAxis.Z , zAxis.Z ,0.0f  ,
+        //                 -Vector3.Dot(ref xAxis, ref  position)  , -Vector3.Dot(ref yAxis, ref  position) ,  -Vector3.Dot(ref zAxis,  ref position),1.0f    );
+        // }
+        
+        public static Matrix CreateLookAtWithMatrixRotationTranslation(ref Vector3 position, ref Vector3 target, ref Vector3 up )
+        {
+            var zAxis = Vector3.Normalize(position - target);
+            var xAxis = Vector3.Normalize(Vector3.Cross(ref up,ref zAxis));
+            var yAxis = Vector3.Cross( ref zAxis, ref xAxis);
+            Matrix translation = Matrix.Identity;
+            translation.M41 = -position.X;
+            translation.M42 = -position.Y;
+            translation.M43 = -position.Z;
+            Matrix rotation = new (
+                xAxis.X , yAxis.X , zAxis.X ,0.0f  ,
+                xAxis.Y , yAxis.Y , zAxis.Y ,0.0f  ,
+                xAxis.Z , yAxis.Z , zAxis.Z ,0.0f  ,
+                0.0f  , 0.0f ,  0.0f ,1.0f    );
+            
+            return rotation * translation ;
+        }
+
+        public static void CreatePerspectiveFieldOfView(float fieldOfView, float aspectRatio, float nearPlaneDistance, float farPlaneDistance, out Matrix result)
+        {
+            Guard.Assert((fieldOfView <= 0f) || (fieldOfView >= 3.141593f), "fieldOfView <= 0 or >= PI");
+            Guard.Assert((farPlaneDistance <= 0f), "nearPlaneDistance <= 0");
+            Guard.Assert((nearPlaneDistance >= farPlaneDistance), "nearPlaneDistance >= farPlaneDistance");
+    
+            var yScale = 1.0f / (float)Helper.Tan(fieldOfView * 0.5f);
+            var xScale = yScale / aspectRatio;
+            var negFarRange = float.IsPositiveInfinity(farPlaneDistance) ? -1.0f : farPlaneDistance / (nearPlaneDistance - farPlaneDistance);
+
+            result.M11 = xScale;  result.M12 = 0.0f;    result.M13 = 0.0f;      result.M14 = 0.0f;
+            
+            result.M21 = 0.0f;    result.M22 = yScale;  result.M23 = 0.0f;      result.M24 = 0.0f;
+            
+            result.M31 = 0.0f;    result.M32 = 0.0f;    result.M33 = negFarRange; result.M34 = -1.0f;
+            
+            result.M41 = 0.0f;    result.M42 = 0.0f;    result.M44 = 0.0f;      result.M43 = nearPlaneDistance * negFarRange;
+        }
+
+
+        public static void MakeProjectionMatrixWithoutFlipYAxis(float fovy_rads, float s, float near, float far, out Matrix result )
+        {
+            float g = 1.0f / Helper.Tan (fovy_rads * 0.5f);
+            float k = far / (far - near);
+
+          
+            result.M11 = g / s;  result.M12 = 0.0f;    result.M13 = 0.0f;   result.M14 = 0.0f;
+            
+            result.M21 = 0.0f;    result.M22 = g;       result.M23 = 0.0f;  result.M24 = 0.0f;
+            
+            result.M31 = 0.0f;    result.M32 = 0.0f;    result.M33 = k;     result.M34 = -near * k;
+            
+            result.M41 = 0.0f;    result.M42 = 0.0f;     result.M43 =0.0f;  result.M44 = 1.0f;
+        }
+        /// <summary>
+        /// Creates a left-handed, perspective projection matrix.
+        /// </summary>
+        /// <param name="width">Width of the viewing volume.</param>
+        /// <param name="height">Height of the viewing volume.</param>
+        /// <param name="znear">Minimum z-value of the viewing volume.</param>
+        /// <param name="zfar">Maximum z-value of the viewing volume.</param>
+        /// <param name="result">When the method completes, contains the created projection matrix.</param>
+        public static void Perspective(float width, float height, float znear, float zfar, out Matrix result)
+        {
+            float halfWidth = width * 0.5f;
+            float halfHeight = height * 0.5f;
+            PerspectiveOffCenter(-halfWidth, halfWidth, -halfHeight, halfHeight, znear, zfar, out result);
+        }
+
+        /// <summary>
+        /// Creates a left-handed, perspective projection matrix.
+        /// </summary>
+        /// <param name="width">Width of the viewing volume.</param>
+        /// <param name="height">Height of the viewing volume.</param>
+        /// <param name="znear">Minimum z-value of the viewing volume.</param>
+        /// <param name="zfar">Maximum z-value of the viewing volume.</param>
+        /// <returns>The created projection matrix.</returns>
+        public static Matrix Perspective(float width, float height, float znear, float zfar)
+        {
+            Perspective(width, height, znear, zfar, out var result);
+            return result;
+        }
+
+        /// <summary>
+        /// Creates a left-handed, perspective projection matrix based on a field of view.
+        /// </summary>
+        /// <param name="fov">Field of view in the y direction, in radians.</param>
+        /// <param name="aspect">Aspect ratio, defined as view space width divided by height.</param>
+        /// <param name="znear">Minimum z-value of the viewing volume.</param>
+        /// <param name="zfar">Maximum z-value of the viewing volume.</param>
+        /// <param name="result">When the method completes, contains the created projection matrix.</param>
+        public static void PerspectiveFov(float fov, float aspect, float znear, float zfar, out Matrix result)
+        {
+            var yScale = (float)(1.0f / Helper.Tan(fov * 0.5f));
+            var q = zfar / (zfar - znear);
+            result = new Matrix
+            {
+                M11 = yScale / aspect,
+                M22 = yScale,
+                M33 = q,
+                M34 = 1.0f,
+                M43 = -q * znear,
+            };
+        }
+
+        /// <summary>
+        /// Creates a left-handed, perspective projection matrix based on a field of view.
+        /// </summary>
+        /// <param name="fov">Field of view in the y direction, in radians.</param>
+        /// <param name="aspect">Aspect ratio, defined as view space width divided by height.</param>
+        /// <param name="znear">Minimum z-value of the viewing volume.</param>
+        /// <param name="zfar">Maximum z-value of the viewing volume.</param>
+        /// <returns>The created projection matrix.</returns>
+        public static Matrix PerspectiveFov(float fov, float aspect, float znear, float zfar)
+        {
+            PerspectiveFov(fov, aspect, znear, zfar, out var result);
+            return result;
+        }
+
+        /// <summary>
+        /// Creates a left-handed, customized perspective projection matrix.
+        /// </summary>
+        /// <param name="left">Minimum x-value of the viewing volume.</param>
+        /// <param name="right">Maximum x-value of the viewing volume.</param>
+        /// <param name="bottom">Minimum y-value of the viewing volume.</param>
+        /// <param name="top">Maximum y-value of the viewing volume.</param>
+        /// <param name="znear">Minimum z-value of the viewing volume.</param>
+        /// <param name="zfar">Maximum z-value of the viewing volume.</param>
+        /// <param name="result">When the method completes, contains the created projection matrix.</param>
+        public static void PerspectiveOffCenter(float left, float right, float bottom, float top, float znear, float zfar, out Matrix result)
+        {
+            float zRange = zfar / (zfar - znear);
+            result = new Matrix
+            {
+                M11 = 2.0f * znear / (right - left),
+                M22 = 2.0f * znear / (top - bottom),
+                M31 = (left + right) / (left - right),
+                M32 = (top + bottom) / (bottom - top),
+                M33 = zRange,
+                M34 = 1.0f,
+                M43 = -znear * zRange,
+            };
+        }
+
+        /// <summary>
+        /// Creates a left-handed, customized perspective projection matrix.
+        /// </summary>
+        /// <param name="left">Minimum x-value of the viewing volume.</param>
+        /// <param name="right">Maximum x-value of the viewing volume.</param>
+        /// <param name="bottom">Minimum y-value of the viewing volume.</param>
+        /// <param name="top">Maximum y-value of the viewing volume.</param>
+        /// <param name="znear">Minimum z-value of the viewing volume.</param>
+        /// <param name="zfar">Maximum z-value of the viewing volume.</param>
+        /// <returns>The created projection matrix.</returns>
+        public static Matrix PerspectiveOffCenter(float left, float right, float bottom, float top, float znear, float zfar)
+        {
+            PerspectiveOffCenter(left, right, bottom, top, znear, zfar, out var result);
+            return result;
+        }
+
+        /// <summary>
+        /// Creates a matrix that scales along the x-axis, y-axis, and y-axis.
+        /// </summary>
+        /// <param name="scale">Scaling factor for all three axes.</param>
+        /// <param name="result">When the method completes, contains the created scaling matrix.</param>
+        public static void Scaling(ref Vector3 scale, out Matrix result)
+        {
+            Scaling(scale.X, scale.Y, scale.Z, out result);
+        }
+
+        /// <summary>
+        /// Creates a matrix that scales along the x-axis, y-axis, and y-axis.
+        /// </summary>
+        /// <param name="scale">Scaling factor for all three axes.</param>
+        /// <returns>The created scaling matrix.</returns>
+        public static Matrix Scaling(Vector3 scale)
+        {
+            Scaling(ref scale, out var result);
+            return result;
+        }
+
+        /// <summary>
+        /// Creates a matrix that scales along the x-axis, y-axis, and y-axis.
+        /// </summary>
+        /// <param name="x">Scaling factor that is applied along the x-axis.</param>
+        /// <param name="y">Scaling factor that is applied along the y-axis.</param>
+        /// <param name="z">Scaling factor that is applied along the z-axis.</param>
+        /// <param name="result">When the method completes, contains the created scaling matrix.</param>
+        public static void Scaling(float x, float y, float z, out Matrix result)
+        {
+            result = Matrix.Identity;
+            result.M11 = Math.Helper.Abs(x);
+            result.M22 =  Math.Helper.Abs(y);
+            result.M33 =  Math.Helper.Abs(z);
+        }
+
+        /// <summary>
+        /// Creates a matrix that scales along the x-axis, y-axis, and y-axis.
+        /// </summary>
+        /// <param name="x">Scaling factor that is applied along the x-axis.</param>
+        /// <param name="y">Scaling factor that is applied along the y-axis.</param>
+        /// <param name="z">Scaling factor that is applied along the z-axis.</param>
+        /// <returns>The created scaling matrix.</returns>
+        public static Matrix Scaling(float x, float y, float z)
+        {
+            Scaling(x, y, z, out var result);
+            return result;
+        }
+
+        /// <summary>
+        /// Creates a matrix that uniformly scales along all three axis.
+        /// </summary>
+        /// <param name="scale">The uniform scale that is applied along all axis.</param>
+        /// <param name="result">When the method completes, contains the created scaling matrix.</param>
+        public static void Scaling(float scale, out Matrix result)
+        {
+            result = Matrix.Identity;
+            result.M11 = result.M22 = result.M33 = Math.Helper.Abs(scale);
+        }
+
+        /// <summary>
+        /// Creates a matrix that uniformly scales along all three axis.
+        /// </summary>
+        /// <param name="scale">The uniform scale that is applied along all axis.</param>
+        /// <returns>The created scaling matrix.</returns>
+        public static Matrix Scaling(float scale)
+        {
+            Scaling(scale, out var result);
+            return result;
+        }
+
+        /// <summary>
+        /// Creates a matrix that rotates around the x-axis.
+        /// </summary>
+        /// <param name="angle">
+        /// Angle of rotation in radians. Angles are measured clockwise when looking along the rotation axis
+        /// toward the origin.
+        /// </param>
+        /// <param name="result">When the method completes, contains the created rotation matrix.</param>
+        public static void RotationX(float angle, out Matrix result)
+        {
+            var cos = (float)Helper.Cos(angle);
+            var sin = (float)Helper.Sin(angle);
+            result = Matrix.Identity;
+            result.M22 = cos;
+            result.M23 = sin;
+            result.M32 = -sin;
+            result.M33 = cos;
+        }
+
+        /// <summary>
+        /// Creates a matrix that rotates around the x-axis.
+        /// </summary>
+        /// <param name="angle">
+        /// Angle of rotation in radians. Angles are measured clockwise when looking along the rotation axis
+        /// toward the origin.
+        /// </param>
+        /// <returns>The created rotation matrix.</returns>
+        public static Matrix RotationX(float angle)
+        {
+            RotationX(angle, out var result);
+            return result;
+        }
+
+        /// <summary>
+        /// Creates a matrix that rotates around the y-axis.
+        /// </summary>
+        /// <param name="angle">
+        /// Angle of rotation in radians. Angles are measured clockwise when looking along the rotation axis
+        /// toward the origin.
+        /// </param>
+        /// <param name="result">When the method completes, contains the created rotation matrix.</param>
+        public static void RotationY(float angle, out Matrix result)
+        {
+            var cos = (float)Helper.Cos(angle);
+            var sin = (float)Helper.Sin(angle);
+            result = Matrix.Identity;
+            result.M11 = cos;
+            result.M13 = -sin;
+            result.M31 = sin;
+            result.M33 = cos;
+        }
+
+        /// <summary>
+        /// Creates a matrix that rotates around the y-axis.
+        /// </summary>
+        /// <param name="angle">
+        /// Angle of rotation in radians. Angles are measured clockwise when looking along the rotation axis
+        /// toward the origin.
+        /// </param>
+        /// <returns>The created rotation matrix.</returns>
+        public static Matrix RotationY(float angle)
+        {
+            RotationY(angle, out var result);
+            return result;
+        }
+
+        /// <summary>
+        /// Creates a matrix that rotates around the z-axis.
+        /// </summary>
+        /// <param name="angle">
+        /// Angle of rotation in radians. Angles are measured clockwise when looking along the rotation axis
+        /// toward the origin.
+        /// </param>
+        /// <param name="result">When the method completes, contains the created rotation matrix.</param>
+        public static void RotationZ(float angle, out Matrix result)
+        {
+            var cos = (float)Helper.Cos(angle);
+            var sin = (float)Helper.Sin(angle);
+            result = Matrix.Identity;
+            result.M11 = cos;
+            result.M12 = sin;
+            result.M21 = -sin;
+            result.M22 = cos;
+        }
+
+        /// <summary>
+        /// Creates a matrix that rotates around the z-axis.
+        /// </summary>
+        /// <param name="angle">
+        /// Angle of rotation in radians. Angles are measured clockwise when looking along the rotation axis
+        /// toward the origin.
+        /// </param>
+        /// <returns>The created rotation matrix.</returns>
+        public static Matrix RotationZ(float angle)
+        {
+            RotationZ(angle, out var result);
+            return result;
+        }
+
+        /// <summary>
+        /// Creates a matrix that rotates around an arbitrary axis.
+        /// </summary>
+        /// <param name="axis">The axis around which to rotate. This parameter is assumed to be normalized.</param>
+        /// <param name="angle">Angle of rotation in radians. Angles are measured clockwise when looking along the rotation axis toward the origin.</param>
+        /// <param name="result">When the method completes, contains the created rotation matrix.</param>
+        public static void RotationAxis(ref Vector3 axis, float angle, out Matrix result)
+        {
+            float x = axis.X;
+            float y = axis.Y;
+            float z = axis.Z;
+            var cos = (float)Helper.Cos(angle);
+            var sin = (float)Helper.Sin(angle);
+            float xx = x * x;
+            float yy = y * y;
+            float zz = z * z;
+            float xy = x * y;
+            float xz = x * z;
+            float yz = y * z;
+
+            result = Matrix.Identity;
+            result.M11 = xx + cos * (1.0f - xx);
+            result.M12 = xy - cos * xy + sin * z;
+            result.M13 = xz - cos * xz - sin * y;
+            result.M21 = xy - cos * xy - sin * z;
+            result.M22 = yy + cos * (1.0f - yy);
+            result.M23 = yz - cos * yz + sin * x;
+            result.M31 = xz - cos * xz + sin * y;
+            result.M32 = yz - cos * yz - sin * x;
+            result.M33 = zz + cos * (1.0f - zz);
+        }
+
+        /// <summary>
+        /// Creates a matrix that rotates around an arbitrary axis.
+        /// </summary>
+        /// <param name="axis">The axis around which to rotate. This parameter is assumed to be normalized.</param>
+        /// <param name="angle">Angle of rotation in radians. Angles are measured clockwise when looking along the rotation axis toward the origin.</param>
+        /// <returns>The created rotation matrix.</returns>
+        public static Matrix RotationAxis(Vector3 axis, float angle)
+        {
+            RotationAxis(ref axis, angle, out var result);
+            return result;
+        }
+
+        
+        /// <summary>
+        /// Creates a translation matrix using the specified offsets.
+        /// </summary>
+        /// <param name="value">The offset for all three coordinate planes.</param>
+        /// <param name="result">When the method completes, contains the created translation matrix.</param>
+        public static void Translation(ref Vector3 value, out Matrix result)
+        {
+            Translation(value.X, value.Y, value.Z, out result);
+        }
+
+        /// <summary>
+        /// Creates a translation matrix using the specified offsets.
+        /// </summary>
+        /// <param name="value">The offset for all three coordinate planes.</param>
+        /// <returns>The created translation matrix.</returns>
+        public static Matrix Translation(Vector3 value)
+        {
+            Translation(ref value, out var result);
+            return result;
+        }
+
+        /// <summary>
+        /// Creates a translation matrix using the specified offsets.
+        /// </summary>
+        /// <param name="x">X-coordinate offset.</param>
+        /// <param name="y">Y-coordinate offset.</param>
+        /// <param name="z">Z-coordinate offset.</param>
+        /// <param name="result">When the method completes, contains the created translation matrix.</param>
+        public static void Translation(float x, float y, float z, out Matrix result)
+        {
+            result = Matrix.Identity;
+            result.M41 = x;
+            result.M42 = y;
+            result.M43 = z;
+        }
+
+        /// <summary>
+        /// Creates a translation matrix using the specified offsets.
+        /// </summary>
+        /// <param name="x">X-coordinate offset.</param>
+        /// <param name="y">Y-coordinate offset.</param>
+        /// <param name="z">Z-coordinate offset.</param>
+        /// <returns>The created translation matrix.</returns>
+        public static Matrix Translation(float x, float y, float z)
+        {
+            Translation(x, y, z, out var result);
+            return result;
+        }
+
+        /// <summary>
+        /// Creates a skew/shear matrix by means of a translation vector, a rotation vector, and a rotation angle.
+        /// shearing is performed in the direction of translation vector, where translation vector and rotation vector define the
+        /// shearing plane.
+        /// The effect is such that the skewed rotation vector has the specified angle with rotation itself.
+        /// </summary>
+        /// <param name="angle">The rotation angle.</param>
+        /// <param name="rotationVec">The rotation vector</param>
+        /// <param name="transVec">The translation vector</param>
+        /// <param name="matrix">Contains the created skew/shear matrix. </param>
+        public static void Skew(float angle, ref Vector3 rotationVec, ref Vector3 transVec, out Matrix matrix)
+        {
+            // http://elckerlyc.ewi.utwente.nl/browser/Elckerlyc/Hmi/HmiMath/src/hmi/math/Mat3f.java
+            var MINIMAL_SKEW_ANGLE = 0.000001f;
+            Vector3 e0 = rotationVec;
+            Vector3 e1 = Vector3.Normalize(transVec);
+            var rv1 = Vector3.Dot(ref rotationVec, ref e1 );
+            e0 += rv1 * e1;
+            var rv0 = Vector3.Dot(ref rotationVec, ref e0 );
+            var cosA = (float)Helper.Cos(angle);
+            var sinA = (float)Helper.Sin(angle);
+            float rr0 = rv0 * cosA - rv1 * sinA;
+            float rr1 = rv0 * sinA + rv1 * cosA;
+            if (rr0 < MINIMAL_SKEW_ANGLE)
+                throw new ArgumentException("Illegal skew angle");
+            float d = rr1 / rr0 - rv1 / rv0;
+            matrix = Matrix.Identity;
+            matrix.M11 = d * e1[0] * e0[0] + 1.0f;
+            matrix.M12 = d * e1[0] * e0[1];
+            matrix.M13 = d * e1[0] * e0[2];
+            matrix.M21 = d * e1[1] * e0[0];
+            matrix.M22 = d * e1[1] * e0[1] + 1.0f;
+            matrix.M23 = d * e1[1] * e0[2];
+            matrix.M31 = d * e1[2] * e0[0];
+            matrix.M32 = d * e1[2] * e0[1];
+            matrix.M33 = d * e1[2] * e0[2] + 1.0f;
+        }
+
+        // /// <summary>
+        // /// Creates a 3D affine transformation matrix.
+        // /// </summary>
+        // /// <param name="scaling">Scaling factor.</param>
+        // /// <param name="rotation">The rotation of the transformation.</param>
+        // /// <param name="translation">The translation factor of the transformation.</param>
+        // /// <param name="result">When the method completes, contains the created affine transformation matrix.</param>
+        // public static void AffineTransformation(float scaling, ref Quaternion rotation, ref Vector3 translation, out Matrix result)
+        // {
+        //     result = Scaling(scaling) * RotationQuaternion(rotation) * Translation(translation);
+        // }
+
+        // /// <summary>
+        // /// Creates a 3D affine transformation matrix.
+        // /// </summary>
+        // /// <param name="scaling">Scaling factor.</param>
+        // /// <param name="rotation">The rotation of the transformation.</param>
+        // /// <param name="translation">The translation factor of the transformation.</param>
+        // /// <returns>The created affine transformation matrix.</returns>
+        // public static Matrix AffineTransformation(float scaling, Quaternion rotation, Vector3 translation)
+        // {
+        //     AffineTransformation(scaling, ref rotation, ref translation, out var result);
+        //     return result;
+        // }
+
+        // /// <summary>
+        // /// Creates a 3D affine transformation matrix.
+        // /// </summary>
+        // /// <param name="scaling">Scaling factor.</param>
+        // /// <param name="rotationCenter">The center of the rotation.</param>
+        // /// <param name="rotation">The rotation of the transformation.</param>
+        // /// <param name="translation">The translation factor of the transformation.</param>
+        // /// <param name="result">When the method completes, contains the created affine transformation matrix.</param>
+        // public static void AffineTransformation(float scaling, ref Vector3 rotationCenter, ref Quaternion rotation, ref Vector3 translation, out Matrix result)
+        // {
+        //     result = Scaling(scaling) * Translation(-rotationCenter) * RotationQuaternion(rotation) *
+        //              Translation(rotationCenter) * Translation(translation);
+        // }
+
+        // /// <summary>
+        // /// Creates a 3D affine transformation matrix.
+        // /// </summary>
+        // /// <param name="scaling">Scaling factor.</param>
+        // /// <param name="rotationCenter">The center of the rotation.</param>
+        // /// <param name="rotation">The rotation of the transformation.</param>
+        // /// <param name="translation">The translation factor of the transformation.</param>
+        // /// <returns>The created affine transformation matrix.</returns>
+        // public static Matrix AffineTransformation(float scaling, Vector3 rotationCenter, Quaternion rotation, Vector3 translation)
+        // {
+        //     AffineTransformation(scaling, ref rotationCenter, ref rotation, ref translation, out var result);
+        //     return result;
+        // }
+
+        // /// <summary>
+        // /// Creates a 2D affine transformation matrix.
+        // /// </summary>
+        // /// <param name="scaling">Scaling factor.</param>
+        // /// <param name="rotation">The rotation of the transformation.</param>
+        // /// <param name="translation">The translation factor of the transformation.</param>
+        // /// <param name="result">When the method completes, contains the created affine transformation matrix.</param>
+        // public static void AffineTransformation2D(float scaling, float rotation, ref Vector2 translation, out Matrix result)
+        // {
+        //     result = Scaling(scaling, scaling, 1.0f) * RotationZ(rotation) * Translation((Vector3)translation);
+        // }
+
+        // /// <summary>
+        // /// Creates a 2D affine transformation matrix.
+        // /// </summary>
+        // /// <param name="scaling">Scaling factor.</param>
+        // /// <param name="rotation">The rotation of the transformation.</param>
+        // /// <param name="translation">The translation factor of the transformation.</param>
+        // /// <returns>The created affine transformation matrix.</returns>
+        // public static Matrix AffineTransformation2D(float scaling, float rotation, Float2 translation)
+        // {
+        //     AffineTransformation2D(scaling, rotation, ref translation, out var result);
+        //     return result;
+        // }
+
+        // /// <summary>
+        // /// Creates a 2D affine transformation matrix.
+        // /// </summary>
+        // /// <param name="scaling">Scaling factor.</param>
+        // /// <param name="rotationCenter">The center of the rotation.</param>
+        // /// <param name="rotation">The rotation of the transformation.</param>
+        // /// <param name="translation">The translation factor of the transformation.</param>
+        // /// <param name="result">When the method completes, contains the created affine transformation matrix.</param>
+        // public static void AffineTransformation2D(float scaling, ref Float2 rotationCenter, float rotation, ref Float2 translation, out Matrix result)
+        // {
+        //     result = Scaling(scaling, scaling, 1.0f) * Translation((Vector3)(-rotationCenter)) * RotationZ(rotation) * Translation((Vector3)rotationCenter) * Translation((Vector3)translation);
+        // }
+
+        // /// <summary>
+        // /// Creates a 2D affine transformation matrix.
+        // /// </summary>
+        // /// <param name="scaling">Scaling factor.</param>
+        // /// <param name="rotationCenter">The center of the rotation.</param>
+        // /// <param name="rotation">The rotation of the transformation.</param>
+        // /// <param name="translation">The translation factor of the transformation.</param>
+        // /// <returns>The created affine transformation matrix.</returns>
+        // public static Matrix AffineTransformation2D(float scaling, Float2 rotationCenter, float rotation, Float2 translation)
+        // {
+        //     AffineTransformation2D(scaling, ref rotationCenter, rotation, ref translation, out var result);
+        //     return result;
+        // }
+
+        // /// <summary>
+        // /// Creates a matrix that contains both the X, Y and Z rotation, as well as scaling and translation.
+        // /// </summary>
+        // /// <param name="translation">The translation.</param>
+        // /// <param name="rotation">Angle of rotation in radians. Angles are measured clockwise when looking along the rotation axis toward the origin.</param>
+        // /// <param name="scaling">The scaling.</param>
+        // /// <returns>The created transformation matrix.</returns>
+        // public static Matrix Transformation(Vector3 scaling, Quaternion rotation, Vector3 translation)
+        // {
+        //     Transformation(ref scaling, ref rotation, ref translation, out var result);
+        //     return result;
+        // }
+
+        // /// <summary>
+        // /// Creates a matrix that contains both the X, Y and Z rotation, as well as scaling and translation.
+        // /// </summary>
+        // /// <param name="translation">The translation.</param>
+        // /// <param name="rotation">Angle of rotation in radians. Angles are measured clockwise when looking along the rotation axis toward the origin.</param>
+        // /// <param name="scaling">The scaling.</param>
+        // /// <param name="result">When the method completes, contains the created transformation matrix.</param>
+        // public static void Transformation(ref Vector3 scaling, ref Quaternion rotation, ref Vector3 translation, out Matrix result)
+        // {
+        //     // Equivalent to:
+        //     //result =
+        //     //    Matrix.Scaling(scaling)
+        //     //    *Matrix.RotationX(rotation.X)
+        //     //    *Matrix.RotationY(rotation.Y)
+        //     //    *Matrix.RotationZ(rotation.Z)
+        //     //    *Matrix.Position(translation);
+
+        //     // Rotation
+        //     float xx = rotation.X * rotation.X;
+        //     float yy = rotation.Y * rotation.Y;
+        //     float zz = rotation.Z * rotation.Z;
+        //     float xy = rotation.X * rotation.Y;
+        //     float zw = rotation.Z * rotation.W;
+        //     float zx = rotation.Z * rotation.X;
+        //     float yw = rotation.Y * rotation.W;
+        //     float yz = rotation.Y * rotation.Z;
+        //     float xw = rotation.X * rotation.W;
+        //     result.M11 = 1.0f - 2.0f * (yy + zz);
+        //     result.M12 = 2.0f * (xy + zw);
+        //     result.M13 = 2.0f * (zx - yw);
+        //     result.M21 = 2.0f * (xy - zw);
+        //     result.M22 = 1.0f - 2.0f * (zz + xx);
+        //     result.M23 = 2.0f * (yz + xw);
+        //     result.M31 = 2.0f * (zx + yw);
+        //     result.M32 = 2.0f * (yz - xw);
+        //     result.M33 = 1.0f - 2.0f * (yy + xx);
+
+        //     // Position
+        //     result.M41 = translation.X;
+        //     result.M42 = translation.Y;
+        //     result.M43 = translation.Z;
+
+        //     // Scale
+        //     result.M11 *= scaling.X;
+        //     result.M12 *= scaling.X;
+        //     result.M13 *= scaling.X;
+        //     result.M21 *= scaling.Y;
+        //     result.M22 *= scaling.Y;
+        //     result.M23 *= scaling.Y;
+        //     result.M31 *= scaling.Z;
+        //     result.M32 *= scaling.Z;
+        //     result.M33 *= scaling.Z;
+
+        //     result.M14 = 0.0f;
+        //     result.M24 = 0.0f;
+        //     result.M34 = 0.0f;
+        //     result.M44 = 1.0f;
+        // }
+
+        // /// <summary>
+        // /// Creates a transformation matrix.
+        // /// </summary>
+        // /// <param name="scalingCenter">Center point of the scaling operation.</param>
+        // /// <param name="scalingRotation">Scaling rotation amount.</param>
+        // /// <param name="scaling">Scaling factor.</param>
+        // /// <param name="rotationCenter">The center of the rotation.</param>
+        // /// <param name="rotation">The rotation of the transformation.</param>
+        // /// <param name="translation">The translation factor of the transformation.</param>
+        // /// <param name="result">When the method completes, contains the created transformation matrix.</param>
+        // public static void Transformation(ref Vector3 scalingCenter, ref Quaternion scalingRotation, ref Vector3 scaling, ref Vector3 rotationCenter, ref Quaternion rotation, ref Vector3 translation, out Matrix result)
+        // {
+        //     Matrix sr = RotationQuaternion(scalingRotation);
+        //     result = Translation(-scalingCenter) * Transpose(sr) * Scaling(scaling) * sr * Translation(scalingCenter) * Translation(-rotationCenter) * RotationQuaternion(rotation) * Translation(rotationCenter) * Translation(translation);
+        // }
+
+        // /// <summary>
+        // /// Creates a transformation matrix.
+        // /// </summary>
+        // /// <param name="scalingCenter">Center point of the scaling operation.</param>
+        // /// <param name="scalingRotation">Scaling rotation amount.</param>
+        // /// <param name="scaling">Scaling factor.</param>
+        // /// <param name="rotationCenter">The center of the rotation.</param>
+        // /// <param name="rotation">The rotation of the transformation.</param>
+        // /// <param name="translation">The translation factor of the transformation.</param>
+        // /// <returns>The created transformation matrix.</returns>
+        // public static Matrix Transformation(Vector3 scalingCenter, Quaternion scalingRotation, Vector3 scaling, Vector3 rotationCenter, Quaternion rotation, Vector3 translation)
+        // {
+        //     Transformation(ref scalingCenter, ref scalingRotation, ref scaling, ref rotationCenter, ref rotation, ref translation, out var result);
+        //     return result;
+        // }
+
+        // /// <summary>
+        // /// Creates a 2D transformation matrix.
+        // /// </summary>
+        // /// <param name="scalingCenter">Center point of the scaling operation.</param>
+        // /// <param name="scalingRotation">Scaling rotation amount.</param>
+        // /// <param name="scaling">Scaling factor.</param>
+        // /// <param name="rotationCenter">The center of the rotation.</param>
+        // /// <param name="rotation">The rotation of the transformation.</param>
+        // /// <param name="translation">The translation factor of the transformation.</param>
+        // /// <param name="result">When the method completes, contains the created transformation matrix.</param>
+        // public static void Transformation2D(ref Float2 scalingCenter, float scalingRotation, ref Float2 scaling, ref Float2 rotationCenter, float rotation, ref Float2 translation, out Matrix result)
+        // {
+        //     result = Translation((Vector3)(-scalingCenter)) * RotationZ(-scalingRotation) * Scaling((Vector3)scaling) * RotationZ(scalingRotation) * Translation((Vector3)scalingCenter) * Translation((Vector3)(-rotationCenter)) * RotationZ(rotation) * Translation((Vector3)rotationCenter) * Translation((Vector3)translation);
+        //     result.M33 = 1f;
+        //     result.M44 = 1f;
+        // }
+
+        // /// <summary>
+        // /// Creates a 2D transformation matrix.
+        // /// </summary>
+        // /// <param name="scalingCenter">Center point of the scaling operation.</param>
+        // /// <param name="scalingRotation">Scaling rotation amount.</param>
+        // /// <param name="scaling">Scaling factor.</param>
+        // /// <param name="rotationCenter">The center of the rotation.</param>
+        // /// <param name="rotation">The rotation of the transformation.</param>
+        // /// <param name="translation">The translation factor of the transformation.</param>
+        // /// <returns>The created transformation matrix.</returns>
+        // public static Matrix Transformation2D(Float2 scalingCenter, float scalingRotation, Float2 scaling, Float2 rotationCenter, float rotation, Float2 translation)
+        // {
+        //     Transformation2D(ref scalingCenter, scalingRotation, ref scaling, ref rotationCenter, rotation, ref translation, out var result);
+        //     return result;
+        // }
+
+        /// <summary>
+        /// Creates the world matrix from the specified parameters
+        /// </summary>
+        /// <param name="position">The position of the object. This value is used in translation operations.</param>
+        /// <param name="forward">The forward direction of the object.</param>
+        /// <param name="up">The upward direction of the object; usually [0, 1, 0].</param>
+        /// <returns>The created world matrix of given transformation world</returns>
+        public static Matrix CreateWorld(Vector3 position, Vector3 forward, Vector3 up)
+        {
+            CreateWorld(ref position, ref forward, ref up, out var result);
+            return result;
+        }
+
+        /// <summary>
+        /// Creates the world matrix from the specified parameters
+        /// </summary>
+        /// <param name="position">The position of the object. This value is used in translation operations.</param>
+        /// <param name="forward">The forward direction of the object.</param>
+        /// <param name="up">The upward direction of the object; usually [0, 1, 0].</param>
+        /// <param name="result">>When the method completes, contains the created world matrix of given transformation world.</param>
+        public static void CreateWorld(ref Vector3 position, ref Vector3 forward, ref Vector3 up, out Matrix result)
+        {
+            var vector3 = Vector3.Normalize( forward);
+            vector3.Negate();
+            Vector3 vector31 = Vector3.Cross(ref up,ref vector3);
+            vector31.Normalize();
+            var vector32 = Vector3.Cross(ref vector3, ref vector31 );
+            result = new Matrix
+            (
+             vector31.X,
+             vector31.Y,
+             vector31.Z,
+             0.0f,
+             vector32.X,
+             vector32.Y,
+             vector32.Z,
+             0.0f,
+             vector3.X,
+             vector3.Y,
+             vector3.Z,
+             0.0f,
+             position.X,
+             position.Y,
+             position.Z,
+             1.0f
+            );
+        }
+
+        /// <summary>
+        /// Creates a new matrix that rotates around an arbitrary vector.
+        /// </summary>
+        /// <param name="axis">The axis to rotate around.</param>
+        /// <param name="angle">The angle to rotate around the vector.</param>
+        /// <returns>The created rotation matrix.</returns>
+        public static Matrix CreateFromAxisAngle(Vector3 axis, float angle)
+        {
+            CreateFromAxisAngle(ref axis, angle, out var result);
+            return result;
+        }
+
+        /// <summary>
+        /// Creates a new matrix that rotates around an arbitrary vector.
+        /// </summary>
+        /// <param name="axis">The axis to rotate around.</param>
+        /// <param name="angle">The angle to rotate around the vector.</param>
+        /// <param name="result">When the method completes, contains the created rotation matrix.</param>
+        public static void CreateFromAxisAngle(ref Vector3 axis, float angle, out Matrix result)
+        {
+            float x = axis.X;
+            float y = axis.Y;
+            float z = axis.Z;
+            float single = Helper.Sin(angle);
+            float single1 = Helper.Cos(angle);
+            float single2 = x * x;
+            float single3 = y * y;
+            float single4 = z * z;
+            float single5 = x * y;
+            float single6 = x * z;
+            float single7 = y * z;
+            result = new Matrix
+            (
+             single2 + single1 * (1.0f - single2),
+             single5 - single1 * single5 + single * z,
+             single6 - single1 * single6 - single * y,
+             0.0f,
+             single5 - single1 * single5 - single * z,
+             single3 + single1 * (1.0f - single3),
+             single7 - single1 * single7 + single * x,
+             0.0f,
+             single6 - single1 * single6 + single * y,
+             single7 - single1 * single7 - single * x,
+             single4 + single1 * (1.0f - single4),
+             0.0f,
+             0.0f,
+             0.0f,
+             0.0f,
+             1.0f
+            );
+        }
+
+        
+   
+
+
+        // /// <summary>
+        // /// Creates a rotation matrix from a quaternion.
+        // /// </summary>
+        // /// <param name="rotation">The quaternion to use to build the matrix.</param>
+        // /// <param name="result">The created rotation matrix.</param>
+        // public static void RotationQuaternion(ref Quaternion rotation, out Matrix result)
+        // {
+        //     float xx = rotation.X * rotation.X;
+        //     float yy = rotation.Y * rotation.Y;
+        //     float zz = rotation.Z * rotation.Z;
+        //     float xy = rotation.X * rotation.Y;
+        //     float zw = rotation.Z * rotation.W;
+        //     float zx = rotation.Z * rotation.X;
+        //     float yw = rotation.Y * rotation.W;
+        //     float yz = rotation.Y * rotation.Z;
+        //     float xw = rotation.X * rotation.W;
+
+        //     result = Identity;
+        //     result.M11 = 1.0f - 2.0f * (yy + zz);
+        //     result.M12 = 2.0f * (xy + zw);
+        //     result.M13 = 2.0f * (zx - yw);
+        //     result.M21 = 2.0f * (xy - zw);
+        //     result.M22 = 1.0f - 2.0f * (zz + xx);
+        //     result.M23 = 2.0f * (yz + xw);
+        //     result.M31 = 2.0f * (zx + yw);
+        //     result.M32 = 2.0f * (yz - xw);
+        //     result.M33 = 1.0f - 2.0f * (yy + xx);
+        // }
+
+        // /// <summary>
+        // /// Creates a rotation matrix from a quaternion.
+        // /// </summary>
+        // /// <param name="rotation">The quaternion to use to build the matrix.</param>
+        // /// <returns>The created rotation matrix.</returns>
+        // public static Matrix RotationQuaternion(Quaternion rotation)
+        // {
+        //     RotationQuaternion(ref rotation, out var result);
+        //     return result;
+        // }
+
+        // /// <summary>
+        // /// Creates a rotation matrix with a specified yaw, pitch, and roll.
+        // /// </summary>
+        // /// <param name="yaw">Yaw around the y-axis, in radians.</param>
+        // /// <param name="pitch">Pitch around the x-axis, in radians.</param>
+        // /// <param name="roll">Roll around the z-axis, in radians.</param>
+        // /// <param name="result">When the method completes, contains the created rotation matrix.</param>
+        // public static void RotationYawPitchRoll(float yaw, float pitch, float roll, out Matrix result)
+        // {
+        //     Quaternion.RotationYawPitchRoll(yaw, pitch, roll, out var quaternion);
+        //     RotationQuaternion(ref quaternion, out result);
+        // }
+
+        // /// <summary>
+        // /// Creates a rotation matrix with a specified yaw, pitch, and roll.
+        // /// </summary>
+        // /// <param name="yaw">Yaw around the y-axis, in radians.</param>
+        // /// <param name="pitch">Pitch around the x-axis, in radians.</param>
+        // /// <param name="roll">Roll around the z-axis, in radians.</param>
+        // /// <returns>The created rotation matrix.</returns>
+        // public static Matrix RotationYawPitchRoll(float yaw, float pitch, float roll)
+        // {
+        //     RotationYawPitchRoll(yaw, pitch, roll, out var result);
+        //     return result;
+        // }
+
 // //         /// <summary>
 // //         /// https://github.com/raysan5/raylib/blob/master/src/rcore.c ligne : 
 // //         ///  retrouve les coordonnée ecran x,y de la postion de l'objet 3D 

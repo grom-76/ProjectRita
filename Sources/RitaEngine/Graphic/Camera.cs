@@ -89,9 +89,9 @@ public struct Camera :IEquatable<Camera>
     /// <summary>
     /// Déplace la position de la caméra 
     /// </summary>
-    /// <param name="x"></param>
-    /// <param name="y"></param>
-    /// <param name="z"></param>
+    /// <param name="angle_x">en degre</param>
+    /// <param name="angle_y">en degre</param>
+    /// <param name="angle_z">en degre</param>
     public void RotateLookAt(float angle_x,float angle_y,float angle_z)
         => CameraImplement.RotateLookAt( ref _data, angle_x,angle_y,angle_z);
 
@@ -105,7 +105,6 @@ public struct Camera :IEquatable<Camera>
     {
        _data.Position.Y = groundposition  ; // <-- this one-liner keeps the user at the ground level (xz plane)
     }
-
 
     public void MoveAroundTarget( Vector3 target , float angleX , float angleY)
         => CameraImplement.MoveAroundTarget( ref _data ,target, angleX , angleY );
@@ -160,9 +159,14 @@ public static class CameraImplement
         UpdateProjection(ref data);
     }
 
+    public static void AddProjection( ref CameraData data , CameraProjectionType type )
+    {
+        data.ProjectionType = type;
+    }
+
     public static void UpdateProjection(ref CameraData data )
     {
-        Matrix.CreatePerspectiveFieldOfView( Helper.ToRadians( data.FieldOfViewInDegree) ,data.AspectRatio, data.ZNear,data.ZFar,out data.Projection );
+        Transforms.CreatePerspectiveFieldOfView( Helper.ToRadians( data.FieldOfViewInDegree) ,data.AspectRatio, data.ZNear,data.ZFar,out data.Projection );
         data.Projection.M22 *= data.FlipY;
     }
     public static void MoveAroundTarget(ref CameraData data, Vector3 target , float leftRight , float upDown)
@@ -197,14 +201,14 @@ public static class CameraImplement
         // FOR UPDATE MATRIX VIEW
         Matrix rotM = Matrix.Identity;
 
-        rotM = Matrix.RotationY(Helper.ToRadians(data.Rotation.Y)) 
-             * Matrix.RotationX(Helper.ToRadians(data.Rotation.X* data.FlipY)) 
-             * Matrix.RotationZ(Helper.ToRadians(data.Rotation.Z)) ;
+        rotM = Transforms.RotationY(Helper.ToRadians(data.Rotation.Y)) 
+             * Transforms.RotationX(Helper.ToRadians(data.Rotation.X* data.FlipY)) 
+             * Transforms.RotationZ(Helper.ToRadians(data.Rotation.Z)) ;
 
         float distance = Vector3.Distance( ref data.Position , ref data.Target);
         Vector3 translation = data.Type == CameraType.RotateAround ? Vector3.Normalize(data.View.TranslationVector - data.Target) * distance : data.Position  ;
        
-        Matrix  transM = Matrix.Translation(translation );
+        Matrix  transM = Transforms.Translation(translation );
         transM.M42 =  (transM.M42 * data.FlipY) ;
 
         data.View  =  data.Type == CameraType.LookAt ? transM * rotM  :   rotM * transM   ;
@@ -279,6 +283,7 @@ public static class CameraImplement
 
         data.Rotation.Y +=  xoffset * sensitivity;
         data.Rotation.X += yoffset * sensitivity; 
+         data.Type = CameraType.LookAt;
     }
     
     /// <summary>

@@ -68,10 +68,8 @@ public static class Sample_0002
             RenderConfig.FragmentShaderFileNameSPV =  "shader_depth_frag.spv";
             RenderConfig.VertexShaderFileNameSPV =  "shader_depth_vert.spv";
             RenderConfig.TextureName = "grid.png";
-            // RenderConfig.Camera.AddLookAkCamera(new(0.0f,2f,-4.0f), new(-27.0f,0.0f, 0.0f),new(0.0f,1.0f,0.0f),45.0f,(float)1280.0f/720.0f, 0.1f,100.0f );
-            // RenderConfig.Camera.AddFirstPersonCamera(new(0.0f,2f,-4.0f), new(0.0f,0.0f,0.0f),new(0.0f,1.0f,0.0f),45.0f,(float)1280.0f/720.0f, 0.1f,100.0f );
             RenderConfig.Camera.AddCamera(new(0.0f,2f,-4.0f), new(0.0f,0.0f,0.0f),new(0.0f,1.0f,0.0f),45.0f,(float)1280.0f/720.0f, 0.1f,100.0f );
-            RenderConfig.Primitive = RitaEngine.Math.GeometricPrimitive.CreateBox(1.0f,1.0f,2.0f);
+            RenderConfig.Primitive = RitaEngine.Math.GeometricPrimitive.CreateBox(1.0f,1.0f,1.0f);
 
            GraphicDevice.BuildRender( RenderConfig);
         }
@@ -175,8 +173,7 @@ public static class Sample_0002
                 RenderConfig.Camera.Advance( -0.1f);
             }
 
-            if ( Input.IsMouseButtonDown( InputMouseButton.Right ))
-            {
+            if ( Input.IsMouseButtonDown( InputMouseButton.Right )) {
                 RenderConfig.Camera.LookAround( Input.Mouse_Position_X, Input.Mouse_Position_Y , 0.1f );
             }
 
