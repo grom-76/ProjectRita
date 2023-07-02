@@ -11,8 +11,6 @@ public sealed class GraphicRenderConfig :IDisposable
 {
     public Rasterization.RasterizationConfigData Rasterization = new();
     public Camera Camera = new();
-
-    // RenderPass
     public Palette BackColorARGB = Palette.Lavender;
     //Layout 
     public int MAX_FRAMES_IN_FLIGHT = 2;
@@ -22,8 +20,6 @@ public sealed class GraphicRenderConfig :IDisposable
     public string FragmentEntryPoint ="";
     public string VertexEntryPoint="";
 
-    public bool VertexOutsideShader = false;
-    public uint AttributeDescription = 2;
 
     // public Position3f_Color3f_UV2f[] Vertices = new Position3f_Color3f_UV2f[] 
     // {

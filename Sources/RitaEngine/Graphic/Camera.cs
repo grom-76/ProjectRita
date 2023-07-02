@@ -162,11 +162,6 @@ public static class CameraImplement
 
         data.View =  translation * rotation;
     }
-  
-    public static void AddProjection( ref CameraData data , CameraProjectionType type )
-    {
-        data.ProjectionType = type;
-    }
 
     public static void UpdateProjection(ref CameraData data )
     {
@@ -175,7 +170,6 @@ public static class CameraImplement
             _ => Transforms.CreatePerspectiveFieldOfView(Helper.ToRadians( data.FieldOfViewInDegree) ,data.AspectRatio, data.ZNear,data.ZFar)
         };
 
-        
         data.Projection.M22 *= data.FlipY;
     }
     public static void MoveAroundTarget(ref CameraData data, Vector3 target , float leftRight , float upDown)
@@ -215,7 +209,7 @@ public static class CameraImplement
              * Transforms.RotationZ(Helper.ToRadians(data.Rotation.Z)) ;
 
         float distance = Vector3.Distance( ref data.Position , ref data.Target);
-        Vector3 translation = data.Type == CameraType.RotateAround ? Vector3.Normalize(data.View.TranslationVector - data.Target) * distance : data.Position  ;
+        Vector3 translation = data.Type == CameraType.RotateAround ? Vector3.Normalize(data.View.TranslationVector - data.Target) * distance : data.Position - data.Target ;
        
         Matrix  transM = Transforms.Translation(translation );
         transM.M42 =  (transM.M42 * data.FlipY) ;
