@@ -239,9 +239,9 @@ public static class Transforms
         public static void Scaling(float x, float y, float z, out Matrix result)
         {
             result = Matrix.Identity;
-            result.M11 = Math.Helper.Abs(x);
-            result.M22 =  Math.Helper.Abs(y);
-            result.M33 =  Math.Helper.Abs(z);
+            result.M11 =  Helper.Abs(x);
+            result.M22 =  Helper.Abs(y);
+            result.M33 =  Helper.Abs(z);
         }
 
         /// <summary>
@@ -265,7 +265,7 @@ public static class Transforms
         public static void Scaling(float scale, out Matrix result)
         {
             result = Matrix.Identity;
-            result.M11 = result.M22 = result.M33 = Math.Helper.Abs(scale);
+            result.M11 = result.M22 = result.M33 = Helper.Abs(scale);
         }
 
         /// <summary>
@@ -509,6 +509,173 @@ public static class Transforms
             matrix.M32 = d * e1[2] * e0[1];
             matrix.M33 = d * e1[2] * e0[2] + 1.0f;
         }
+
+
+// https://github.com/Philip-Trettner/GlmSharp/blob/master/GlmSharp/GlmSharp/Mat4x4/mat4.cs
+        //  /// <summary>
+        // /// Creates a frustrum projection matrix.
+        // /// </summary>
+        // public static Matrix Frustum(float left, float right, float bottom, float top, float nearVal, float farVal)
+        // {
+        //     var m = Identity;
+        //     m.M00 = (2 * nearVal) / (right - left);
+        //     m.M11 = (2 * nearVal) / (top - bottom);
+        //     m.M20 = (right + left) / (right - left);
+        //     m.M21 = (top + bottom) / (top - bottom);
+        //     m.M22 = -(farVal + nearVal) / (farVal - nearVal);
+        //     m.M23 = -1;
+        //     m.M32 = -(2 * farVal * nearVal) / (farVal - nearVal);
+        //     return m;
+        // }
+        
+        // /// <summary>
+        // /// Creates a matrix for a symmetric perspective-view frustum with far plane at infinite.
+        // /// </summary>
+        // public static Matrix InfinitePerspective(float fovy, float aspect, float zNear)
+        // {
+        //     var range = Helper.Tan((double)fovy / 2.0) * (double)zNear;
+        //     var l = -range * (double)aspect;
+        //     var r = range * (double)aspect;
+        //     var b = -range;
+        //     var t = range;
+        //     var m = Identity;
+        //     m.M00 = (float)( ((2.0)*(double)zNear)/(r - l) );
+        //     m.M11 = (float)( ((2.0)*(double)zNear)/(t - b) );
+        //     m.M22 = (float)( - (1.0) );
+        //     m.M23 = (float)( - (1.0) );
+        //     m.M32 = (float)( - (2.0)*(double)zNear );
+        //     return m;
+        // }
+        
+        // /// <summary>
+        // /// Build a look at view matrix.
+        // /// </summary>
+        // public static Matrix LookAt(Vector3 eye, Vector3 center, Vector3 up)
+        // {
+        //     var f = (center - eye).Normalized;
+        //     var s = Vector3.Cross(f, up).Normalized;
+        //     var u = Vector3.Cross(s, f);
+        //     var m = Identity;
+        //     m.M00 = s.x;
+        //     m.M10 = s.y;
+        //     m.M20 = s.z;
+        //     m.M01 = u.x;
+        //     m.M11 = u.y;
+        //     m.M21 = u.z;
+        //     m.M02 = -f.x;
+        //     m.M12 = -f.y;
+        //     m.M22 = -f.z;
+        //     m.M30 = -Vector3.Dot(s, eye);
+        //     m.M31 = -Vector3.Dot(u, eye);
+        //     m.M32 = Vector3.Dot(f, eye);
+        //     return m;
+        // }
+        
+        // /// <summary>
+        // /// Creates a matrix for an orthographic parallel viewing volume.
+        // /// </summary>
+        // public static Matrix Ortho(float left, float right, float bottom, float top, float zNear, float zFar)
+        // {
+        //     var m = Identity;
+        //     m.M00 = 2/(right - left);
+        //     m.M11 = 2/(top - bottom);
+        //     m.M22 = - 2/(zFar - zNear);
+        //     m.M30 = - (right + left)/(right - left);
+        //     m.M31 = - (top + bottom)/(top - bottom);
+        //     m.M32 = - (zFar + zNear)/(zFar - zNear);
+        //     return m;
+        // }
+        
+        // /// <summary>
+        // /// Creates a matrix for projecting two-dimensional coordinates onto the screen.
+        // /// </summary>
+        // public static Matrix Ortho(float left, float right, float bottom, float top)
+        // {
+        //     var m = Identity;
+        //     m.M00 = 2/(right - left);
+        //     m.M11 = 2/(top - bottom);
+        //     m.M22 = - 1;
+        //     m.M30 = - (right + left)/(right - left);
+        //     m.M31 = - (top + bottom)/(top - bottom);
+        //     return m;
+        // }
+        
+        // /// <summary>
+        // /// Creates a perspective transformation matrix.
+        // /// </summary>
+        // public static Matrix Perspective(float fovy, float aspect, float zNear, float zFar)
+        // {
+        //     var tanHalfFovy = Helper.Tan(fovy / 2.0f);
+        //     var m = Matrix.Zero;
+        //     m.M00 = (float)( 1 / ((double)aspect * tanHalfFovy) );
+        //     m.M11 = (float)( 1 / (tanHalfFovy) );
+        //     m.M22 = (float)( -(zFar + zNear) / (zFar - zNear) );
+        //     m.M23 = (float)( -1 );
+        //     m.M32 = (float)( -(2 * zFar * zNear) / (zFar - zNear) );
+        //     return m;
+        // }
+        
+        // /// <summary>
+        // /// Builds a perspective projection matrix based on a field of view.
+        // /// </summary>
+        // public static Matrix PerspectiveFov(float fov, float width, float height, float zNear, float zFar)
+        // {
+        //     if (width <= 0) throw new ArgumentOutOfRangeException("width");
+        //     if (height <= 0) throw new ArgumentOutOfRangeException("height");
+        //     if (fov <= 0) throw new ArgumentOutOfRangeException("fov");
+        //     var h = Helper.Cos((double)fov / 2.0) / Helper.Sin((double)fov / 2.0);
+        //     var w = h * (double)(height / width);
+        //     var m = Matrix.Zero;
+        //     m.M00 = (float)w;
+        //     m.M11 = (float)h;
+        //     m.M22 = - (zFar + zNear)/(zFar - zNear);
+        //     m.M23 = - 1;
+        //     m.M32 = - (2*zFar*zNear)/(zFar - zNear);
+        //     return m;
+        // }
+        
+        // /// <summary>
+        // /// Map the specified object coordinates (obj.x, obj.y, obj.z) into window coordinates.
+        // /// </summary>
+        // public static Vector3 Project(Vector3 obj, Matrix model, Matrix proj, Vector4 viewport)
+        // {
+        //     var tmp = proj * (model * new Vector4(obj.X,obj.Y,obj.Z, 1.0f));
+        //     tmp /= tmp.w;
+        //     tmp = tmp * 0.5f + 0.5f;
+        //     tmp.x = tmp.x * viewport.z + viewport.x;
+        //     tmp.y = tmp.y * viewport.w + viewport.y;
+        //     return tmp.swizzle.xyz;
+        // }
+        
+        // /// <summary>
+        // /// Map the specified window coordinates (win.x, win.y, win.z) into object coordinates.
+        // /// </summary>
+        // public static Vector3 UnProject(Vector3 win, Matrix model, Matrix proj, Vector4 viewport)
+        // {
+        //     var tmp = new Vector4(win, 1);
+        //     tmp.x = (tmp.x - viewport.x) / viewport.z;
+        //     tmp.y = (tmp.y - viewport.y) / viewport.w;
+        //     tmp = tmp * 2 - 1;
+        
+        //     var unp = proj.Inverse * tmp;
+        //     unp /= unp.w;
+        //     var obj = model.Inverse * unp;
+        //     return (Vector3)obj / obj.w;
+        // }
+        
+        // /// <summary>
+        // /// Map the specified window coordinates (win.x, win.y, win.z) into object coordinates (faster but less precise).
+        // /// </summary>
+        // public static Vector3 UnProjectFaster(Vector3 win, Matrix model, Matrix proj, Vector4 viewport)
+        // {
+        //     var tmp = new Vector4(win, 1);
+        //     tmp.x = (tmp.x - viewport.x) / viewport.z;
+        //     tmp.y = (tmp.y - viewport.y) / viewport.w;
+        //     tmp = tmp * 2 - 1;
+        
+        //     var obj = (proj * model).Inverse * tmp;
+        //     return (Vector3)obj / obj.w;
+        // }
 
         // /// <summary>
         // /// Creates a 3D affine transformation matrix.
@@ -1711,7 +1878,7 @@ public static class Transforms
 // // // #endregion
 
 // // // #region Project unproject pickMatrix
-// // //     internal static Vector4 MultiplyMat4ByVec4(in Matrix4x4 matrix ,in  Vector4 value )
+// // //     internal static Vector4 MultiplyMatrixByVector4(in Matrix4x4 matrix ,in  Vector4 value )
 // // //     {
 // // //         Vector4 result = new Vector4();
 // // //         result.X = value.X * matrix[0][0] + value.Y* matrix[0][1] + value.Z*matrix[0][2] + value.W * matrix[0][3] ;
@@ -1721,7 +1888,7 @@ public static class Transforms
 // // //         return result ;
 // // //     }
 
-// // //     internal static void MultiplyMat4ByVec4(ref Vector4 result,in Matrix4x4 matrix ,in Vector4 value )
+// // //     internal static void MultiplyMatrixByVector4(ref Vector4 result,in Matrix4x4 matrix ,in Vector4 value )
 // // //     {
 // // //         result.X = value.X * matrix[0][0] + value.Y* matrix[0][1] + value.Z*matrix[0][2] + value.W * matrix[0][3] ;
 // // //         result.Y = (value.X * matrix[1][0]) + value.Y* matrix[1][1] + value.Z*matrix[1][2] + value.W * matrix[1][3] ;
@@ -1729,7 +1896,7 @@ public static class Transforms
 // // //         result.W = value.X * matrix[3][0] + value.Y* matrix[3][1] + value.Z*matrix[3][2] + value.W * matrix[3][3] ;
 // // //     }
 
-// // //     internal static Vector4 MultiplyVec4ByMat4(in Vector4 value,in  Matrix4x4 matrix)
+// // //     internal static Vector4 MultiplyVector4ByMatrix(in Vector4 value,in  Matrix4x4 matrix)
 // // //         => new Vector4
 // // //         {
 // // //             X = value.X * matrix[0][0] + value.Y * matrix[1][0] + value.Z * matrix[2][0] + value.W * matrix[3][0],
@@ -1738,7 +1905,7 @@ public static class Transforms
 // // //             W = value.X * matrix[0][3] + value.Y * matrix[1][3] + value.Z * matrix[2][3] + value.W * matrix[3][3]
 // // //         };
     
-// // //     internal static Matrix4x4 MultiplyMat4byMat4(in Matrix4x4 m1 ,in Matrix4x4 m2)
+// // //     internal static Matrix4x4 MultiplyMatrixbyMatrix(in Matrix4x4 m1 ,in Matrix4x4 m2)
 // // //     {
 // // //         Matrix4x4 result = new Matrix4x4(1.0f);
 // // //         result[0] = m1[0] * m2[0][0] + m1[1] * m2[0][1] + m1[2] * m2[0][2] + m1[3] * m2[0][3];
@@ -1748,7 +1915,7 @@ public static class Transforms
 // // //         return result ;
 // // //     }
 
-// // //     internal static void MultiplyMat4byMat4(ref Matrix4x4 result ,in  Matrix4x4 m1 ,in Matrix4x4 m2)
+// // //     internal static void MultiplyMatrixbyMatrix(ref Matrix4x4 result ,in  Matrix4x4 m1 ,in Matrix4x4 m2)
 // // //     {
 // // //         result[0] = m1[0] * m2[0][0] + m1[1] * m2[0][1] + m1[2] * m2[0][2] + m1[3] * m2[0][3];
 // // //         result[1] = m1[0] * m2[1][0] + m1[1] * m2[1][1] + m1[2] * m2[1][2] + m1[3] * m2[1][3];
@@ -1771,8 +1938,8 @@ public static class Transforms
 // // //     internal static Vector4 ProjectNO(in Vector3 objPosition,in Matrix4x4 modelview,in Matrix4x4 projection ,in Vector4 viewport)
 // // //     {
 // // //         Vector4 tmp = new Vector4(objPosition.X, objPosition.Y, objPosition.Z,1.0f);
-// // //         tmp = MultiplyMat4ByVec4( modelview ,tmp); //tmp = model * tmp;
-// // //         tmp = MultiplyMat4ByVec4( projection, tmp);//tmp = projection * tmp; 
+// // //         tmp = MultiplyMatrixByVector4( modelview ,tmp); //tmp = model * tmp;
+// // //         tmp = MultiplyMatrixByVector4( projection, tmp);//tmp = projection * tmp; 
 
 // // //         tmp /= tmp.W;
 // // //         tmp = tmp * 0.5f  + 0.5f;
@@ -1799,7 +1966,7 @@ public static class Transforms
 
 // // //         float det = value[0][0] * d11 - value[0][1] * d12 + value[0][2] * d13 - value[0][3] * d14;
             
-// // //         // if (Math.Abs(det) == 0.0f)
+// // //         // if (Helper.Abs(det) == 0.0f)
 // // //         // {
 // // //         //   result = Matrix.Zero;
 // // //         //   return;
@@ -1859,8 +2026,8 @@ public static class Transforms
 // // // 		tmp = (tmp*2) - 1.0f ;
 // // // // https://stackoverflow.com/questions/7692988/opengl-math-projecting-screen-space-to-world-space-coords
 // // // //https://stackoverflow.com/questions/29997209/opengl-c-mouse-ray-picking-glmunproject
-// // //           Vector4 obj = MultiplyMat4ByVec4(  inverse , tmp);
-// // //         //  var obj = MultiplyVec4ByMat4(tmp , inverse);
+// // //           Vector4 obj = MultiplyMatrixByVector4(  inverse , tmp);
+// // //         //  var obj = MultiplyVector4ByMatrix(tmp , inverse);
 // // //         // obj /= obj.W;
 // // //         // return obj;
 // // //         return  Normalize(obj);
@@ -2041,7 +2208,7 @@ public static class Transforms
 // // 		        throw new ArgumentException("nearPlaneDistance >= farPlaneDistance");
 // // 		    }
 
-// //             var yScale = 1.0f / (float)Math.Tan((double)fieldOfView * 0.5f);
+// //             var yScale = 1.0f / (float)Helper.Tan((double)fieldOfView * 0.5f);
 // //             var xScale = yScale / aspectRatio;
 // //             var negFarRange = float.IsPositiveInfinity(farPlaneDistance) ? -1.0f : farPlaneDistance / (nearPlaneDistance - farPlaneDistance);
 
@@ -2165,10 +2332,10 @@ public static class Transforms
 // // // ///////////////////////////////////////////////////////////////////////////////////////
 // // // //https://www.howtobuildsoftware.com/index.php/how-do/7RO/c-opengl-opengl-c-mouse-ray-picking-glmunproject
 // // // // // Values you might be interested:
-// // // // glm::vec3 cameraPosition; // some camera position, this is supplied by you
-// // // // glm::vec3 rayDirection = CFreeCamera::CreateRay();
-// // // // glm::vec3 rayStartPositon = cameraPosition;
-// // // // glm::vec3 rayEndPosition = rayStartPosition + rayDirection * someDistance;
+// // // // glm::Vector3 cameraPosition; // some camera position, this is supplied by you
+// // // // glm::Vector3 rayDirection = CFreeCamera::CreateRay();
+// // // // glm::Vector3 rayStartPositon = cameraPosition;
+// // // // glm::Vector3 rayEndPosition = rayStartPosition + rayDirection * someDistance;
 
 // // //     internal static Vector4 CreateRay( in Vector3 position , in Matrix4x4 clip , in Vector4 viewport )
 // // //     {
@@ -2271,11 +2438,11 @@ public static class Transforms
 // // //         Vector4 Vec0 = new Vector4(m[1][0], m[0][0], m[0][0], m[0][0]);
 // // //         Vector4 Vec1 = new Vector4(m[1][1], m[0][1], m[0][1], m[0][1]);
 // // //         Vector4 Vec2 = new Vector4(m[1][2], m[0][2], m[0][2], m[0][2]);
-// // //         Vector4 Vec3 = new Vector4(m[1][3], m[0][3], m[0][3], m[0][3]);
+// // //         Vector4 Vector3 = new Vector4(m[1][3], m[0][3], m[0][3], m[0][3]);
 
-// // //         Vector4 Inv0 = new Vector4(Vec1 * Fac0 - Vec2 * Fac1 + Vec3 * Fac2);
-// // //         Vector4 Inv1 = new Vector4(Vec0 * Fac0 - Vec2 * Fac3 + Vec3 * Fac4);
-// // //         Vector4 Inv2 = new Vector4(Vec0 * Fac1 - Vec1 * Fac3 + Vec3 * Fac5);
+// // //         Vector4 Inv0 = new Vector4(Vec1 * Fac0 - Vec2 * Fac1 + Vector3 * Fac2);
+// // //         Vector4 Inv1 = new Vector4(Vec0 * Fac0 - Vec2 * Fac3 + Vector3 * Fac4);
+// // //         Vector4 Inv2 = new Vector4(Vec0 * Fac1 - Vec1 * Fac3 + Vector3 * Fac5);
 // // //         Vector4 Inv3 = new Vector4(Vec0 * Fac2 - Vec1 * Fac4 + Vec2 * Fac5);
 
 // // //         Vector4  SignA = new Vector4(+1, -1, +1, -1);
@@ -3303,7 +3470,7 @@ public static class Transforms
 // // // #endregion
 
 // // // #region Project unproject pickMatrix
-// // //     internal static Vector4 MultiplyMat4ByVec4(in Matrix4x4 matrix ,in  Vector4 value )
+// // //     internal static Vector4 MultiplyMatrixByVector4(in Matrix4x4 matrix ,in  Vector4 value )
 // // //     {
 // // //         Vector4 result = new Vector4();
 // // //         result.X = value.X * matrix[0][0] + value.Y* matrix[0][1] + value.Z*matrix[0][2] + value.W * matrix[0][3] ;
@@ -3313,7 +3480,7 @@ public static class Transforms
 // // //         return result ;
 // // //     }
 
-// // //     internal static void MultiplyMat4ByVec4(ref Vector4 result,in Matrix4x4 matrix ,in Vector4 value )
+// // //     internal static void MultiplyMatrixByVector4(ref Vector4 result,in Matrix4x4 matrix ,in Vector4 value )
 // // //     {
 // // //         result.X = value.X * matrix[0][0] + value.Y* matrix[0][1] + value.Z*matrix[0][2] + value.W * matrix[0][3] ;
 // // //         result.Y = (value.X * matrix[1][0]) + value.Y* matrix[1][1] + value.Z*matrix[1][2] + value.W * matrix[1][3] ;
@@ -3321,7 +3488,7 @@ public static class Transforms
 // // //         result.W = value.X * matrix[3][0] + value.Y* matrix[3][1] + value.Z*matrix[3][2] + value.W * matrix[3][3] ;
 // // //     }
 
-// // //     internal static Vector4 MultiplyVec4ByMat4(in Vector4 value,in  Matrix4x4 matrix)
+// // //     internal static Vector4 MultiplyVector4ByMatrix(in Vector4 value,in  Matrix4x4 matrix)
 // // //         => new Vector4
 // // //         {
 // // //             X = value.X * matrix[0][0] + value.Y * matrix[1][0] + value.Z * matrix[2][0] + value.W * matrix[3][0],
@@ -3330,7 +3497,7 @@ public static class Transforms
 // // //             W = value.X * matrix[0][3] + value.Y * matrix[1][3] + value.Z * matrix[2][3] + value.W * matrix[3][3]
 // // //         };
     
-// // //     internal static Matrix4x4 MultiplyMat4byMat4(in Matrix4x4 m1 ,in Matrix4x4 m2)
+// // //     internal static Matrix4x4 MultiplyMatrixbyMatrix(in Matrix4x4 m1 ,in Matrix4x4 m2)
 // // //     {
 // // //         Matrix4x4 result = new Matrix4x4(1.0f);
 // // //         result[0] = m1[0] * m2[0][0] + m1[1] * m2[0][1] + m1[2] * m2[0][2] + m1[3] * m2[0][3];
@@ -3340,7 +3507,7 @@ public static class Transforms
 // // //         return result ;
 // // //     }
 
-// // //     internal static void MultiplyMat4byMat4(ref Matrix4x4 result ,in  Matrix4x4 m1 ,in Matrix4x4 m2)
+// // //     internal static void MultiplyMatrixbyMatrix(ref Matrix4x4 result ,in  Matrix4x4 m1 ,in Matrix4x4 m2)
 // // //     {
 // // //         result[0] = m1[0] * m2[0][0] + m1[1] * m2[0][1] + m1[2] * m2[0][2] + m1[3] * m2[0][3];
 // // //         result[1] = m1[0] * m2[1][0] + m1[1] * m2[1][1] + m1[2] * m2[1][2] + m1[3] * m2[1][3];
@@ -3363,8 +3530,8 @@ public static class Transforms
 // // //     internal static Vector4 ProjectNO(in Vector3 objPosition,in Matrix4x4 modelview,in Matrix4x4 projection ,in Vector4 viewport)
 // // //     {
 // // //         Vector4 tmp = new Vector4(objPosition.X, objPosition.Y, objPosition.Z,1.0f);
-// // //         tmp = MultiplyMat4ByVec4( modelview ,tmp); //tmp = model * tmp;
-// // //         tmp = MultiplyMat4ByVec4( projection, tmp);//tmp = projection * tmp; 
+// // //         tmp = MultiplyMatrixByVector4( modelview ,tmp); //tmp = model * tmp;
+// // //         tmp = MultiplyMatrixByVector4( projection, tmp);//tmp = projection * tmp; 
 
 // // //         tmp /= tmp.W;
 // // //         tmp = tmp * 0.5f  + 0.5f;
@@ -3391,7 +3558,7 @@ public static class Transforms
 
 // // //         float det = value[0][0] * d11 - value[0][1] * d12 + value[0][2] * d13 - value[0][3] * d14;
             
-// // //         // if (Math.Abs(det) == 0.0f)
+// // //         // if (Helper.Abs(det) == 0.0f)
 // // //         // {
 // // //         //   result = Matrix.Zero;
 // // //         //   return;
@@ -3451,8 +3618,8 @@ public static class Transforms
 // // // 		tmp = (tmp*2) - 1.0f ;
 // // // // https://stackoverflow.com/questions/7692988/opengl-math-projecting-screen-space-to-world-space-coords
 // // // //https://stackoverflow.com/questions/29997209/opengl-c-mouse-ray-picking-glmunproject
-// // //           Vector4 obj = MultiplyMat4ByVec4(  inverse , tmp);
-// // //         //  var obj = MultiplyVec4ByMat4(tmp , inverse);
+// // //           Vector4 obj = MultiplyMatrixByVector4(  inverse , tmp);
+// // //         //  var obj = MultiplyVector4ByMatrix(tmp , inverse);
 // // //         // obj /= obj.W;
 // // //         // return obj;
 // // //         return  Normalize(obj);
@@ -3633,7 +3800,7 @@ public static class Transforms
 // // 		        throw new ArgumentException("nearPlaneDistance >= farPlaneDistance");
 // // 		    }
 
-// //             var yScale = 1.0f / (float)Math.Tan((double)fieldOfView * 0.5f);
+// //             var yScale = 1.0f / (float)Helper.Tan((double)fieldOfView * 0.5f);
 // //             var xScale = yScale / aspectRatio;
 // //             var negFarRange = float.IsPositiveInfinity(farPlaneDistance) ? -1.0f : farPlaneDistance / (nearPlaneDistance - farPlaneDistance);
 
@@ -3757,10 +3924,10 @@ public static class Transforms
 // // // ///////////////////////////////////////////////////////////////////////////////////////
 // // // //https://www.howtobuildsoftware.com/index.php/how-do/7RO/c-opengl-opengl-c-mouse-ray-picking-glmunproject
 // // // // // Values you might be interested:
-// // // // glm::vec3 cameraPosition; // some camera position, this is supplied by you
-// // // // glm::vec3 rayDirection = CFreeCamera::CreateRay();
-// // // // glm::vec3 rayStartPositon = cameraPosition;
-// // // // glm::vec3 rayEndPosition = rayStartPosition + rayDirection * someDistance;
+// // // // glm::Vector3 cameraPosition; // some camera position, this is supplied by you
+// // // // glm::Vector3 rayDirection = CFreeCamera::CreateRay();
+// // // // glm::Vector3 rayStartPositon = cameraPosition;
+// // // // glm::Vector3 rayEndPosition = rayStartPosition + rayDirection * someDistance;
 
 // // //     internal static Vector4 CreateRay( in Vector3 position , in Matrix4x4 clip , in Vector4 viewport )
 // // //     {

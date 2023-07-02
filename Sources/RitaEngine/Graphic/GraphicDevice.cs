@@ -61,7 +61,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
         GraphicDeviceImplement.CreateDescriptorSets(ref _functions,ref _data);
         // need to complete descriptor before layout
         GraphicDeviceImplement.CreatePipelineLayout( ref _functions , ref _data);
-        GraphicDeviceImplement.CreatePipeline(ref _functions, ref _data );
+        GraphicDeviceImplement.CreatePipeline(ref _functions, ref _data , in config);
         GraphicDeviceImplement.CreateFramebuffers(ref _functions,ref _data);
         GraphicDeviceImplement.CreateSyncObjects(ref _functions , ref _data);
     }
@@ -2020,7 +2020,7 @@ public static class GraphicDeviceImplement
 
     #endregion
 
-    public static unsafe void CreatePipeline(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data )
+    public static unsafe void CreatePipeline(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data , in GraphicRenderConfig renderConfig)
     {
         #region SHADERS
 
@@ -2153,22 +2153,8 @@ public static class GraphicDeviceImplement
         viewportState.pNext = null;
         #endregion
 
-        #region  RASTERIZATION
-        VkPipelineRasterizationStateCreateInfo rasterizer =new();
-        rasterizer.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-        rasterizer.rasterizerDiscardEnable = VK.VK_FALSE;
-        rasterizer.polygonMode =VkPolygonMode. VK_POLYGON_MODE_FILL;
-        rasterizer.lineWidth = 1.0f;
-        rasterizer.cullMode = (uint)VkCullModeFlagBits.VK_CULL_MODE_BACK_BIT;
-        rasterizer.frontFace =VkFrontFace.VK_FRONT_FACE_COUNTER_CLOCKWISE;
-        rasterizer.flags =0;
-        rasterizer.pNext = null;
-        rasterizer.depthBiasEnable = VK.VK_FALSE;
-        rasterizer.depthClampEnable = VK.VK_FALSE;
-        rasterizer.depthBiasClamp =0.0f;
-        rasterizer.depthBiasConstantFactor =1.0f;
-        rasterizer.depthBiasSlopeFactor =1.0f;
-        #endregion
+
+        Rasterization.CreateRasterization( ref renderConfig.Rasterization , out VkPipelineRasterizationStateCreateInfo rasterizer) ;
 
         #region MULTISAMPLING
         VkPipelineMultisampleStateCreateInfo multisampling=new();
