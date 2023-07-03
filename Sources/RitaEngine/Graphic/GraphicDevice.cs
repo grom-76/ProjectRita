@@ -2153,26 +2153,17 @@ public static class GraphicDeviceImplement
         viewportState.pNext = null;
         #endregion
 
+        GraphicPipeline.Rasterization.CreateRasterization( ref renderConfig.Pipeline_Rasterization , out VkPipelineRasterizationStateCreateInfo rasterizer) ;
 
-        GraphicPipeline. Rasterization.CreateRasterization( ref renderConfig.Rasterization , out VkPipelineRasterizationStateCreateInfo rasterizer) ;
+        GraphicPipeline.Multisampling.CreateMultisampling(ref renderConfig.Pipeline_Multisampling, out VkPipelineMultisampleStateCreateInfo multisampling );
 
-        GraphicPipeline.Multisampling.CreateMultisampling(ref renderConfig.Multisampling, out VkPipelineMultisampleStateCreateInfo multisampling );
-
+        GraphicPipeline.DepthStencil.CreateDepthStencil( ref renderConfig.Pipeline_DepthStencil , out VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo);
         
-        #region DEPTh & STENCIL
+        #region Tesslation
            //not used 
         VkPipelineTessellationStateCreateInfo tessellationStateCreateInfo = new();
         tessellationStateCreateInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
 
-        VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo = new();
-        depthStencilStateCreateInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-        depthStencilStateCreateInfo.depthTestEnable =  VK.VK_TRUE;
-        depthStencilStateCreateInfo.depthWriteEnable = VK.VK_TRUE;
-        depthStencilStateCreateInfo.depthCompareOp = VkCompareOp.VK_COMPARE_OP_LESS;
-        depthStencilStateCreateInfo.depthBoundsTestEnable = VK.VK_FALSE;
-        depthStencilStateCreateInfo.stencilTestEnable = VK.VK_FALSE;
-        depthStencilStateCreateInfo.maxDepthBounds = 1.0f;
-        depthStencilStateCreateInfo.minDepthBounds = 0.0f;
         #endregion
         
         #region DYNAMIC STATES

@@ -7,7 +7,7 @@ using RitaEngine.API.Vulkan;
 [StructLayout(LayoutKind.Sequential, Pack = RitaEngine.Base.BaseHelper.FORCE_ALIGNEMENT), SkipLocalsInit]    
 public static class Multisampling
 {
-
+    [StructLayout(LayoutKind.Sequential, Pack = RitaEngine.Base.BaseHelper.FORCE_ALIGNEMENT), SkipLocalsInit]
     public struct MultisamplingConfigData
     {
         public SampleCount  RasterizationSamples = SampleCount.VK_SAMPLE_COUNT_1_BIT;
@@ -17,6 +17,15 @@ public static class Multisampling
         public bool                   AlphaToOneEnable = false ;
 
         public MultisamplingConfigData()  { }
+        
+        #region OVERRIDE    
+        public override string ToString() => string.Format($"Multisampling" );
+        public override int GetHashCode() => HashCode.Combine(MinSampleShading,AlphaToCoverageEnable ,AlphaToOneEnable, SampleShadingEnable  );
+        public override bool Equals(object? obj) => obj is MultisamplingConfigData data && this.Equals(data) ;
+        public bool Equals(MultisamplingConfigData other)=>  false;
+        public static bool operator ==(MultisamplingConfigData left, MultisamplingConfigData right) => left.Equals(right);
+        public static bool operator !=(MultisamplingConfigData left, MultisamplingConfigData  right) => !left.Equals(right);
+        #endregion
     }
 
 

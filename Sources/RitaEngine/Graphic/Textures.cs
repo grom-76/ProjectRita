@@ -1,8 +1,10 @@
 namespace RitaEngine.Graphic;
 
-
+using System.IO;
 using RitaEngine.API.Vulkan;
 using RitaEngine.Base;
+using RitaEngine.Base.Debug;
+using RitaEngine.Resources.Images;
 
 public struct Textures
 {
@@ -62,6 +64,261 @@ public static class TexturesImplement
       
     }
 #endregion
+
+ #region Texture
+
+    public unsafe static void CreateTextureImage(ref GraphicDeviceFunctions func,ref GraphicDeviceData data )
+    {
+        VkFormat format = VkFormat.VK_FORMAT_UNDEFINED;
+        uint texWidth=512, texHeight=512;
+        uint texChannels=4;
+        //TODO CreateTextureImage  File.ReadAllBytes( data.Info.TextureName) do this outside 
+        var file = File.ReadAllBytes( data.Info.TextureName);
+        // StbImage.stbi__vertically_flip_on_load_set = 1;
+        ImageResult result = ImageResult.FromMemory(file , ColorComponents.RedGreenBlueAlpha);
+        texWidth = (uint)result.Width;
+        texHeight = (uint)result.Height;
+        texChannels = (uint)result.Comp;
+
+        ulong imageSize = (ulong)(texWidth * texHeight * texChannels);
+
+        VkBuffer stagingBuffer = VkBuffer.Null;
+        VkDeviceMemory stagingBufferMemory = VkDeviceMemory.Null;
+
+        // CreateStagingBuffer(ref func , ref data , imageSize, 
+        //     VkBufferUsageFlagBits.VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
+        //     VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
+        //     VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+        //     ref stagingBuffer, 
+        //     ref stagingBufferMemory);
+
+        byte* imgPtr = null;
+        func.vkMapMemory(data.Handles.Device, stagingBufferMemory, 0, imageSize, 0, (void**)&imgPtr).Check("Impossible to map memory for texture");
+       
+            // void* ptr = Unsafe.AsPointer( ref  result.Data[0]);
+        fixed( byte* tex2D = &result.Data[0])
+        {
+            Unsafe.CopyBlock(imgPtr  ,tex2D ,(uint)imageSize);
+        }
+
+          
+        func.vkUnmapMemory(data.Handles.Device, stagingBufferMemory);
+
+        if (result.Comp == ColorComponents.RedGreenBlue  )
+            format = VkFormat.VK_FORMAT_R8G8B8_SRGB;
+        else if (result.Comp == ColorComponents.RedGreenBlueAlpha )    
+            format = VkFormat.VK_FORMAT_R8G8B8A8_SRGB;
+
+        CreateImage(ref func , ref data, ref data.Info.TextureImage, ref data.Info.TextureImageMemory, texWidth, texHeight, 
+            format,//VkFormat.VK_FORMAT_R8G8B8A8_SRGB, 
+            VkImageTiling.VK_IMAGE_TILING_OPTIMAL, 
+            VkImageUsageFlagBits.VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits.VK_IMAGE_USAGE_SAMPLED_BIT, 
+            VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT   );
+
+        TransitionImageLayout(ref func , ref data, format, VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED, VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+            CopyBufferToImage(ref  func,ref  data,stagingBuffer, (texWidth), (texHeight));
+        TransitionImageLayout(ref func , ref data,format, VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VkImageLayout.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+        func.vkDestroyBuffer(data.Handles.Device, stagingBuffer, null);
+        func.vkFreeMemory(data.Handles.Device, stagingBufferMemory, null);
+        
+        file = null!;
+        result.Data = null!;
+        
+        Log.Info($"Create Texture Image {data.Info.TextureImage} ");
+        Log.Info($"Create Texture Image Memory {data.Info.TextureImageMemory} ");
+    }
+
+    public unsafe static void CreateTextureImageView(ref GraphicDeviceFunctions  func, ref GraphicDeviceData data)
+    {
+        VkImageViewCreateInfo viewInfo = new();
+        viewInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        viewInfo.image = data.Info.TextureImage;
+        viewInfo.viewType = VkImageViewType. VK_IMAGE_VIEW_TYPE_2D;
+        viewInfo.format = VkFormat. VK_FORMAT_R8G8B8A8_SRGB;
+        viewInfo.subresourceRange.aspectMask =  (uint)VkImageAspectFlagBits. VK_IMAGE_ASPECT_COLOR_BIT;
+        viewInfo.subresourceRange.baseMipLevel = 0;
+        viewInfo.subresourceRange.levelCount = 1;
+        viewInfo.subresourceRange.baseArrayLayer = 0;
+        viewInfo.subresourceRange.layerCount = 1;
+
+        fixed (VkImageView* imageView = &data.Info.TextureImageView )
+        {
+            func.vkCreateImageView(data.Handles.Device, &viewInfo, null, imageView).Check("failed to create image view!");
+        }
+        Log.Info($"Create Texture Image View {data.Info.TextureImageView}");
+    }
+
+    public unsafe static void DisposeTextureImage(in GraphicDeviceFunctions  func, ref GraphicDeviceData data)
+    {
+        if( !data.Info.TextureImage.IsNull)
+        {
+            Log.Info($"Create Texture Image {data.Info.TextureImage} ");
+            func.vkDestroyImage(data.Handles.Device, data.Info.TextureImage, null);
+        }
+        if( !data.Info.TextureImageMemory.IsNull)
+        {
+            Log.Info($"Create Texture Image Memory {data.Info.TextureImageMemory} ");
+            func.vkFreeMemory(data.Handles.Device, data.Info.TextureImageMemory, null);
+        }
+        if( !data.Info.TextureImageView.IsNull)
+        {
+            Log.Info($"Destroy Texture Image View {data.Info.TextureImageView}");
+            func.vkDestroyImageView(data.Handles.Device, data.Info.TextureImageView, null);
+        }
+    }
+    
+    private unsafe static void CreateImage(ref GraphicDeviceFunctions func,ref GraphicDeviceData data,
+        ref VkImage image,ref VkDeviceMemory imageMemory,  uint width, uint height, VkFormat format, VkImageTiling tiling,
+        VkImageUsageFlagBits usage, VkMemoryPropertyFlagBits properties) 
+    {
+        VkImageCreateInfo imageInfo = new();
+        imageInfo.sType =VkStructureType.VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        imageInfo.imageType =VkImageType. VK_IMAGE_TYPE_2D;
+        
+        imageInfo.extent.width = width;
+        imageInfo.extent.height = height;
+        imageInfo.extent.depth = 1;
+        imageInfo.mipLevels = 1;
+        imageInfo.arrayLayers = 1;
+        imageInfo.format = format;
+        imageInfo.tiling = tiling;
+        imageInfo.initialLayout =VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED;
+        imageInfo.usage = (uint)usage;
+        imageInfo.samples =VkSampleCountFlagBits.VK_SAMPLE_COUNT_1_BIT;
+        imageInfo.sharingMode = VkSharingMode. VK_SHARING_MODE_EXCLUSIVE;
+        imageInfo.pNext = null;
+
+        fixed( VkImage* img = &image)
+        {
+            func.vkCreateImage(data.Handles.Device, &imageInfo, null,img).Check("failed to create image!");
+        }
+        
+        VkMemoryRequirements memRequirements;
+        func.vkGetImageMemoryRequirements(data.Handles.Device, image, &memRequirements);
+
+        VkMemoryAllocateInfo allocInfo = new();
+        allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        // allocInfo.memoryTypeIndex = FindMemoryType(ref func , ref data, memRequirements.memoryTypeBits, properties);
+
+        fixed (VkDeviceMemory* imgMem = &imageMemory  )
+        {
+            func.vkAllocateMemory(data.Handles.Device, &allocInfo, null, imgMem).Check("failed to allocate image memory!");
+        }
+
+        func.vkBindImageMemory( data.Handles.Device, image,imageMemory, 0).Check("Bind Image Memory");
+    }
+
+    private unsafe static void TransitionImageLayout(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) 
+    {
+        VkCommandBuffer commandBuffer = BeginSingleTimeCommands(ref func , ref data);
+
+        VkImageMemoryBarrier barrier = new();
+        barrier.sType =VkStructureType. VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barrier.oldLayout = oldLayout;
+        barrier.newLayout = newLayout;
+        barrier.srcQueueFamilyIndex = VK.VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK.VK_QUEUE_FAMILY_IGNORED;
+        barrier.image = data.Info.TextureImage;
+        barrier.subresourceRange.aspectMask =(uint) VkImageAspectFlagBits.VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier.subresourceRange.baseMipLevel = 0;
+        barrier.subresourceRange.levelCount = 1;
+        barrier.subresourceRange.baseArrayLayer = 0;
+        barrier.subresourceRange.layerCount = 1;
+
+        VkPipelineStageFlagBits sourceStage=VkPipelineStageFlagBits. VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        VkPipelineStageFlagBits destinationStage = VkPipelineStageFlagBits .VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+        if (oldLayout == VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+        {
+            barrier.srcAccessMask = 0;
+            barrier.dstAccessMask = (uint)VkAccessFlagBits.VK_ACCESS_TRANSFER_WRITE_BIT;
+
+            sourceStage = VkPipelineStageFlagBits. VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            destinationStage = VkPipelineStageFlagBits .VK_PIPELINE_STAGE_TRANSFER_BIT;
+        } 
+        else if (oldLayout == VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout ==VkImageLayout.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) 
+        {
+            barrier.srcAccessMask = (uint)VkAccessFlagBits.VK_ACCESS_TRANSFER_WRITE_BIT;
+            barrier.dstAccessMask = (uint)VkAccessFlagBits.VK_ACCESS_SHADER_READ_BIT;
+
+            sourceStage = VkPipelineStageFlagBits .VK_PIPELINE_STAGE_TRANSFER_BIT;
+            destinationStage = VkPipelineStageFlagBits .VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        } else 
+        {
+            Guard.ThrowWhenConditionIsTrue(true,"unsupported layout transition!");
+        }
+
+        func.vkCmdPipelineBarrier( commandBuffer,
+            (uint)sourceStage, (uint)destinationStage,
+            0, 0, null, 0, null, 1, &barrier   );
+
+        EndSingleTimeCommands(ref func , ref data ,commandBuffer);
+    }
+
+    private unsafe static void CopyBufferToImage(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data,VkBuffer buffer,  uint width, uint height) 
+    {
+        VkCommandBuffer commandBuffer = BeginSingleTimeCommands(ref func , ref data);
+
+        VkBufferImageCopy region = new();
+        region.bufferOffset = 0;
+        region.bufferRowLength = 0;
+        region.bufferImageHeight = 0;
+        region.imageSubresource.aspectMask = (uint)VkImageAspectFlagBits.VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.mipLevel = 0;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.layerCount = 1;
+        
+        VkOffset3D offset3D = new(); offset3D.x=0;offset3D.y=0;offset3D.z =0;
+        region.imageOffset = offset3D;
+        VkExtent3D extent3D = new(); extent3D.width = width; extent3D.height = height; extent3D.depth =1;
+        region.imageExtent = extent3D;
+
+        func.vkCmdCopyBufferToImage(commandBuffer, buffer, data.Info.TextureImage, VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+        EndSingleTimeCommands(ref func , ref data, commandBuffer);
+    }
+
+    private unsafe static VkCommandBuffer BeginSingleTimeCommands(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data)
+    {
+        
+        VkCommandBufferAllocateInfo allocInfo = new();
+        allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.level = VkCommandBufferLevel.VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandPool = data.Handles.CommandPool;
+        allocInfo.commandBufferCount = 1;
+
+        VkCommandBuffer commandBuffer = VkCommandBuffer.Null;
+
+        func.vkAllocateCommandBuffers(data.Handles.Device, &allocInfo, &commandBuffer);
+
+        VkCommandBufferBeginInfo beginInfo = new();
+        beginInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags =(uint) VkCommandBufferUsageFlagBits.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+        func.vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+        return commandBuffer;
+    }
+
+    private unsafe static void EndSingleTimeCommands(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data, VkCommandBuffer commandBuffer) 
+    {
+        func.vkEndCommandBuffer(commandBuffer);
+       
+        VkSubmitInfo submitInfo = new();
+        submitInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers =&commandBuffer;
+        
+        func.vkQueueSubmit(data.Handles.GraphicQueue, 1, &submitInfo, VkFence.Null);
+        func.vkQueueWaitIdle(data.Handles.GraphicQueue);
+
+        func.vkFreeCommandBuffers(data.Handles.Device, data.Handles.CommandPool, 1, &commandBuffer);
+    }
+
+    #endregion
+
 }
 
 

@@ -9,9 +9,10 @@ using RitaEngine.API.Vulkan;
 /// </summary>
 public sealed class GraphicRenderConfig :IDisposable
 {
-    public GraphicPipeline.Rasterization.RasterizationConfigData Rasterization = new();
-    public GraphicPipeline.Multisampling.MultisamplingConfigData Multisampling = new();
-    
+    public GraphicPipeline.Rasterization.RasterizationConfigData Pipeline_Rasterization = new();
+    public GraphicPipeline.Multisampling.MultisamplingConfigData Pipeline_Multisampling = new();
+    public GraphicPipeline.DepthStencil.DepthStencilConfigData Pipeline_DepthStencil = new();
+
     public GeometricPrimitive Primitive = new();
     public Camera Camera = new();
     public Palette BackColorARGB = Palette.Lavender;
@@ -24,9 +25,6 @@ public sealed class GraphicRenderConfig :IDisposable
     public string VertexEntryPoint="";
 
 
-
-   
-    public int VerticeSize =0;// = Vertices.Length * Vertices.Size ;
     public string TextureName ="wood.png";
 
     

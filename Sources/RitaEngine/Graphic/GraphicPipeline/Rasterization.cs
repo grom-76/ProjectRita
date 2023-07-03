@@ -39,16 +39,17 @@ public static class Rasterization
         {
         }
 
-    #region OVERRIDE    
-    public override string ToString() => string.Format($"RasterizationConfigData" );
-    public override int GetHashCode() => HashCode.Combine(LineWidth,DepthBiasSlopeFactor ,DepthBiasClamp, DepthBiasConstantFactor  );
-    public override bool Equals(object? obj) => obj is RasterizationConfigData data && this.Equals(data) ;
-    public bool Equals(RasterizationConfigData other)=>  false;
-    public static bool operator ==(RasterizationConfigData left, RasterizationConfigData right) => left.Equals(right);
-    public static bool operator !=(RasterizationConfigData left, RasterizationConfigData  right) => !left.Equals(right);
-    #endregion
+        #region OVERRIDE    
+        public override string ToString() => string.Format($"RasterizationConfigData" );
+        public override int GetHashCode() => HashCode.Combine(LineWidth,DepthBiasSlopeFactor ,DepthBiasClamp, DepthBiasConstantFactor  );
+        public override bool Equals(object? obj) => obj is RasterizationConfigData data && this.Equals(data) ;
+        public bool Equals(RasterizationConfigData other)=>  false;
+        public static bool operator ==(RasterizationConfigData left, RasterizationConfigData right) => left.Equals(right);
+        public static bool operator !=(RasterizationConfigData left, RasterizationConfigData  right) => !left.Equals(right);
+        #endregion
 
     }
+
 
     /// <summary>  Indicates which face will be culled. </summary>
     public enum FaceCullMode : uint
