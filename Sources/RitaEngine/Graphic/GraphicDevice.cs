@@ -2154,20 +2154,10 @@ public static class GraphicDeviceImplement
         #endregion
 
 
-        Rasterization.CreateRasterization( ref renderConfig.Rasterization , out VkPipelineRasterizationStateCreateInfo rasterizer) ;
+        GraphicPipeline. Rasterization.CreateRasterization( ref renderConfig.Rasterization , out VkPipelineRasterizationStateCreateInfo rasterizer) ;
 
-        #region MULTISAMPLING
-        VkPipelineMultisampleStateCreateInfo multisampling=new();
-        multisampling.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-        multisampling.sampleShadingEnable = VK.VK_FALSE;
-        multisampling.rasterizationSamples =VkSampleCountFlagBits. VK_SAMPLE_COUNT_1_BIT;
-        multisampling.alphaToCoverageEnable =0;
-        multisampling.alphaToOneEnable =0;
-        multisampling.flags =0;
-        multisampling.minSampleShading =0.0f;
-        multisampling.pNext = null;
-        multisampling.pSampleMask =null;
-        #endregion
+        GraphicPipeline.Multisampling.CreateMultisampling(ref renderConfig.Multisampling, out VkPipelineMultisampleStateCreateInfo multisampling );
+
         
         #region DEPTh & STENCIL
            //not used 
