@@ -467,6 +467,7 @@ public static class GraphicDeviceImplement
     {
         public uint? graphicsFamily = null!;
         public uint? presentFamily = null!;
+        public uint? ComputeFamily = null!;
 
         public QueueFamilyIndices() { }
 
@@ -1060,6 +1061,22 @@ public static class GraphicDeviceImplement
         Log.Info($"Create Command Pool {data.Handles.CommandPool}  with {VkCommandPoolCreateFlagBits.VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT}");
     }
 
+     public static unsafe void CreateCommandPoolForCompute(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data  ) 
+    {
+        
+        VkCommandPoolCreateInfo poolInfo = new();
+        poolInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        poolInfo.flags = (uint)VkCommandPoolCreateFlagBits.VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        poolInfo.queueFamilyIndex =data.Info.VkGraphicFamilyIndice;
+
+        fixed( VkCommandPool* pool =  &data.Handles.CommandPoolForCompute)
+        {
+            func.vkCreateCommandPool(data.Handles.Device, &poolInfo, null, pool ).Check("failed to create command pool!");
+        }
+
+        Log.Info($"Create Command Pool {data.Handles.CommandPoolForCompute}  with {VkCommandPoolCreateFlagBits.VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT}");
+    }
+
     public static unsafe void CreateCommandBuffer(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data ) 
     {
         data.Handles.CommandBuffers = new VkCommandBuffer[data.Info.MAX_FRAMES_IN_FLIGHT]; 
@@ -1084,6 +1101,15 @@ public static class GraphicDeviceImplement
         {
             Log.Info($"Destroy Command Pool {data.Handles.CommandPool}");
             func.vkDestroyCommandPool(data.Handles.Device, data.Handles.CommandPool , null);
+        }
+    }
+
+        public unsafe static void DisposeCommandPoolForCompute(in GraphicDeviceFunctions  func,ref GraphicDeviceData data )
+    {
+        if (!data.Handles.Device.IsNull && !data.Handles.CommandPoolForCompute.IsNull)
+        {
+            Log.Info($"Destroy Command Pool {data.Handles.CommandPoolForCompute}");
+            func.vkDestroyCommandPool(data.Handles.Device, data.Handles.CommandPoolForCompute , null);
         }
     }
    

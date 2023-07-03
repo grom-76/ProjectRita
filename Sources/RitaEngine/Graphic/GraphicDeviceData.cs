@@ -40,7 +40,10 @@ public struct GraphicDeviceHandles: IEquatable<GraphicDeviceHandles>
     public VkDevice Device = VkDevice.Null; 
     public VkQueue PresentQueue = VkQueue.Null;// used for draw 
     public VkQueue GraphicQueue = VkQueue.Null;// used for draw
+     public VkQueue ComputeQueue = VkQueue.Null;
     public VkCommandPool CommandPool = VkCommandPool.Null;// not used for draw but importante??? only need to create command buffer 
+    public VkCommandPool CommandPoolForCompute = VkCommandPool.Null;// not used for draw but importante??? only need to create command buffer 
+
     public VkDescriptorSetLayout DescriptorSetLayout = VkDescriptorSetLayout.Null;
     public VkDescriptorPool DescriptorPool = VkDescriptorPool.Null;
     public VkPipelineLayout PipelineLayout = VkPipelineLayout.Null;

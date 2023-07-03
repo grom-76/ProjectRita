@@ -37,10 +37,12 @@ public static class Sample_0002
             Config.Audio_Category = AudioCategory.GameMedia;
             Config.Audio_Channels = AudioChannels.stereo;
             Config.GraphicDevice_EnableDebugMode = true;
-            // RitaEngine.Resources.Shaders. CreateSPIRV(path, "shader_depth.vert","shader_depth_vert.spv", RitaEngine.Resources.Shaders.ShaderType.VertexShader , "main");
-            // RitaEngine.Resources.Shaders. CreateSPIRV(path, "shader_depth.frag","shader_depth_frag.spv", RitaEngine.Resources.Shaders.ShaderType.FragmentShader , "main");
+            
             Window.Events.OnKillFocus = onkillFocus;
             Window.Events.OnSetFocus = onSetFocus;
+
+            // RitaEngine.Resources.Shaders. CreateSPIRV(path, "shader_depth.vert","shader_depth_vert.spv", RitaEngine.Resources.Shaders.ShaderType.VertexShader , "main");
+            // RitaEngine.Resources.Shaders. CreateSPIRV(path, "shader_depth.frag","shader_depth_frag.spv", RitaEngine.Resources.Shaders.ShaderType.FragmentShader , "main");
         }
 
         private void onSetFocus(nuint wParam, nint lParam)
@@ -61,6 +63,8 @@ public static class Sample_0002
         protected override void Load()
         {
             snd.Init( AudioDevice ,   "demo.wav" );
+
+            RenderConfig.Pipeline_Rasterization.FaceCullMode = RitaEngine.Graphic.GraphicPipeline.Rasterization.FaceCullMode.Front;
 
             RenderConfig.BackColorARGB = RitaEngine.Math.Color.Palette.Lavender;
             RenderConfig.FragmentEntryPoint ="main";

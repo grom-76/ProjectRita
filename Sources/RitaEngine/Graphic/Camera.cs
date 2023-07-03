@@ -210,9 +210,10 @@ public static class CameraImplement
 
         float distance = Vector3.Distance( ref data.Position , ref data.Target);
         Vector3 translation = data.Type == CameraType.RotateAround ? Vector3.Normalize(data.View.TranslationVector - data.Target) * distance : data.Position - data.Target ;
-       
+        
         Matrix  transM = Transforms.Translation(translation );
-        transM.M42 =  (transM.M42 * data.FlipY) ;
+        transM.M42 =   (transM.M42 * data.FlipY) ;
+        
 
         data.View  =  data.Type == CameraType.LookAt ? transM * rotM  :   rotM * transM   ;
         data.Type = CameraType.None;
