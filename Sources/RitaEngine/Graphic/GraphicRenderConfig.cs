@@ -12,6 +12,7 @@ public sealed class GraphicRenderConfig :IDisposable
     public GraphicPipeline.Rasterization.RasterizationConfigData Pipeline_Rasterization = new();
     public GraphicPipeline.Multisampling.MultisamplingConfigData Pipeline_Multisampling = new();
     public GraphicPipeline.DepthStencil.DepthStencilConfigData Pipeline_DepthStencil = new();
+    public GraphicPipeline.DynamicStates.DynamicStatesConfigData Pipeline_DynamicStates = new();
 
     public GeometricPrimitive Primitive = new();
     public Camera Camera = new();
@@ -23,10 +24,9 @@ public sealed class GraphicRenderConfig :IDisposable
     public string FragmentShaderFileNameSPV ="";
     public string FragmentEntryPoint ="";
     public string VertexEntryPoint="";
-
-
     public string TextureName ="wood.png";
 
+    public PushConstantsMesh Mesh = new();
     
 
     public GraphicRenderConfig() {}

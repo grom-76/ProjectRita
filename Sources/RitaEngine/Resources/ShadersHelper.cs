@@ -7,10 +7,10 @@ using RitaEngine.Resources.Shader.SpirvCross;
 
 public static  class Shaders
 {
-    public static void CreateSPIRV(string path, string input, string output, ShaderType shadertype, string entrypoint)
+    public static void CreateSPIRV( string input, string output, ShaderType shadertype, string entrypoint)
     {
        
-        string shaderSourceFile = Path.Combine(path, input );
+        string shaderSourceFile = Path.Combine(RitaEngine.Platform.PlatformHelper.AssetsPath, input );
         if( !File.Exists(shaderSourceFile))
         {
             throw new Exception("Error file not found : " + shaderSourceFile);
@@ -18,7 +18,7 @@ public static  class Shaders
 
         string shaderSource = File.ReadAllText(shaderSourceFile);
 
-        using RitaEngine.Resources.Shader.ShaderCompiler.Compiler compiler = new (path);
+        using RitaEngine.Resources.Shader.ShaderCompiler.Compiler compiler = new (RitaEngine.Platform.PlatformHelper.AssetsPath);
 
         using var result = compiler.Compile(shaderSource, shaderSourceFile, (ShaderKind)shadertype, entrypoint);
                 
@@ -29,7 +29,7 @@ public static  class Shaders
 
         var shaderCode = result.GetBytecode().ToArray();
 
-        File.WriteAllBytes(Path.Combine(path,output), shaderCode) ;
+        File.WriteAllBytes(Path.Combine(RitaEngine.Platform.PlatformHelper.AssetsPath,output), shaderCode) ;
        
     }
 

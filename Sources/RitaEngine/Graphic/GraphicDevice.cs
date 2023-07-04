@@ -98,6 +98,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
     public void UpdateRender(in GraphicRenderConfig config)
     {    
         _data.Info.UniformBufferArray = config.Camera.ToArray;
+        _data.Info.PushConstants = config.Mesh;
     }
 
     public void DrawRender(in GraphicRenderConfig config)
@@ -180,6 +181,7 @@ public static class GraphicDeviceImplement
 
         data.Info.RenderArea.extent = data.Info.VkSurfaceArea;
         data.Info.RenderArea.offset = data.Info.RenderAreaOffset;
+        data.Info.PushConstants = pipeline.Mesh ;
 
     }   
 
@@ -2027,15 +2029,28 @@ public static class GraphicDeviceImplement
     {
         VkPipelineLayoutCreateInfo pipelineLayoutInfo=new();
         pipelineLayoutInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutInfo.pPushConstantRanges = null; 
         pipelineLayoutInfo.flags =0;
         pipelineLayoutInfo.pNext =null; 
+
         pipelineLayoutInfo.setLayoutCount = 1;           
         fixed (VkDescriptorSetLayout* layout = &data.Handles.DescriptorSetLayout )
         {
             pipelineLayoutInfo.pSetLayouts = layout;
         }         
-        pipelineLayoutInfo.pushConstantRangeCount = 0;    // Optionnel
+
+
+        VkPushConstantRange push_constant;
+	    //this push constant range starts at the beginning
+	    push_constant.offset = 0;
+	    //this push constant range takes up the size of a MeshPushConstants struct
+	    push_constant.size = (uint)sizeof(PushConstantsMesh); // 16 * sizeof(float) + 4 * sizeof(float)
+	    //this push constant range is accessible only in the vertex shader
+	    push_constant.stageFlags = (uint)VkShaderStageFlagBits.VK_SHADER_STAGE_VERTEX_BIT;
+
+
+        pipelineLayoutInfo.pushConstantRangeCount = 1;    // Optionnel
+        pipelineLayoutInfo.pPushConstantRanges = &push_constant; 
+
 
         fixed( VkPipelineLayout* layout = &data.Handles.PipelineLayout )
         {
@@ -2184,31 +2199,17 @@ public static class GraphicDeviceImplement
         GraphicPipeline.Multisampling.CreateMultisampling(ref renderConfig.Pipeline_Multisampling, out VkPipelineMultisampleStateCreateInfo multisampling );
 
         GraphicPipeline.DepthStencil.CreateDepthStencil( ref renderConfig.Pipeline_DepthStencil , out VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo);
+
+        GraphicPipeline.DynamicStates.CreateDynamicStates( ref renderConfig.Pipeline_DynamicStates , out  VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo );
+   
+        
+        
         
         #region Tesslation
            //not used 
         VkPipelineTessellationStateCreateInfo tessellationStateCreateInfo = new();
         tessellationStateCreateInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
 
-        #endregion
-        
-        #region DYNAMIC STATES
-
-        VkDynamicState* dynamicStates = stackalloc VkDynamicState[3] 
-        {
-            VkDynamicState.VK_DYNAMIC_STATE_VIEWPORT,
-            VkDynamicState.VK_DYNAMIC_STATE_SCISSOR,
-            VkDynamicState.VK_DYNAMIC_STATE_LINE_WIDTH,
-            // VkDynamicState.VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY,
-            //     VkDynamicState.VK_DYNAMIC_STATE_CULL_MODE,
-            //     VkDynamicState.VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT,
-        };
-        
-        VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo =  new();
-        dynamicStateCreateInfo.sType = VkStructureType. VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-        dynamicStateCreateInfo.dynamicStateCount = 3;
-        dynamicStateCreateInfo.pDynamicStates = dynamicStates;
-        
         #endregion
 
         VkGraphicsPipelineCreateInfo pipelineInfo =new();
@@ -2252,7 +2253,7 @@ public static class GraphicDeviceImplement
     private static unsafe void RecordCommandBuffer(in GraphicDeviceFunctions  func,ref GraphicDeviceData data, in VkCommandBuffer commandBuffer, uint imageIndex)
     {
         func.vkResetCommandBuffer(commandBuffer, (uint)VkCommandBufferResetFlagBits.VK_COMMAND_BUFFER_RESET_RELEASE_NONE);
-
+    // COMMAND BUFFER ----------------------------------------------------------------------------------------------------
         VkCommandBufferBeginInfo beginInfo = default;
         beginInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO; 
         beginInfo.pNext =null;
@@ -2262,7 +2263,7 @@ public static class GraphicDeviceImplement
         func.vkBeginCommandBuffer(commandBuffer, &beginInfo).Check("Failed to Begin command buffer");
 
             VkClearValue* clearValues = stackalloc VkClearValue[2] {data.Info.ClearColor,data.Info.ClearColor2 };
-
+        // RENDER PASS --------------------------------------------------------------------------------------------------
             VkRenderPassBeginInfo renderPassInfo = default;
             renderPassInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO; 
             renderPassInfo.renderPass = data.Handles.RenderPass;
@@ -2273,33 +2274,40 @@ public static class GraphicDeviceImplement
             renderPassInfo.renderArea =data.Info.RenderArea;
             
             func.vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VkSubpassContents.VK_SUBPASS_CONTENTS_INLINE);
-        
-                // USE SHADER 
+
+            // PUSH CONSTANTS ---------- ( do before bin pipeline)
+            // void* ptr = new IntPtr( data.Info.PushConstants).ToPointer();
+            fixed(void* ptr = &data.Info.PushConstants ){
+                func.vkCmdPushConstants(commandBuffer,data.Handles.PipelineLayout, (uint) VkShaderStageFlagBits.VK_SHADER_STAGE_VERTEX_BIT, 0,(uint)sizeof(PushConstantsMesh), ptr );
+            }
+            
+            // USE SHADER 
                 func.vkCmdBindPipeline(commandBuffer, VkPipelineBindPoint.VK_PIPELINE_BIND_POINT_GRAPHICS, data.Handles.Pipeline);
                 
-                // SEND DATA To SHADER
+            // SEND DATA To SHADER
                 fixed(VkDescriptorSet* desc =  &data.Handles.DescriptorSets[CurrentFrame] )
                 {
                     func.vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint.VK_PIPELINE_BIND_POINT_GRAPHICS, data.Handles.PipelineLayout, 0, 1, desc, 0, null);
                 }
                 
-                // SET DYNAMIC STATES
+            // SET DYNAMIC STATES
                 fixed(VkViewport* viewport = &data.Info.Viewport ){ func.vkCmdSetViewport(commandBuffer, 0, 1,viewport); }
                 fixed( VkRect2D* scissor = &data.Info.Scissor) { func.vkCmdSetScissor(commandBuffer, 0, 1, scissor); }
                 func.vkCmdSetLineWidth( commandBuffer,data.Handles.DynamicStatee_LineWidth);
                
 
-                // BIND VERTEX AND INDICES
+            // BIND VERTEX AND INDICES
                 VkDeviceSize* offsets = stackalloc VkDeviceSize[]{0};
                 VkBuffer* vertexBuffers = stackalloc VkBuffer[] { data.Handles.VertexBuffer};
                 func.vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
                 func.vkCmdBindIndexBuffer(commandBuffer, data.Handles.IndicesBuffer, 0, VkIndexType.VK_INDEX_TYPE_UINT16);
-                // DRAw VERTEX INDEX 
+            // DRAW CALLS  ------------ VERTEX INDEXED  
                 func.vkCmdDrawIndexed(commandBuffer, data.Handles.IndicesSize, 1, 0, 0, 0);
 
             func.vkCmdEndRenderPass(commandBuffer);
-        
+        // RENDER PASS --------------------------------------------------------------------------------------------------        
         func.vkEndCommandBuffer(commandBuffer).Check("Failed to End command buffer ");
+    // COMMAND BUFFER ----------------------------------------------------------------------------------------------------    
     }
     private static int CurrentFrame =0;
 
@@ -2316,7 +2324,6 @@ public static class GraphicDeviceImplement
         VkSwapchainKHR* swapChains = stackalloc  VkSwapchainKHR[1]{ data.Handles.SwapChain };// VkSwapchainKHR[] swapChains = { data.Handles.SwapChain };
         VkCommandBuffer commandBuffer =data.Handles.CommandBuffers[/*data.*/CurrentFrame];
 
-
         func.vkWaitForFences(data.Handles.Device, 1,&CurrentinFlightFence, VK.VK_TRUE, data.Info.tick_timeout).Check("Acquire Image");
 
         VkResult result = func.vkAcquireNextImageKHR(data.Handles.Device, data.Handles.SwapChain, data.Info.tick_timeout,CurrentImageAvailableSemaphore, VkFence.Null, &imageIndex);
@@ -2332,12 +2339,12 @@ public static class GraphicDeviceImplement
         }
 
         UpdateUniformBuffer( func,ref  data);
-        
-        
+                
         func.vkResetFences(data.Handles.Device, 1, &CurrentinFlightFence);
 
  
         RecordCommandBuffer(  func,ref data, in  commandBuffer, imageIndex);
+
 
         VkSubmitInfo submitInfo = default;
         submitInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -2348,6 +2355,7 @@ public static class GraphicDeviceImplement
         submitInfo.pCommandBuffers = &commandBuffer;      
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores ;
+        submitInfo.pNext = null;
         
         func.vkQueueSubmit(data.Handles.GraphicQueue, 1, &submitInfo,  CurrentinFlightFence ).Check("failed to submit draw command buffer!");
         
@@ -2358,6 +2366,8 @@ public static class GraphicDeviceImplement
         presentInfo.pImageIndices = &imageIndex;
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapChains;
+        presentInfo.pNext =null;
+        presentInfo.pResults = null;
         
         result = func.vkQueuePresentKHR(data.Handles.PresentQueue, &presentInfo); 
 

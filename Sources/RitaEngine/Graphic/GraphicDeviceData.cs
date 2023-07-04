@@ -1,7 +1,7 @@
 namespace RitaEngine.Graphic;
 
-using RitaEngine.Math;
 using RitaEngine.API.Vulkan;
+using RitaEngine.Math;
 
 [StructLayout(LayoutKind.Sequential, Pack = RitaEngine.Base.BaseHelper.FORCE_ALIGNEMENT), SkipLocalsInit]
 public struct GraphicDeviceData : IEquatable<GraphicDeviceData>
@@ -158,6 +158,8 @@ public struct GraphicDeviceInfo : IEquatable<GraphicDeviceInfo>
     public float[] UniformBufferArray = null!;
     public float[] Vertices = null!;
     public string TextureName ="";
+
+    public PushConstantsMesh PushConstants = new();
 
     public GraphicDeviceInfo()
     {

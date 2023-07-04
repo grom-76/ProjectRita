@@ -28,3 +28,12 @@ public struct Uniform_MVP
 }
 
 
+public struct PushConstantsMesh
+{
+    public Matrix Model = Matrix.Identity;
+    public Vector4 Data = new(0.0f);
+
+    public PushConstantsMesh()
+    {
+    }
+}

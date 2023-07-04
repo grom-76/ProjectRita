@@ -3,8 +3,9 @@ namespace RitaSamples;
 using RitaEngine.Audio;
 using RitaEngine.Base;
 using RitaEngine.Input;
+using RitaEngine.Math;
 using RitaEngine.Platform;
-
+using RitaEngine.Resources;
 
 public static class Sample_0002
 {
@@ -23,6 +24,7 @@ public static class Sample_0002
     {
 
         RitaEngine.Audio.PlayerSound2D snd = new();
+        Vector3 ModelPosition = new(0.0f);
    
         
         public MyGame()
@@ -41,8 +43,8 @@ public static class Sample_0002
             Window.Events.OnKillFocus = onkillFocus;
             Window.Events.OnSetFocus = onSetFocus;
 
-            // RitaEngine.Resources.Shaders. CreateSPIRV(path, "shader_depth.vert","shader_depth_vert.spv", RitaEngine.Resources.Shaders.ShaderType.VertexShader , "main");
-            // RitaEngine.Resources.Shaders. CreateSPIRV(path, "shader_depth.frag","shader_depth_frag.spv", RitaEngine.Resources.Shaders.ShaderType.FragmentShader , "main");
+            RitaEngine.Resources.Shaders. CreateSPIRV( "shader_depth.vert","shader_depth_vert.spv", ShaderType.VertexShader , "main");
+            RitaEngine.Resources.Shaders. CreateSPIRV( "shader_depth.frag","shader_depth_frag.spv", ShaderType.FragmentShader , "main");
         }
 
         private void onSetFocus(nuint wParam, nint lParam)
@@ -64,7 +66,7 @@ public static class Sample_0002
         {
             snd.Init( AudioDevice ,   "demo.wav" );
 
-            RenderConfig.Pipeline_Rasterization.FaceCullMode = RitaEngine.Graphic.GraphicPipeline.Rasterization.FaceCullMode.Front;
+            RenderConfig.Pipeline_Rasterization.FaceCullMode = RitaEngine.Graphic.GraphicPipeline.Rasterization.FaceCullMode.None;
 
             RenderConfig.BackColorARGB = RitaEngine.Math.Color.Palette.Lavender;
             RenderConfig.FragmentEntryPoint ="main";
@@ -184,6 +186,18 @@ public static class Sample_0002
 
             if (  Input.IsMouseButtonDown( InputMouseButton.Left ) ) {
                 RenderConfig.Camera.MoveAroundTarget(  new(0.0f,0.0f,0.0f), Input.Mouse_Delta_X,Input.Mouse_Delta_Y);
+            }
+
+            if ( Input.IsKeyDown( InputKeys.W))
+            {
+                ModelPosition.X += 0.1f;
+                Transforms.Translation( ref ModelPosition , out RenderConfig.Mesh.Model );
+            }
+            if ( Input.IsKeyDown( InputKeys.X))
+            {
+                ModelPosition.X -= 0.1f;
+                Transforms.Translation( ref ModelPosition , out RenderConfig.Mesh.Model );
+                
             }
             
         }
