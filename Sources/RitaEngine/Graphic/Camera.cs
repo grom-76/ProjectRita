@@ -219,6 +219,52 @@ public static class CameraImplement
         data.Type = CameraType.None;
     }
 
+    public static void SetViewYXZ(ref CameraData data)
+    {
+              // FOR UPDATE MATRIX VIEW
+        Matrix rotM = Matrix.Identity;
+
+       
+        float c3 = MathF.Cos(data.Rotation.Z);
+        float s3 = MathF.Sin(data.Rotation.Z);
+        float c2 = MathF.Cos(data.Rotation.X);
+        float s2 = MathF.Sin(data.Rotation.X);
+        float c1 = MathF.Cos(data.Rotation.Y);
+        float s1 = MathF.Sin(data.Rotation.Y);
+        Vector3 u = new((c1 * c3 + s1 * s2 * s3), (c2 * s3), (c1 * s2 * s3 - c3 * s1));
+        Vector3 v = new((c3 * s1 * s2 - c1 * s3), (c2 * c3), (c1 * c3 * s2 + s1 * s3));
+        Vector3 w = new((c2 * s1), (-s2), (c1 * c2));
+        // Matrix rotM  = new()
+        rotM.M11 = u.X; rotM.M12 = v.X ;rotM.M13 = w.X ;
+        rotM.M21 = u.Y; rotM.M22 = v.Y ;rotM.M23 = w.Y ;
+        rotM.M31 = u.Z; rotM.M32 = v.Z ;rotM.M33 = w.Z ;
+
+           // var cosBeta = (float)Helper.Cos(Helper.ToRadians(data.Rotation.Y));//pitch 
+        // var sinBeta = (float)Helper.Sin(Helper.ToRadians(data.Rotation.Y));
+        
+        // var cosSigma = (float)Helper.Cos(Helper.ToRadians(data.Rotation.X* data.FlipY)); //roll
+        // var sinSigma = (float)Helper.Sin(Helper.ToRadians(data.Rotation.X* data.FlipY));
+
+        // var cosAlpha = (float)Helper.Cos(Helper.ToRadians(data.Rotation.Z)); // Yaw
+        // var sinAlpha = (float)Helper.Sin(Helper.ToRadians(data.Rotation.Z));
+        // var    rotM = Matrix.Identity;
+        
+        // rotM.M11 =  cosSigma *cosBeta;
+        // rotM.M12 = (sinAlpha *sinBeta * cosSigma)  - (cosAlpha * sinSigma);
+        // rotM.M13 = (cosAlpha *sinBeta * cosSigma)  + (sinAlpha * sinSigma);
+        // rotM.M21 = sinSigma *cosBeta;
+        // rotM.M22 =(sinAlpha *sinBeta * sinSigma)  + (cosAlpha * cosSigma);
+        // rotM.M23 = (cosAlpha *sinBeta * cosSigma)  - (sinAlpha * cosSigma);
+        // rotM.M31 = -sinBeta;
+        // rotM.M32 = sinAlpha * cosBeta;
+        // rotM.M33 = cosBeta * cosAlpha;
+
+        // if( rotM.M11 == float.NaN || rotM.M12 == float.NaN || rotM.M13 == float.NaN 
+        // || rotM.M21 == float.NaN|| rotM.M22 == float.NaN|| rotM.M23 == float.NaN
+        // || rotM.M31 == float.NaN|| rotM.M32 == float.NaN|| rotM.M33 == float.NaN)
+        //     Log.Warning("Error Gimbal Lock");
+    }
+
     public static void Strafe(ref CameraData data,float distance)
     {
         data.Velocity.X  = distance;data.Velocity.Y = 0.0f; data.Velocity.Z = 0.0f;
