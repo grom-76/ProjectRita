@@ -66,7 +66,7 @@ public static class Sample_0002
         {
             snd.Init( AudioDevice ,   "demo.wav" );
 
-            RenderConfig.Pipeline_Rasterization.FaceCullMode = RitaEngine.Graphic.GraphicPipeline.Rasterization.FaceCullMode.None;
+            RenderConfig.Pipeline_Rasterization.FaceCullMode = RitaEngine.Graphic.Pipeline.FaceCullMode.None;
 
             RenderConfig.BackColorARGB = RitaEngine.Math.Color.Palette.Lavender;
             RenderConfig.FragmentEntryPoint ="main";

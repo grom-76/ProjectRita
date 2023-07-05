@@ -9,10 +9,11 @@ using RitaEngine.API.Vulkan;
 /// </summary>
 public sealed class GraphicRenderConfig :IDisposable
 {
-    public GraphicPipeline.Rasterization.RasterizationConfigData Pipeline_Rasterization = new();
-    public GraphicPipeline.Multisampling.MultisamplingConfigData Pipeline_Multisampling = new();
-    public GraphicPipeline.DepthStencil.DepthStencilConfigData Pipeline_DepthStencil = new();
-    public GraphicPipeline.DynamicStates.DynamicStatesConfigData Pipeline_DynamicStates = new();
+    public Pipeline.RasterizationConfigData Pipeline_Rasterization = new();
+    public Pipeline.MultisamplingConfigData Pipeline_Multisampling = new();
+    public Pipeline.DepthStencilConfigData Pipeline_DepthStencil = new();
+    public Pipeline.DynamicStatesConfigData Pipeline_DynamicStates = new();
+    public Pipeline.ColorBlendingConfigData Pipeline_ColorBlending = new();
 
     public GeometricPrimitive Primitive = new();
     public Camera Camera = new();

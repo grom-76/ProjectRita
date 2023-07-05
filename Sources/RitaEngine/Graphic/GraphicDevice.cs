@@ -335,6 +335,7 @@ public static class GraphicDeviceImplement
         sci .flags = 0;
         sci .sType = VkStructureType.VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
 
+
         fixed ( VkSurfaceKHR* surf = &data.Handles.Surface)
         {
             func.vkCreateWin32SurfaceKHR(data.Handles.Instance,&sci,null, surf).Check("Create Surface");
@@ -696,6 +697,16 @@ public static class GraphicDeviceImplement
 
     #region SWAP CHAIN
     
+
+    public struct SwapChainConfig
+    {
+        public bool Stereoscopic3DApp = false ;
+        public bool Clipped =false;
+        public VkCompositeAlphaFlagBitsKHR CompositeAlpha = VkCompositeAlphaFlagBitsKHR.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+
+        public SwapChainConfig()  {    }
+    }
+
     public static unsafe void CreateSwapChain(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data)
     {
          // FOR SWAP CHAIN ----------------------------------------------------
@@ -714,6 +725,7 @@ public static class GraphicDeviceImplement
 
         VkSwapchainCreateInfoKHR createInfo = new();
         createInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+        createInfo.pNext = null;
         createInfo.surface = data.Handles.Surface;
         createInfo.minImageCount = imageCount;
         createInfo.imageFormat =  data.Info.VkSurfaceFormat.format;
@@ -763,10 +775,10 @@ public static class GraphicDeviceImplement
 
         for (uint i = 0; i < size; i++)
         {
-            VkImageViewCreateInfo imageViewCreateInfo= new();//New<VkImageViewCreateInfo>();
-            imageViewCreateInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO; //VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            VkImageViewCreateInfo imageViewCreateInfo= new();
+            imageViewCreateInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO; 
             imageViewCreateInfo.image = data.Handles.Images[i];
-            imageViewCreateInfo.viewType = VkImageViewType.VK_IMAGE_VIEW_TYPE_2D;// VK_IMAGE_VIEW_TYPE_2D ;//VkImageViewType.VK_IMAGE_VIEW_TYPE_2D;// VK_IMAGE_VIEW_TYPE_2D;
+            imageViewCreateInfo.viewType = VkImageViewType.VK_IMAGE_VIEW_TYPE_2D;
             imageViewCreateInfo.format = data.Info.VkFormat;
             imageViewCreateInfo.components.r = VkComponentSwizzle.VK_COMPONENT_SWIZZLE_IDENTITY;
             imageViewCreateInfo.components.g = VkComponentSwizzle.VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -919,7 +931,7 @@ public static class GraphicDeviceImplement
             {
                 framebufferInfo.pAttachments = attachmentPtr; 
             }
-            // framebufferInfo.pAttachments = (VkImageView*)Unsafe.AsPointer( ref attachments[0]); 
+
             framebufferInfo.width = data.Info.VkSurfaceArea.width;
             framebufferInfo.height = data.Info.VkSurfaceArea.height;
             framebufferInfo.layers = 1;
@@ -1051,9 +1063,18 @@ public static class GraphicDeviceImplement
     {
         
         VkCommandPoolCreateInfo poolInfo = new();
-        poolInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;//VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        poolInfo.flags = (uint)VkCommandPoolCreateFlagBits.VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;// VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        poolInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        poolInfo.pNext = null;
+        poolInfo.flags = (uint)VkCommandPoolCreateFlagBits.VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
         poolInfo.queueFamilyIndex =data.Info.VkGraphicFamilyIndice;
+
+        /*
+        K_COMMAND_POOL_CREATE_TRANSIENT_BIT specifies that command buffers allocated from the pool will be short-lived, meaning that they will be reset or freed in a relatively short timeframe. This flag may be used by the implementation to control memory allocation behavior within the pool.
+        spécifie que les tampons de commande alloués à partir du pool seront de courte durée, ce qui signifie qu'ils seront réinitialisés ou libérés dans un délai relativement court. Cet indicateur peut être utilisé par l'implémentation pour contrôler le comportement de l'allocation de mémoire au sein du pool.
+VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT allows any command buffer allocated from a pool to be individually reset to the initial state; either by calling vkResetCommandBuffer, or via the implicit reset when calling vkBeginCommandBuffer. If this flag is not set on a pool, then vkResetCommandBuffer must not be called for any command buffer allocated from that pool.
+permet à tout tampon de commande alloué à partir d'un pool d'être individuellement réinitialisé à l'état initial, soit en appelant vkResetCommandBuffer, soit via la réinitialisation implicite lors de l'appel à vkBeginCommandBuffer. Si ce drapeau n'est pas activé pour un pool, vkResetCommandBuffer ne doit pas être appelé pour un tampon de commande alloué à partir de ce pool.
+VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated from the pool are protected command buffers.
+        */
 
         fixed( VkCommandPool* pool =  &data.Handles.CommandPool)
         {
@@ -2194,34 +2215,29 @@ public static class GraphicDeviceImplement
         viewportState.pNext = null;
         #endregion
 
-        GraphicPipeline.Rasterization.CreateRasterization( ref renderConfig.Pipeline_Rasterization , out VkPipelineRasterizationStateCreateInfo rasterizer) ;
-
-        GraphicPipeline.Multisampling.CreateMultisampling(ref renderConfig.Pipeline_Multisampling, out VkPipelineMultisampleStateCreateInfo multisampling );
-
-        GraphicPipeline.DepthStencil.CreateDepthStencil( ref renderConfig.Pipeline_DepthStencil , out VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo);
-
-        GraphicPipeline.DynamicStates.CreateDynamicStates( ref renderConfig.Pipeline_DynamicStates , out  VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo );
-   
-        
-        
-        
-        #region Tesslation
-           //not used 
-        VkPipelineTessellationStateCreateInfo tessellationStateCreateInfo = new();
-        tessellationStateCreateInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
-
-        #endregion
+        // Pipeline.CreateColorBlending(ref renderConfig.Pipeline_ColorBlending ,out VkPipelineColorBlendStateCreateInfo colorBlending );
+        Pipeline.CreateRasterization( ref renderConfig.Pipeline_Rasterization , out VkPipelineRasterizationStateCreateInfo rasterizer) ;
+        Pipeline.CreateMultisampling(ref renderConfig.Pipeline_Multisampling, out VkPipelineMultisampleStateCreateInfo multisampling );
+        Pipeline.CreateDepthStencil( ref renderConfig.Pipeline_DepthStencil , out VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo);
+        Pipeline.CreateDynamicStates( ref renderConfig.Pipeline_DynamicStates , out  VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo );
+        Pipeline.CreateTessellation(out VkPipelineTessellationStateCreateInfo tessellationStateCreateInfo);
+    
 
         VkGraphicsPipelineCreateInfo pipelineInfo =new();
         pipelineInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+        pipelineInfo.pNext = null;
+
         pipelineInfo.flags = (uint)VkPipelineCreateFlagBits.VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT ;
+        
         pipelineInfo.renderPass = data.Handles.RenderPass;
         pipelineInfo.subpass = 0;
-        pipelineInfo.basePipelineHandle = VkPipeline.Null;
+        
         pipelineInfo.stageCount =2;
         pipelineInfo.pStages = shaderStages;
+
         pipelineInfo.pVertexInputState = &vertexInputInfo;
         pipelineInfo.pInputAssemblyState = &inputAssembly;
+        
         pipelineInfo.pColorBlendState = &colorBlending;
         pipelineInfo.pViewportState = &viewportState;
         pipelineInfo.pRasterizationState = &rasterizer;
@@ -2230,8 +2246,9 @@ public static class GraphicDeviceImplement
         pipelineInfo.pTessellationState = &tessellationStateCreateInfo;
         pipelineInfo.pDepthStencilState = &depthStencilStateCreateInfo;
         pipelineInfo.pDynamicState = &dynamicStateCreateInfo;
-        pipelineInfo.pNext = null;
+        
         pipelineInfo.basePipelineIndex =0;
+        pipelineInfo.basePipelineHandle = VkPipeline.Null;
         
         fixed( VkPipeline* gfxpipeline = &data.Handles.Pipeline )
         {    
