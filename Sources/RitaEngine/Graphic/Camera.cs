@@ -144,11 +144,6 @@ public static class CameraImplement
         var xAxis = Vector3.Normalize(Vector3.Cross(ref data.Up,ref zAxis));
         var yAxis = Vector3.Cross( ref zAxis, ref xAxis);
 
-        Matrix translation = Matrix.Identity;
-        
-        translation.M41 = -data.Position.X;
-        translation.M42 = -data.Position.Y ;
-        translation.M43 = -data.Position.Z;
         Matrix rotation = new (
             xAxis.X , yAxis.X , zAxis.X ,0.0f  ,
             xAxis.Y , yAxis.Y , zAxis.Y ,0.0f  ,
@@ -160,7 +155,13 @@ public static class CameraImplement
         float rmRoll =  Helper.ToDegree( Helper.ATan2(rotation.M21,rotation.M22)) ; // Z
         data.Rotation = new( rmPitch,rmYaw, rmRoll);
 
+        Matrix translation = Matrix.Identity;
+        translation.M41 = -data.Position.X ;
+        translation.M42 = -data.Position.Y; 
+        translation.M43 = -data.Position.Z;
+
         data.View =  translation * rotation;
+        data.Position = data.View.TranslationVector;
     }
 
     public static void UpdateProjection(ref CameraData data )
@@ -188,34 +189,33 @@ public static class CameraImplement
         {
               // FOr yaw and pitch 
             Vector3 CamFront = default;
-            CamFront.X = - Helper.Cos( data.Rotation.X.ToRad()) * Helper.Sin(data.Rotation.Y.ToRad() );
-            CamFront.Y = Helper.Sin( data.Rotation.X.ToRad() );
+            CamFront.X = -Helper.Cos( data.Rotation.X.ToRad()) * Helper.Sin(data.Rotation.Y.ToRad() ) ;
+            CamFront.Y = Helper.Sin( data.Rotation.X.ToRad());
             CamFront.Z = Helper.Cos( data.Rotation.X.ToRad() ) * Helper.Cos(data.Rotation.Y.ToRad());
             CamFront = Vector3.Normalize(CamFront);
             // for ROLL
-            Vector3 CamRight = Vector3.Normalize(  ( Vector3.Cross( ref CamFront,ref data.Up ) /* * Helper.Cos( data.Rotation.Z.ToRad() )*/  )  ) ;
-                    // + (  data.Up * Helper.Sin((data.Rotation.Z  ).ToRad()  )   );
-
+            Vector3 CamRight = Vector3.Normalize(  ( Vector3.Cross( ref CamFront,ref data.Up )   )  ) ;
+           
             Vector3 CamUp = Vector3.Normalize(  Vector3.Cross( ref CamRight, ref CamFront));
-            
+
             data.Position += (CamFront * data.Velocity.Z) + (CamUp * data.Velocity.Y) + (CamRight * data.Velocity.X);
         }
 
         // FOR UPDATE MATRIX VIEW
-        Matrix rotM = Matrix.Identity;
+        // Matrix rotM = Matrix.Identity;
+         Matrix rotM =  Transforms.RotationY(Helper.ToRadians(data.Rotation.Y))
+            * Transforms.RotationX(Helper.ToRadians(data.Rotation.X* data.FlipY)) 
+            * Transforms.RotationZ(Helper.ToRadians(data.Rotation.Z)) ;
 
-        rotM = Transforms.RotationY(Helper.ToRadians(data.Rotation.Y)) 
-             * Transforms.RotationX(Helper.ToRadians(data.Rotation.X* data.FlipY)) 
-             * Transforms.RotationZ(Helper.ToRadians(data.Rotation.Z)) ;
-
-        float distance = Vector3.Distance( ref data.Position , ref data.Target);
-        Vector3 translation = data.Type == CameraType.RotateAround ? Vector3.Normalize(data.View.TranslationVector - data.Target) * distance : data.Position - data.Target ;
+        Vector3 translation = data.Type == CameraType.RotateAround 
+            ? Vector3.Normalize(data.View.TranslationVector - data.Target) *  Vector3.Distance( ref data.Position , ref data.Target)
+            : data.Position ;
         
         Matrix  transM = Transforms.Translation(translation );
-        transM.M42 =   (transM.M42 * data.FlipY) ;
+        transM.M42 =  data.Type == CameraType.LookAt ?  (transM.M42 * data.FlipY) : transM.M42  ;
         
+        data.View  =  data.Type == CameraType.LookAt ? transM * rotM : rotM * transM   ;
 
-        data.View  =  data.Type == CameraType.LookAt ? transM * rotM  :   rotM * transM   ;
         data.Type = CameraType.None;
     }
 
@@ -333,7 +333,7 @@ public static class CameraImplement
 
         data.Rotation.Y +=  xoffset * sensitivity;
         data.Rotation.X += yoffset * sensitivity; 
-         data.Type = CameraType.LookAt;
+        data.Type = CameraType.LookAt;
     }
     
     /// <summary>
