@@ -20,6 +20,8 @@ using RitaEngine.Graphic;
 [SkipLocalsInit, StructLayout(LayoutKind.Sequential ,Pack =  BaseHelper.FORCE_ALIGNEMENT)]
 public struct GraphicDevice : IEquatable<GraphicDevice>
 {
+    public static string VersionToString( uint version ) => $"{VK.VK_VERSION_MAJOR(version)}.{VK.VK_VERSION_MINOR(version)}.{VK.VK_VERSION_PATCH(version)} ";
+    
     private GraphicDeviceFunctions _functions = new();
     private GraphicDeviceData _data =new(); // inside => Instance Device Render Infos 
 
@@ -97,6 +99,7 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
 
     public void UpdateRender(in GraphicRenderConfig config)
     {    
+        //TODO => for each Mesh _data.Info.UniformBufferArray = config.Camera.ClipToArray(ModelsWorld);Avec : float[0] = Models[0] -- float[16] = Models[15]
         _data.Info.UniformBufferArray = config.Camera.ToArray;
         _data.Info.PushConstants = config.Mesh;
     }
@@ -114,8 +117,9 @@ public struct GraphicDevice : IEquatable<GraphicDevice>
     #endregion
 }
 
-public static class GraphicDeviceImplement
+public static partial class GraphicDeviceImplement
 {
+
 
     public unsafe static void Pause(in GraphicDeviceFunctions func,ref GraphicDeviceData data  )
     {
@@ -142,20 +146,19 @@ public static class GraphicDeviceImplement
         
     }
 
-    public static string VersionToString( uint version ) => $"{VK.VK_VERSION_MAJOR(version)}.{VK.VK_VERSION_MINOR(version)}.{VK.VK_VERSION_PATCH(version)} ";
+  
 
     public static unsafe void TransfertToData(in PlatformConfig config, in Window window ,ref GraphicDeviceFunctions functions , ref GraphicDeviceData data)
     {
         //check if Exist vulkandllname? 
-        functions.InitLoaderFunctions( config.LibraryName_Vulkan);
-        data.Info.EnableDebug = config.GraphicDevice_EnableDebugMode;
+        functions.InitLoaderFunctions( config.GraphicDevice.LibraryName_Vulkan);
+        data.Info.EnableDebug = config.GraphicDevice.EnableDebugMode;
         data.Info.GameName  = window.GetWindowName();
         data.Info.Handle = window.GetWindowHandle();
         data.Info.HInstance = window.GetWindowHInstance();
         data.Info.Width = window.GetWindowWidth();
         data.Info.Height = window.GetWindowheight();
         data.Handles.GetFrameBufferCallback = window.GetFrameBuffer;
-        
     }
 
     public static void TransfertToRender(in GraphicRenderConfig pipeline, in GraphicDeviceFunctions functions, ref GraphicDeviceData data)
@@ -182,7 +185,6 @@ public static class GraphicDeviceImplement
         data.Info.RenderArea.extent = data.Info.VkSurfaceArea;
         data.Info.RenderArea.offset = data.Info.RenderAreaOffset;
         data.Info.PushConstants = pipeline.Mesh ;
-
     }   
 
     #region INSTANCE & DEBUG
@@ -335,7 +337,6 @@ public static class GraphicDeviceImplement
         sci .flags = 0;
         sci .sType = VkStructureType.VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
 
-
         fixed ( VkSurfaceKHR* surf = &data.Handles.Surface)
         {
             func.vkCreateWin32SurfaceKHR(data.Handles.Instance,&sci,null, surf).Check("Create Surface");
@@ -440,7 +441,6 @@ public static class GraphicDeviceImplement
             func.vkGetPhysicalDeviceFeatures(data.Handles.PhysicalDevice,features );
         } 
 
-    
         // DZEVICE  EXTENSIONS -------------------------------------------------
         uint propertyCount = 0;
         func.vkEnumerateDeviceExtensionProperties(data.Handles.PhysicalDevice, null, &propertyCount, null).Check();
@@ -455,7 +455,6 @@ public static class GraphicDeviceImplement
            data.Info.DeviceExtensions[i] = Encoding.UTF8.GetString( properties[i].extensionName, (int) length ); //new string(properties[i].extensionName); //
         }
         data.Info.DeviceExtensions[propertyCount] = VK.VK_KHR_SWAPCHAIN_EXTENSION_NAME ;
-
        
     }
 
@@ -581,9 +580,13 @@ public static class GraphicDeviceImplement
         {
             if (availableFormat.format == VkFormat.VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VkColorSpaceKHR.VK_COLOR_SPACE_SRGB_NONLINEAR_KHR )
             {
+               
+
                 return availableFormat;
             }
         }
+
+
         return data.Info.Formats[0];
     }
 
@@ -622,7 +625,7 @@ public static class GraphicDeviceImplement
     
     public static unsafe void CreateLogicalDevice(ref GraphicDeviceFunctions func,ref GraphicDeviceData data )
     {
-         (data.Info.VkGraphicFamilyIndice,data.Info.VkPresentFamilyIndice) = FindQueueFamilies(ref func , data.Handles.PhysicalDevice,data.Handles.Surface);
+        (data.Info.VkGraphicFamilyIndice,data.Info.VkPresentFamilyIndice) = FindQueueFamilies(ref func , data.Handles.PhysicalDevice,data.Handles.Surface);
 
         VkDeviceQueueCreateInfo* queueCreateInfos = stackalloc VkDeviceQueueCreateInfo[2];
 
@@ -630,9 +633,9 @@ public static class GraphicDeviceImplement
         uniqueQueueFamilies.Add(data.Info.VkGraphicFamilyIndice);
         uniqueQueueFamilies.Add(data.Info.VkPresentFamilyIndice);
     
-
         float queuePriority = 1.0f;
         uint queueCount = 0;
+
         foreach (uint queueFamily in uniqueQueueFamilies)
         {
             queueCreateInfos[queueCount++] = new VkDeviceQueueCreateInfo {
@@ -668,7 +671,6 @@ public static class GraphicDeviceImplement
 
        Log.Info($"Create Device :{data.Handles.Device}");
 
-
         //CREATE QUEUES 
         fixed(VkQueue* gq =&data.Handles.GraphicQueue)
         {
@@ -683,8 +685,7 @@ public static class GraphicDeviceImplement
     }
 
     public static unsafe void DisposeLogicalDevice(in GraphicDeviceFunctions func,ref GraphicDeviceData data )
-    {
-        
+    {       
         if ( !data.Handles.Device.IsNull)
         {
             Log.Info($"Dispose Logical Device {data.Handles.Device}");
@@ -692,26 +693,19 @@ public static class GraphicDeviceImplement
         }  
     }
 
-
     #endregion
 
     #region SWAP CHAIN
-    
 
-    public struct SwapChainConfig
-    {
-        public bool Stereoscopic3DApp = false ;
-        public bool Clipped =false;
-        public VkCompositeAlphaFlagBitsKHR CompositeAlpha = VkCompositeAlphaFlagBitsKHR.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-
-        public SwapChainConfig()  {    }
-    }
 
     public static unsafe void CreateSwapChain(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data)
     {
          // FOR SWAP CHAIN ----------------------------------------------------
         data.Info.VkPresentMode = ChooseSwapPresentMode(ref data);
         data.Info.VkSurfaceFormat  = ChooseSwapSurfaceFormat(ref data);
+        VkFormatProperties formatProperties;
+        func.vkGetPhysicalDeviceFormatProperties(data.Handles.PhysicalDevice,data.Info.VkSurfaceFormat.format, &formatProperties);
+        
         data.Info.VkSurfaceArea = ChooseSwapExtent(ref data);
         data.Info.VkFormat = data.Info.VkSurfaceFormat.format;
 
@@ -720,7 +714,6 @@ public static class GraphicDeviceImplement
             data.Info.ImageCount = data.Info.Capabilities.maxImageCount;
         }
 
-       
         uint* queueFamilyIndices = stackalloc uint[2]{data.Info.VkGraphicFamilyIndice, data.Info.VkPresentFamilyIndice};
 
         VkSwapchainCreateInfoKHR createInfo = new();
@@ -752,7 +745,6 @@ public static class GraphicDeviceImplement
         }
 
         Log.Info($"Create SwapChain {data.Handles.SwapChain}\nMode : {data.Info.VkPresentMode}\nSize :[{data.Info.VkSurfaceArea.width},{data.Info.VkSurfaceArea.height}] ");
-
 
         // SWWAP CHAIN IMAGES  ----------------------------------------------------------------------
 
@@ -846,7 +838,7 @@ public static class GraphicDeviceImplement
         depthAttachment.finalLayout = VkImageLayout.VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         depthAttachment.flags = (uint)VkAttachmentDescriptionFlagBits.VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT;
 
-        
+        VkAttachmentDescription* attachments = stackalloc VkAttachmentDescription[] { colorAttachment, depthAttachment };
 
         // SUBPASS  -> COLOR POST PROCESSING       
         VkAttachmentReference colorAttachmentRef = new();
@@ -878,9 +870,6 @@ public static class GraphicDeviceImplement
         dependency.dstStageMask =(uint) VkPipelineStageFlagBits.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT| (uint)VkPipelineStageFlagBits.VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
         dependency.dstAccessMask =(uint)VkAccessFlagBits. VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT| (uint)VkAccessFlagBits.VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         dependency.dependencyFlags =0;
-
-        //RENDER PASS 
-        VkAttachmentDescription* attachments = stackalloc VkAttachmentDescription[] { colorAttachment, depthAttachment };
 
         VkRenderPassCreateInfo renderPassInfo = new();
         renderPassInfo.sType = VkStructureType. VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -925,13 +914,12 @@ public static class GraphicDeviceImplement
 
             VkFramebufferCreateInfo framebufferInfo = new();
             framebufferInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-            framebufferInfo.renderPass = data.Handles.RenderPass;
+            framebufferInfo.renderPass = VkRenderPass.Null; //data.Handles.RenderPass;
             framebufferInfo.attachmentCount = (uint)attachments.Length ;
             fixed( VkImageView* attachmentPtr =&attachments[0] ) 
             {
                 framebufferInfo.pAttachments = attachmentPtr; 
             }
-
             framebufferInfo.width = data.Info.VkSurfaceArea.width;
             framebufferInfo.height = data.Info.VkSurfaceArea.height;
             framebufferInfo.layers = 1;
@@ -942,7 +930,6 @@ public static class GraphicDeviceImplement
             }
             Log.Info($"-{i} Create FrameBuffer {data.Handles.Framebuffers[i] }");
         }
-        
     }
 
     public unsafe static void DisposeFrameBuffer(in GraphicDeviceFunctions  func,ref GraphicDeviceData data  )
@@ -963,6 +950,7 @@ public static class GraphicDeviceImplement
     #endregion
 
     #region DEpth Buffering 
+
     public unsafe static void CreateDepthResources(ref GraphicDeviceFunctions func, ref GraphicDeviceData data)
     {
         VkFormat depthFormat = FindDepthFormat(func , data.Handles.PhysicalDevice);
@@ -1051,7 +1039,7 @@ public static class GraphicDeviceImplement
                 VkFormat.VK_FORMAT_D16_UNORM
             },
             VkImageTiling.VK_IMAGE_TILING_OPTIMAL,
-             VkFormatFeatureFlagBits.VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
+            VkFormatFeatureFlagBits.VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
         );
     }
 
@@ -1061,7 +1049,6 @@ public static class GraphicDeviceImplement
 
     public static unsafe void CreateCommandPool(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data  ) 
     {
-        
         VkCommandPoolCreateInfo poolInfo = new();
         poolInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         poolInfo.pNext = null;
@@ -2386,7 +2373,7 @@ VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated fr
         presentInfo.pNext =null;
         presentInfo.pResults = null;
         
-        result = func.vkQueuePresentKHR(data.Handles.PresentQueue, &presentInfo); 
+        result = func.vkQueuePresentKHR(data.Handles.GraphicQueue, &presentInfo); 
 
         if ( result == VkResult.VK_ERROR_OUT_OF_DATE_KHR || result == VkResult.VK_SUBOPTIMAL_KHR )
         {
@@ -2417,3 +2404,5 @@ VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated fr
     #endregion
 
 }
+
+

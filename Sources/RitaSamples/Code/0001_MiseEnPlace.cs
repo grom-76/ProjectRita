@@ -38,7 +38,7 @@ public static class Sample_0001
             config.Input_ShowCursor = true;
             config.Audio_Category = AudioCategory.GameMedia;
             config.Audio_Channels = AudioChannels.stereo;
-            config.GraphicDevice_EnableDebugMode = true;
+            config.GraphicDevice.EnableDebugMode = true;
 
             clock.Init(config);
             window.Init(config, clock);

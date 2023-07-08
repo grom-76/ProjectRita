@@ -38,7 +38,7 @@ public static class Sample_0002
             Config.Input_ShowCursor = true;
             Config.Audio_Category = AudioCategory.GameMedia;
             Config.Audio_Channels = AudioChannels.stereo;
-            Config.GraphicDevice_EnableDebugMode = true;
+            Config.GraphicDevice.EnableDebugMode = true;
             
             Window.Events.OnKillFocus = onkillFocus;
             Window.Events.OnSetFocus = onSetFocus;

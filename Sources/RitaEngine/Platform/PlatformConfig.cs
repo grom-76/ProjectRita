@@ -1,6 +1,7 @@
 namespace RitaEngine.Platform;
 
 using System.Runtime;
+using RitaEngine.API.Vulkan;
 using RitaEngine.Audio;
 using RitaEngine.Graphic;
 using RitaEngine.Input;
@@ -14,17 +15,14 @@ public sealed class PlatformConfig : IDisposable
     public string LibraryName_User32 = "User32.dll";
     public string LibraryName_Kernel =  "kernel32.dll";
     public string LibraryName_Gdi =  "Gdi32.dll";
-    public string LibraryName_Vulkan = "vulkan-1.dll";
+    
     public string LibraryName_xaudio = "xaudio2_9.dll";
     #endif
 
     #if WIN64
     public AudioDeviceBackEnd Audio_BackEnd = AudioDeviceBackEnd.Xaudio;
     public InputBackEnd Input_BackEnd = InputBackEnd.XInput;
-    public GraphicDeviceBackend GraphicDevice_BackEnd = GraphicDeviceBackend.Vulkan;
-    public GraphicDeviceClipVolume GraphicDevice_ClipVolume = GraphicDeviceClipVolume.ZeroToOne;
-    public GraphicDeviceScreenOrigin GraphicDevice_ScreenOrigin =GraphicDeviceScreenOrigin.Center_Y_DownAxis;
-    public GraphicDeviceNDC GraphicDevice_NDC = GraphicDeviceNDC.RightHand;
+    
 
     #else
     
@@ -59,18 +57,41 @@ public sealed class PlatformConfig : IDisposable
     public WindowStyle Window_Style =0;
     public WindowExtraStyle Window_ExtraStyle =0;
 
-    
-    public bool GraphicDevice_EnableDebugMode = false;
-    public string[] GraphicDevice_ValidationLayerExtensions = new string[]{  
-    "VK_LAYER_KHRONOS_validation",
-    "VK_LAYER_LUNARG_standard_validation",
-    "VK_LAYER_GOOGLE_threading",
-    "VK_LAYER_LUNARG_parameter_validation",
-    "VK_LAYER_LUNARG_object_tracker",
-    "VK_LAYER_LUNARG_core_validation",
-    "VK_LAYER_GOOGLE_unique_objects", };
+    public GraphciDeviceConfig GraphicDevice = new();
 
+    public struct GraphciDeviceConfig
+    {
+        public string LibraryName_Vulkan = "vulkan-1.dll";
+        public bool EnableDebugMode = false;
+        public string[] ValidationLayerExtensions = new string[]{  
+        "VK_LAYER_KHRONOS_validation",
+        "VK_LAYER_LUNARG_standard_validation",
+        "VK_LAYER_GOOGLE_threading",
+        "VK_LAYER_LUNARG_parameter_validation",
+        "VK_LAYER_LUNARG_object_tracker",
+        "VK_LAYER_LUNARG_core_validation",
+        "VK_LAYER_GOOGLE_unique_objects", };
+
+        public SwapChainConfig SwapChain = new();
+
+        public GraphicDeviceBackend GraphicDevice_BackEnd = GraphicDeviceBackend.Vulkan;
+        public GraphicDeviceClipVolume GraphicDevice_ClipVolume = GraphicDeviceClipVolume.ZeroToOne;
+        public GraphicDeviceScreenOrigin GraphicDevice_ScreenOrigin =GraphicDeviceScreenOrigin.Center_Y_DownAxis;
+        public GraphicDeviceNDC GraphicDevice_NDC = GraphicDeviceNDC.RightHand;
+
+        public GraphciDeviceConfig() { }
+
+        public struct SwapChainConfig
+        {
+            public bool Stereoscopic3DApp = false ;
+            public bool Clipped =false;
+            public VkCompositeAlphaFlagBitsKHR CompositeAlpha = VkCompositeAlphaFlagBitsKHR.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+
+            public SwapChainConfig() { }
+        }        
+    }
     
+
 
     public  static (int width,int height) GetResolution(WindowResolution resolution)
         =>resolution switch{

@@ -17,9 +17,6 @@ public unsafe static partial class VkHelper
         }
     }
 
-   public const string VulkandllName = "vulkan-1.dll";
-
-
     public static void ValidateExtensionsForLoad(ref string[] extensions, uint version)
 	{
 		_=version;
