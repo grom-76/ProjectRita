@@ -103,7 +103,16 @@ public static partial class App
     public unsafe static void Init(ref VulkanFunctions funcs , ref GraphicDeviceDatas data, ref GraphicsConfig config , in Window window  )
     {
         funcs.Loader = new( config.BackEnd.LibraryName_Vulkan);
+        CreateInstanceDebugAndSurface(ref funcs, ref data , ref config , in window);
+        CreateDevice(ref funcs, ref data , ref config , in window);        
 
+    }
+
+    public unsafe static void Dispose(ref VulkanFunctions func,ref GraphicDeviceDatas data)
+    {
+        DisposeDevice(ref func , ref data);
+        DisposeInstanceDebugAndSurface(ref func ,ref data);
+        func.Dispose();   
     }
     
     #region INSTANCE , DEBUG & SURFACE 
@@ -186,7 +195,7 @@ public static partial class App
         fixed( VkInstance* instance = &data.App_Instance)
         {
             func.Loader.vkCreateInstance(&instanceCreateInfo, null, instance).Check("failed to create instance!");
-        };
+        }
 
         Log.Info($"Create Debug {data.App_Instance}");
 
@@ -196,14 +205,17 @@ public static partial class App
        func.Instance = new( func.vkGetInstanceProcAddr ,data.App_Instance );
 
         // CREATE DEBUG ------------------------------------------------------------------------
-        if ( !config.Device.EnableDebugMode  )return ;
-        
-        fixed(VkDebugUtilsMessengerEXT* dbg = &data.App_DebugMessenger )
+        if ( !config.Device.EnableDebugMode  )
         {
-            func.Instance.vkCreateDebugUtilsMessengerEXT(data.App_Instance, &debugCreateInfo, null, dbg).Check("failed to set up debug messenger!");
-        }
-        Log.Info($"Create Debug {data.App_DebugMessenger}");
+            fixed(VkDebugUtilsMessengerEXT* dbg = &data.App_DebugMessenger )
+            {
+                func.Instance.vkCreateDebugUtilsMessengerEXT(data.App_Instance, &debugCreateInfo, null, dbg).Check("failed to set up debug messenger!");
+            }
+            Log.Info($"Create Debug {data.App_DebugMessenger}");
 
+        }
+        
+        
         // CREATE SURFACE -------------------------------------------------------------------------
         #if WIN64
         VkWin32SurfaceCreateInfoKHR sci = new() ;
@@ -387,7 +399,7 @@ public static partial class App
             {
                 case VkQueueFlagBits.VK_QUEUE_GRAPHICS_BIT:
                     data.Device_QueueFamilies[0] = i;
-                    if( SupportPresenting(func, data, i) )
+                    if( SupportPresenting(ref func,ref data, i) )
                         data.Device_QueueFamilies[3] = i;
                     break;
                 case VkQueueFlagBits.VK_QUEUE_COMPUTE_BIT:
@@ -516,7 +528,7 @@ public static partial class App
 
     }
 
-    private static unsafe bool SupportPresenting(VulkanFunctions func, GraphicDeviceDatas data, uint i)
+    private static unsafe bool SupportPresenting(ref VulkanFunctions func,ref GraphicDeviceDatas data, uint i)
     {
         uint presentSupport = 0;
         //Querying for WSI Support

@@ -8,7 +8,10 @@ public static class Program
         // RitaSamples.Sample_0001.Run();
 
         // Start empty porject like monogame
-        RitaSamples.Sample_0002.Run();
+        // RitaSamples.Sample_0002.Run();
+
+        //Start with new graphic device vulkan code 
+        RitaSamples.Sample_0003.Run();
 
     }
 }
