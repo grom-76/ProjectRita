@@ -24,14 +24,13 @@ public struct GraphicDeviceDatas
     public VkPresentModeKHR Device_PresentMode = VkPresentModeKHR.VK_PRESENT_MODE_IMMEDIATE_KHR ;
     public VkFormat Device_SurfaceFormat = VkFormat.VK_FORMAT_B8G8R8A8_SRGB;
     public VkExtent2D Device_SurfaceSize = new();
-    public uint[] Device_QueueFamilies = new uint[4];
+    public uint[] Device_QueueFamilies = new uint[3]{ uint.MaxValue ,uint.MaxValue,uint.MaxValue };
     public uint Device_ImageCount =0;
     public VkDevice Device = VkDevice.Null;
     public VkQueue Device_GraphicQueue = VkQueue.Null;
     public VkQueue Device_PresentQueue = VkQueue.Null;
     public VkQueue Device_ComputeQueue = VkQueue.Null;
-    public VkQueue Device_TransfertQueue = VkQueue.Null;
-
+    
     public GraphicDeviceDatas()
     {
     }
@@ -60,7 +59,7 @@ public struct GraphicsConfig
         "VK_LAYER_GOOGLE_unique_objects", };
         public string[] DeviceExtensionsManualAdd = new string[] { VK.VK_KHR_SWAPCHAIN_EXTENSION_NAME  };
         public VkPresentModeKHR PresentModePreferred = VkPresentModeKHR.VK_PRESENT_MODE_IMMEDIATE_KHR ;
-        public VkFormat SurfaceFormatPreferred = VkFormat.VK_FORMAT_B8G8R8_SRGB;
+        public VkFormat SurfaceFormatPreferred = VkFormat.VK_FORMAT_B8G8R8A8_SRGB;
         public VkColorSpaceKHR ColorFormatPreferred = VkColorSpaceKHR.VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 
         public void Vsync( bool disable )
@@ -284,7 +283,9 @@ public static partial class App
         // CREATE DEVICE
         float queuePriority = 1.0f;
         
-        var queueFamiliesCount = data.Device_QueueFamilies[0] == data.Device_QueueFamilies[3] ? 3 : 4 ;
+        var queueFamiliesCount = data.Device_QueueFamilies[0] == data.Device_QueueFamilies[2] ? data.Device_QueueFamilies.Length-1 : data.Device_QueueFamilies.Length ;
+        queueFamiliesCount = data.Device_QueueFamilies[0] == data.Device_QueueFamilies[1] ? queueFamiliesCount-1 : queueFamiliesCount ;
+
         VkDeviceQueueCreateInfo* queueCreateInfos = stackalloc VkDeviceQueueCreateInfo[queueFamiliesCount];
 
         for( uint i = 0; i < queueFamiliesCount ; i++ )
@@ -328,20 +329,16 @@ public static partial class App
         }
         fixed(VkQueue* pq = &data.Device_PresentQueue)
         {
-            func.Device.vkGetDeviceQueue(data.Device, data.Device_QueueFamilies[3], 0, pq); 
+            func.Device.vkGetDeviceQueue(data.Device, data.Device_QueueFamilies[2], 0, pq); 
         }
         fixed(VkQueue* cq = &data.Device_ComputeQueue)
         {
             func.Device.vkGetDeviceQueue(data.Device, data.Device_QueueFamilies[1], 0, cq); 
         }
-        fixed(VkQueue* tq = &data.Device_TransfertQueue)
-        {
-            func.Device.vkGetDeviceQueue(data.Device, data.Device_QueueFamilies[2], 0, tq); 
-        }
+        
 
         Log.Info($"Graphic Queue : indice :{ data.Device_QueueFamilies[0]}  Adr[{data.Device_GraphicQueue}]");
         Log.Info($"Compute Queue : indice :{ data.Device_QueueFamilies[1]}  Adr[{data.Device_ComputeQueue}]");
-        Log.Info($"Transfert Queue : indice :{ data.Device_QueueFamilies[2]}  Adr[{data.Device_TransfertQueue}]");
         Log.Info($"Present Queue : indice :{ data.Device_QueueFamilies[3]}  Adr[{data.Device_PresentQueue}]");
     }
 
@@ -394,29 +391,26 @@ public static partial class App
 
         for( uint i = 0 ; i <queueFamilyProperties.Length ; i++ )
         {
-            var flag = queueFamilyProperties[(int)i].queueFlags;
-            switch (flag)
+            // var flag = queueFamilyProperties[(int)i].queueFlags;
+            if ( (queueFamilyProperties[(int)i].queueFlags & VkQueueFlagBits.VK_QUEUE_GRAPHICS_BIT) != 0)
             {
-                case VkQueueFlagBits.VK_QUEUE_GRAPHICS_BIT:
-                    data.Device_QueueFamilies[0] = i;
-                    if( SupportPresenting(ref func,ref data, i) )
-                        data.Device_QueueFamilies[3] = i;
-                    break;
-                case VkQueueFlagBits.VK_QUEUE_COMPUTE_BIT:
-                    if ( queueFamilyProperties[(int)i].queueCount > 1 )
-                        data.Device_QueueFamilies[1] = i;
-                    break;
-                case VkQueueFlagBits.VK_QUEUE_TRANSFER_BIT:
-                    // SEE minImageTransferGranularity  is the minimum granularity supported for image transfer operations 
-                    data.Device_QueueFamilies[2] =i;
-                    break;
+                data.Device_QueueFamilies[0] = i;
+                
             }
-
-            if (data.Device_QueueFamilies[0] != uint.MaxValue && data.Device_QueueFamilies[3] != uint.MaxValue && data.Device_QueueFamilies[1] != uint.MaxValue && data.Device_QueueFamilies[2] != uint.MaxValue)
+            if ( (queueFamilyProperties[(int)i].queueFlags & VkQueueFlagBits.VK_QUEUE_COMPUTE_BIT) != 0)
+            {
+                if ( queueFamilyProperties[(int)i].queueCount > 1 )
+                        data.Device_QueueFamilies[1] = i;
+            }
+            if( SupportPresenting(ref func,ref data, i) )
+                    data.Device_QueueFamilies[2] = i;
+                
+            
+            if (data.Device_QueueFamilies[0] != uint.MaxValue && data.Device_QueueFamilies[2] != uint.MaxValue && data.Device_QueueFamilies[1] != uint.MaxValue )
             { break; }
         }
 
-        if (data.Device_QueueFamilies[0] == uint.MaxValue || data.Device_QueueFamilies[3] == uint.MaxValue || data.Device_QueueFamilies[1] == uint.MaxValue || data.Device_QueueFamilies[2] == uint.MaxValue)
+        if (data.Device_QueueFamilies[0] == uint.MaxValue || data.Device_QueueFamilies[2] == uint.MaxValue || data.Device_QueueFamilies[1] == uint.MaxValue )
         {
             data.Device_Physical  = VkPhysicalDevice.Null ;
             return;

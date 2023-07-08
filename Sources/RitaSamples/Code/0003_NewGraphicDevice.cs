@@ -57,7 +57,7 @@ public static class Sample_0003
         }
         finally
         {
-            
+            RitaEngine.Graphic.GraphicDeviceImplement.App.Dispose(ref func, ref data);
             input.Release();
             window.Release();
             clock.Release();
