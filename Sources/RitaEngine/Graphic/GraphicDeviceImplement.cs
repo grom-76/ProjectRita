@@ -24,12 +24,20 @@ public struct GraphicDeviceDatas
     public VkPresentModeKHR Device_PresentMode = VkPresentModeKHR.VK_PRESENT_MODE_IMMEDIATE_KHR ;
     public VkFormat Device_SurfaceFormat = VkFormat.VK_FORMAT_B8G8R8A8_SRGB;
     public VkExtent2D Device_SurfaceSize = new();
+    public VkColorSpaceKHR Device_ImageColor = VkColorSpaceKHR.VK_COLOR_SPACE_SRGB_NONLINEAR_KHR ;
+    public VkSurfaceTransformFlagBitsKHR Device_Transform = VkSurfaceTransformFlagBitsKHR.VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
     public uint[] Device_QueueFamilies = new uint[3]{ uint.MaxValue ,uint.MaxValue,uint.MaxValue };
     public uint Device_ImageCount =0;
     public VkDevice Device = VkDevice.Null;
     public VkQueue Device_GraphicQueue = VkQueue.Null;
     public VkQueue Device_PresentQueue = VkQueue.Null;
     public VkQueue Device_ComputeQueue = VkQueue.Null;
+
+    public VkSwapchainKHR SwapChain = VkSwapchainKHR.Null ;
+    public VkImage[] SwapChain_Images = null!;
+    public VkImageView[] SwapChain_ImageViews = null!;
+    
+    
     
     public GraphicDeviceDatas()
     {
@@ -441,6 +449,8 @@ public static partial class App
             data.Device_ImageCount = Capabilities.maxImageCount;
         }
 
+        data.Device_Transform = Capabilities.currentTransform;
+
         // Surface Format -------------------------------------------------------------------------------------------------------------------------------------------
         uint surfaceFormatCount = 0;
         func.Instance.vkGetPhysicalDeviceSurfaceFormatsKHR(data.Device_Physical, data.App_Surface,  &surfaceFormatCount, null).Check("vkGetPhysicalDeviceSurfaceFormatsKHR");
@@ -450,15 +460,18 @@ public static partial class App
             func.Instance.vkGetPhysicalDeviceSurfaceFormatsKHR(data.Device_Physical, data.App_Surface,  &surfaceFormatCount, surfaceFormatsPtr).Check("vkGetPhysicalDeviceSurfaceFormatsKHR");
         }
 
+        data.Device_SurfaceFormat = surfaceFormats[0].format;
+        data.Device_ImageColor =surfaceFormats[0].colorSpace;
+
         foreach (VkSurfaceFormatKHR availableFormat in surfaceFormats)
         {
             if (availableFormat.format == config.Device.SurfaceFormatPreferred && availableFormat.colorSpace == config.Device.ColorFormatPreferred )
             {
                 data.Device_SurfaceFormat = availableFormat.format;
+                data.Device_ImageColor = availableFormat.colorSpace  ;
             }
         }
-        data.Device_SurfaceFormat = surfaceFormats[0].format;
-
+        
         // Present mode -----------------------------------------------------------------------------------------------------------------------
         uint presentModeCount = 0;
         func.Instance.vkGetPhysicalDeviceSurfacePresentModesKHR(data.Device_Physical, data.App_Surface, &presentModeCount, null).Check("vkGetPhysicalDeviceSurfacePresentModesKHR Count");
@@ -544,105 +557,95 @@ public static partial class SwapChain
 {
     
 
-    public unsafe static void Pause(in GraphicDeviceFunctions func,ref GraphicDeviceData data  )
+    public unsafe static void Pause(ref VulkanFunctions func,ref GraphicDeviceDatas data   )
     {
-        if ( !data.Handles.Device.IsNull){
-            func.vkDeviceWaitIdle(data.Handles.Device).Check($"WAIT IDLE VkDevice : {data.Handles.Device}");
+        if ( !data.Device.IsNull){
+            func.Device.vkDeviceWaitIdle(data.Device).Check($"WAIT IDLE VkDevice : {data.Device}");
         }
     }
 
-    public unsafe static void ReCreateSwapChain(ref GraphicDeviceFunctions func,ref GraphicDeviceData data)
+    public unsafe static void ReCreateSwapChain(ref VulkanFunctions func,ref GraphicDeviceDatas data , ref GraphicsConfig config)
     {
-        if ( data.Handles.SwapChain == VkSwapchainKHR.Null)return ;
+        // if ( data.Handles.SwapChain == VkSwapchainKHR.Null)return ;
 
-        data.Handles.GetFrameBufferCallback(ref data.Info.VkSurfaceArea.width ,ref data.Info.VkSurfaceArea.height );
+        // data.Handles.GetFrameBufferCallback(ref data.Info.VkSurfaceArea.width ,ref data.Info.VkSurfaceArea.height );
 
-        Pause( func,ref data);
-        DisposeDepthResources(  func , ref data);
-        DisposeFrameBuffer(func, ref data);
-        DisposeSwapChain(func , ref data);
+        // Pause( func,ref data);
+        // DisposeDepthResources(  func , ref data);
+        // DisposeFrameBuffer(func, ref data);
+        // DisposeSwapChain(func , ref data);
        
-        CreateSwapChain(ref func,ref data);
-        CreateImageViews(ref func, ref data);
-        CreateDepthResources( ref func, ref data);
-        CreateFramebuffers(ref func,ref data);
+        CreateSwapChain(ref func,ref data, ref config);
+        // CreateImageViews(ref func, ref data);
+        // CreateDepthResources( ref func, ref data);
+        // CreateFramebuffers(ref func,ref data);
         
     }
 
-    public static unsafe void CreateSwapChain(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data)
+    public static unsafe void CreateSwapChain(ref VulkanFunctions func,ref GraphicDeviceDatas data , ref GraphicsConfig config)
     {
-         // FOR SWAP CHAIN ----------------------------------------------------
-        data.Info.VkPresentMode = ChooseSwapPresentMode(ref data);
-        data.Info.VkSurfaceFormat  = ChooseSwapSurfaceFormat(ref data);
-        VkFormatProperties formatProperties;
-        func.vkGetPhysicalDeviceFormatProperties(data.Handles.PhysicalDevice,data.Info.VkSurfaceFormat.format, &formatProperties);
-        
-        data.Info.VkSurfaceArea = ChooseSwapExtent(ref data);
-        data.Info.VkFormat = data.Info.VkSurfaceFormat.format;
 
-        uint imageCount = data.Info.Capabilities.minImageCount + 1;
-        if (data.Info.Capabilities.maxImageCount > 0 && data.Info.ImageCount > data.Info.Capabilities.maxImageCount) {
-            data.Info.ImageCount = data.Info.Capabilities.maxImageCount;
-        }
-
-        uint* queueFamilyIndices = stackalloc uint[2]{data.Info.VkGraphicFamilyIndice, data.Info.VkPresentFamilyIndice};
+        uint* queueFamilyIndices = stackalloc uint[2]{data.Device_QueueFamilies[0], data.Device_QueueFamilies[2]};
 
         VkSwapchainCreateInfoKHR createInfo = new();
         createInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
         createInfo.pNext = null;
-        createInfo.surface = data.Handles.Surface;
-        createInfo.minImageCount = imageCount;
-        createInfo.imageFormat =  data.Info.VkSurfaceFormat.format;
-        createInfo.imageColorSpace = data.Info.VkSurfaceFormat.colorSpace;
-        createInfo.imageExtent = data.Info.VkSurfaceArea;
-        createInfo.imageArrayLayers = 1;
+        createInfo.surface = data.App_Surface;
+        createInfo.minImageCount = data.Device_ImageCount;
+        createInfo.imageFormat =  data.Device_SurfaceFormat;
+        createInfo.imageColorSpace = data.Device_ImageColor;
+        createInfo.imageExtent = data.Device_SurfaceSize;
+        createInfo.imageArrayLayers = config.SwapChain.Stereoscopic3DApp ? (uint)2 : (uint)1;
+
         createInfo.imageUsage = (uint)VkImageUsageFlagBits.VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        if (data.Info.VkGraphicFamilyIndice != data.Info.VkPresentFamilyIndice) {
+        
+        if (data.Device_QueueFamilies[0] != data.Device_QueueFamilies[2]) {
             createInfo.imageSharingMode = VkSharingMode.VK_SHARING_MODE_CONCURRENT;
             createInfo.queueFamilyIndexCount = 2;
             createInfo.pQueueFamilyIndices = queueFamilyIndices;
         } else {
             createInfo.imageSharingMode = VkSharingMode.VK_SHARING_MODE_EXCLUSIVE;
         }
-        createInfo.preTransform = data.Info.Capabilities.currentTransform;
-        createInfo.compositeAlpha = VkCompositeAlphaFlagBitsKHR.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-        createInfo.presentMode = data.Info.VkPresentMode;
-        createInfo.clipped = VK.VK_TRUE;
+        
+        createInfo.preTransform = data.Device_Transform;
+        createInfo.compositeAlpha = config.SwapChain.CompositeAlpha;
+        createInfo.presentMode = data.Device_PresentMode;
+        createInfo.clipped = config.SwapChain.Clipped ? VK.VK_TRUE : VK.VK_FALSE;
         createInfo.oldSwapchain = VkSwapchainKHR.Null;
 
-        fixed (VkSwapchainKHR* swapchainPtr = &data.Handles.SwapChain)
+        fixed (VkSwapchainKHR* swapchainPtr = &data.SwapChain)
         {
-            func.vkCreateSwapchainKHR(data.Handles.Device, &createInfo, null, swapchainPtr).Check("failed to create swap chain!");
+            func.Device.vkCreateSwapchainKHR(data.Device, &createInfo, null, swapchainPtr).Check("failed to create swap chain!");
         }
 
-        Log.Info($"Create SwapChain {data.Handles.SwapChain}\nMode : {data.Info.VkPresentMode}\nSize :[{data.Info.VkSurfaceArea.width},{data.Info.VkSurfaceArea.height}] ");
-
-        // SWWAP CHAIN IMAGES  ----------------------------------------------------------------------
-
-        func.vkGetSwapchainImagesKHR(data.Handles.Device, data.Handles.SwapChain, &imageCount, null);
-       
-        data.Handles.Images = new VkImage[imageCount];
-
-        fixed (VkImage* swapchainImagesPtr = data.Handles.Images){
-            func.vkGetSwapchainImagesKHR(data.Handles.Device,data.Handles.SwapChain, &imageCount, swapchainImagesPtr).Check("vkGetSwapchainImagesKHR");
-        }
-        
-        Log.Info($"Create {data.Handles.Images.Length} SwapChainImages ");
-        data.Info.ImageCount = imageCount  ;
+        Log.Info($"Create SwapChain {data.SwapChain}");
     }
 
-    public static unsafe void CreateImageViews(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data )
+    public static unsafe void CreateImageViews(ref VulkanFunctions func,ref GraphicDeviceDatas data , ref GraphicsConfig config )
     {
-        uint size  = data.Info.ImageCount;
-        data.Handles.SwapChainImageViews = new VkImageView[size ];
+        // SWWAP CHAIN IMAGES  ----------------------------------------------------------------------
+        uint imageCount = 0 ;
+        func.Device.vkGetSwapchainImagesKHR(data.Device, data.SwapChain, &imageCount, null);
+       
+        data.SwapChain_Images = new VkImage[imageCount];
 
-        for (uint i = 0; i < size; i++)
+        fixed (VkImage* swapchainImagesPtr = data.SwapChain_Images){
+            func.Device.vkGetSwapchainImagesKHR(data.Device,data.SwapChain, &imageCount, swapchainImagesPtr).Check("vkGetSwapchainImagesKHR");
+        }
+        
+        Log.Info($"Create {data.SwapChain_Images.Length} SwapChainImages ");
+
+        data.Device_ImageCount = imageCount  ;
+        
+        data.SwapChain_ImageViews = new VkImageView[imageCount ];
+
+        for (uint i = 0; i < imageCount; i++)
         {
             VkImageViewCreateInfo imageViewCreateInfo= new();
             imageViewCreateInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO; 
-            imageViewCreateInfo.image = data.Handles.Images[i];
+            imageViewCreateInfo.image = data.SwapChain_Images[i];
             imageViewCreateInfo.viewType = VkImageViewType.VK_IMAGE_VIEW_TYPE_2D;
-            imageViewCreateInfo.format = data.Info.VkFormat;
+            imageViewCreateInfo.format = data.Device_SurfaceFormat;
             imageViewCreateInfo.components.r = VkComponentSwizzle.VK_COMPONENT_SWIZZLE_IDENTITY;
             imageViewCreateInfo.components.g = VkComponentSwizzle.VK_COMPONENT_SWIZZLE_IDENTITY;
             imageViewCreateInfo.components.b = VkComponentSwizzle.VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -653,11 +656,11 @@ public static partial class SwapChain
             imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
             imageViewCreateInfo.subresourceRange.layerCount = 1;
 
-            fixed(VkImageView* img =  &data.Handles.SwapChainImageViews[i])
+            fixed(VkImageView* img =  &data.SwapChain_ImageViews[i])
             {
-                func.vkCreateImageView(data.Handles.Device, &imageViewCreateInfo, null, img).Check("failed to create image views!");
+                func.Device.vkCreateImageView(data.Device, &imageViewCreateInfo, null, img).Check("failed to create image views!");
             }
-            Log.Info($"\t -[{i}] {data.Handles.SwapChainImageViews[i]} : {data.Info.VkFormat} other info ...."); 
+            Log.Info($"\t -[{i}] {data.SwapChain_Images[i]} : {data.Device_SurfaceFormat} other info ...."); 
         }
     }
     
