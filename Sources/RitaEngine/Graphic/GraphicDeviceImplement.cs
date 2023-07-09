@@ -4,6 +4,7 @@ using RitaEngine.API.Vulkan;
 using RitaEngine.Base;
 using RitaEngine.Base.Debug;
 using RitaEngine.Base.Strings;
+using RitaEngine.Math.Color;
 using RitaEngine.Platform;
 using VkDeviceSize = UInt64;
 
@@ -47,7 +48,19 @@ public struct GraphicsData : IEquatable<GraphicsData>
     public PFN_GetFrameBuffer SwapChain_GetFrameBufferCallback = null!;
     public VkFramebuffer[] Framebuffers = null!;
       
-    
+    public VkCommandPool CommandPool = VkCommandPool.Null;
+    public VkCommandPool CommandPoolCompute = VkCommandPool.Null;
+    public VkCommandBuffer[] CommandBuffers = null!;
+
+    public VkSemaphore[] ImageAvailableSemaphores = null!;
+    public VkSemaphore[] RenderFinishedSemaphores = null!;
+    public VkFence[] InFlightFences =null!;
+
+    public VkRenderPass RenderPass = VkRenderPass.Null;
+    public VkRect2D RenderPass_RenderArea = new();
+    public VkClearValue[] RenderPass_ClearColors = new VkClearValue[2];
+
+
     public GraphicsData() { }
     #region OVERRIDE    
     public override string ToString() => string.Format($"Graphics  Data" );
@@ -65,8 +78,21 @@ public struct GraphicsConfig : IEquatable<GraphicsConfig>
     public InstanceConfig Instance = new();
     public SwapChainConfig SwapChain = new();
     public DeviceConfig Device = new();
+    public RenderConfig Render = new();
 
     public GraphicsConfig() { }
+
+    [StructLayout(LayoutKind.Sequential, Pack = RitaEngine.Base.BaseHelper.FORCE_ALIGNEMENT), SkipLocalsInit]
+    public struct RenderConfig
+    {
+        public int MAX_FRAMES_IN_FLIGHT = 2;
+        public ulong Tick_timeout = ulong.MaxValue;
+        public Palette BackColorARGB = Palette.Lavender;
+
+        public RenderConfig()
+        {
+        }
+    }
 
     [StructLayout(LayoutKind.Sequential, Pack = RitaEngine.Base.BaseHelper.FORCE_ALIGNEMENT), SkipLocalsInit]
     public struct InstanceConfig
@@ -1211,18 +1237,31 @@ public static partial class Memories
 }
 
 [SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
-public static partial class Render_Commands
+public static partial class Render
 {
     
+    public static unsafe void Init(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config )
+    {
+        CreateCommandPool(ref func , ref data, ref config);
+        CreateCommandBuffer(ref func , ref data,ref config);
+        CreateSyncObjects(ref func , ref data,ref config);
+    }
+
+    public unsafe static void Dispose(ref VulkanFunctions func,ref GraphicsData data)
+    {
+        DisposeSyncObjects(ref func , ref data);
+        DisposeCommandPool(ref func , ref data);
+    }
+
     #region COMMAND BUFFERS 
 
-    public static unsafe void CreateCommandPool(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data  ) 
+    public static unsafe void CreateCommandPool(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config  ) 
     {
         VkCommandPoolCreateInfo poolInfo = new();
         poolInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         poolInfo.pNext = null;
         poolInfo.flags = (uint)VkCommandPoolCreateFlagBits.VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        poolInfo.queueFamilyIndex =data.Info.VkGraphicFamilyIndice;
+        poolInfo.queueFamilyIndex =data.Device_QueueFamilies[0];
 
         /*
         K_COMMAND_POOL_CREATE_TRANSIENT_BIT specifies that command buffers allocated from the pool will be short-lived, meaning that they will be reset or freed in a relatively short timeframe. This flag may be used by the implementation to control memory allocation behavior within the pool.
@@ -1232,89 +1271,162 @@ permet à tout tampon de commande alloué à partir d'un pool d'être individuel
 VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated from the pool are protected command buffers.
         */
 
-        fixed( VkCommandPool* pool =  &data.Handles.CommandPool)
+        fixed( VkCommandPool* pool =  &data.CommandPool)
         {
-            func.vkCreateCommandPool(data.Handles.Device, &poolInfo, null, pool ).Check("failed to create command pool!");
+            func.Device.vkCreateCommandPool(data.Device, &poolInfo, null, pool ).Check("failed to create command pool!");
         }
 
-        Log.Info($"Create Command Pool {data.Handles.CommandPool}  with {VkCommandPoolCreateFlagBits.VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT}");
-    }
+        Log.Info($"Create Command Pool {data.CommandPool}  with {VkCommandPoolCreateFlagBits.VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT}");
 
-     public static unsafe void CreateCommandPoolForCompute(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data  ) 
-    {
-        
-        VkCommandPoolCreateInfo poolInfo = new();
-        poolInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        poolInfo.flags = (uint)VkCommandPoolCreateFlagBits.VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-        poolInfo.queueFamilyIndex =data.Info.VkGraphicFamilyIndice;
+        VkCommandPoolCreateInfo poolInfoCompute = new();
+        poolInfoCompute.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        poolInfoCompute.flags = (uint)VkCommandPoolCreateFlagBits.VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+        poolInfoCompute.queueFamilyIndex =data.Device_QueueFamilies[1];
 
-        fixed( VkCommandPool* pool =  &data.Handles.CommandPoolForCompute)
+        fixed( VkCommandPool* pool =  &data.CommandPoolCompute)
         {
-            func.vkCreateCommandPool(data.Handles.Device, &poolInfo, null, pool ).Check("failed to create command pool!");
+            func.Device.vkCreateCommandPool(data.Device, &poolInfoCompute, null, pool ).Check("failed to create command pool!");
         }
 
-        Log.Info($"Create Command Pool {data.Handles.CommandPoolForCompute}  with {VkCommandPoolCreateFlagBits.VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT}");
+        Log.Info($"Create Command Pool {data.CommandPoolCompute}  with {VkCommandPoolCreateFlagBits.VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT}");
     }
 
-    public static unsafe void CreateCommandBuffer(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data ) 
+    public unsafe static void DisposeCommandPool(ref VulkanFunctions func,ref GraphicsData data  )
     {
-        data.Handles.CommandBuffers = new VkCommandBuffer[data.Info.MAX_FRAMES_IN_FLIGHT]; 
+        if (!data.Device.IsNull && !data.CommandPool.IsNull)
+        {
+            Log.Info($"Destroy Command Pool {data.CommandPool}");
+            func.Device.vkDestroyCommandPool(data.Device, data.CommandPool , null);
+        }
+        if (!data.Device.IsNull && !data.CommandPoolCompute.IsNull)
+        {
+            Log.Info($"Destroy Command Pool {data.CommandPoolCompute}");
+            func.Device.vkDestroyCommandPool(data.Device, data.CommandPoolCompute , null);
+        }
+    }
+
+    public static unsafe void CreateCommandBuffer(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config ) 
+    {
+        data.CommandBuffers = new VkCommandBuffer[config.Render.MAX_FRAMES_IN_FLIGHT]; 
 
         VkCommandBufferAllocateInfo allocInfo =new();
         allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.commandPool = data.Handles.CommandPool;
+        allocInfo.commandPool = data.CommandPool;
         allocInfo.level = VkCommandBufferLevel.VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandBufferCount = (uint)data.Handles.CommandBuffers.Length;
+        allocInfo.commandBufferCount = (uint)data.CommandBuffers.Length;
         
-        fixed(VkCommandBuffer* commandBuffer = &data.Handles.CommandBuffers[0] )
+        fixed(VkCommandBuffer* commandBuffer = &data.CommandBuffers[0] )
         {
-            func.vkAllocateCommandBuffers(data.Handles.Device, &allocInfo, commandBuffer ).Check("failed to allocate command buffers!"); 
+            func.Device.vkAllocateCommandBuffers(data.Device, &allocInfo, commandBuffer ).Check("failed to allocate command buffers!"); 
         }
 
-        Log.Info($"Create Allocate Command buffer count : {data.Info.MAX_FRAMES_IN_FLIGHT}");
-    }
-
-    public unsafe static void DisposeCommandPool(in GraphicDeviceFunctions  func,ref GraphicDeviceData data )
-    {
-        if (!data.Handles.Device.IsNull && !data.Handles.CommandPool.IsNull)
-        {
-            Log.Info($"Destroy Command Pool {data.Handles.CommandPool}");
-            func.vkDestroyCommandPool(data.Handles.Device, data.Handles.CommandPool , null);
-        }
-    }
-
-        public unsafe static void DisposeCommandPoolForCompute(in GraphicDeviceFunctions  func,ref GraphicDeviceData data )
-    {
-        if (!data.Handles.Device.IsNull && !data.Handles.CommandPoolForCompute.IsNull)
-        {
-            Log.Info($"Destroy Command Pool {data.Handles.CommandPoolForCompute}");
-            func.vkDestroyCommandPool(data.Handles.Device, data.Handles.CommandPoolForCompute , null);
-        }
+        Log.Info($"Create Allocate Command buffer count : {config.Render.MAX_FRAMES_IN_FLIGHT}");
     }
    
     #endregion
 
+    #region Synchronisation & cache control 
+
+    public static unsafe void CreateSyncObjects(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config   )
+    {
+        data.ImageAvailableSemaphores = new VkSemaphore[config.Render.MAX_FRAMES_IN_FLIGHT]; 
+        data.RenderFinishedSemaphores = new VkSemaphore[config.Render.MAX_FRAMES_IN_FLIGHT];
+        data.InFlightFences = new VkFence[config.Render.MAX_FRAMES_IN_FLIGHT];
+
+        VkSemaphoreCreateInfo semaphoreInfo =new();
+        semaphoreInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        semaphoreInfo.flags =0;
+        semaphoreInfo.pNext =null;
+
+        VkFenceCreateInfo fenceInfo= new();
+        fenceInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+        fenceInfo.flags = (uint)VkFenceCreateFlagBits.VK_FENCE_CREATE_SIGNALED_BIT;
+
+
+        for (int i = 0; i < config.Render.MAX_FRAMES_IN_FLIGHT; i++)
+        {
+            fixed( VkSemaphore* imageAvailableSemaphore = &data.ImageAvailableSemaphores[i])
+            {
+                func.Device.vkCreateSemaphore(data.Device, &semaphoreInfo, null,  imageAvailableSemaphore).Check("Failed to create Semaphore ImageAvailableSemaphore");
+            }
+            Log.Info($"-{i}  Create Semaphore Image Available : {data.ImageAvailableSemaphores[i]}");
+            
+            fixed( VkSemaphore* renderFinishedSemaphore = &data.RenderFinishedSemaphores[i])
+            {
+                func.Device.vkCreateSemaphore(data.Device, &semaphoreInfo, null, renderFinishedSemaphore).Check("Failed to create Semaphore RenderFinishedSemaphore");
+            }
+            Log.Info($"-{i}  Create Semaphore render Finish : {data.RenderFinishedSemaphores[i]}");
+            
+            fixed(VkFence*  inFlightFence = &data.InFlightFences[i] )
+            {
+                func.Device.vkCreateFence(data.Device, &fenceInfo, null, inFlightFence).Check("Failed to create Fence InFlightFence");
+            }
+            Log.Info($"-{i}  Create Fence  : {data.InFlightFences[i]}");
+        }
+    }
+
+    public static unsafe void DisposeSyncObjects(ref VulkanFunctions func,ref GraphicsData data)
+    {
+        if (  !data.Device.IsNull && data.RenderFinishedSemaphores != null){
+            for ( int i = 0 ; i< data.RenderFinishedSemaphores.Length ; i++)
+            {
+                if ( !data.RenderFinishedSemaphores[i].IsNull)
+                {
+                    Log.Info($"-{i}  Create Semaphore render Finish : {data.RenderFinishedSemaphores[i]}");
+                    func.Device.vkDestroySemaphore(data.Device, data.RenderFinishedSemaphores[i], null);
+                }
+            }
+            data.RenderFinishedSemaphores = null!;
+        }
+
+        if (  !data.Device.IsNull && data.ImageAvailableSemaphores != null){
+            for ( int i = 0 ; i< data.ImageAvailableSemaphores.Length ; i++)
+            {
+                if ( !data.ImageAvailableSemaphores[i].IsNull)
+                {
+                    Log.Info($"-{i}  Create Semaphore Image Available : {data.ImageAvailableSemaphores[i]}");
+                    func.Device.vkDestroySemaphore(data.Device, data.ImageAvailableSemaphores[i], null);
+                }
+            }
+            data.ImageAvailableSemaphores = null!;
+        }
+
+        if (  !data.Device.IsNull && data.InFlightFences != null){
+            for ( int i = 0 ; i< data.InFlightFences.Length ; i++)
+            {
+                if ( !data.InFlightFences[i].IsNull)
+                {
+                    Log.Info($"-{i}  Create Fence  : {data.InFlightFences[i]}");
+                    func.Device.vkDestroyFence(data.Device,data.InFlightFences[i], null);
+                }
+            }
+            data.InFlightFences = null!;
+        }
+    }
+
+    #endregion
 
     private static int CurrentFrame =0;
-    public static unsafe  void Draw(ref GraphicDeviceFunctions func, ref GraphicDeviceData data )
+
+    public static unsafe  void Draw(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config )
     {
         uint imageIndex=0;
-        VkFence CurrentinFlightFence = data.Handles.InFlightFences[/*data.*/CurrentFrame];
-        VkSemaphore CurrentImageAvailableSemaphore =  data.Handles.ImageAvailableSemaphores[/*data.*/CurrentFrame];
-        VkSemaphore CurrentRenderFinishedSemaphore = data.Handles.RenderFinishedSemaphores[/*data.*/CurrentFrame];
+        VkFence CurrentinFlightFence = data.InFlightFences[/*data.*/CurrentFrame];
+        VkSemaphore CurrentImageAvailableSemaphore =  data.ImageAvailableSemaphores[/*data.*/CurrentFrame];
+        VkSemaphore CurrentRenderFinishedSemaphore = data.RenderFinishedSemaphores[/*data.*/CurrentFrame];
         VkSemaphore* waitSemaphores = stackalloc VkSemaphore[1] {CurrentImageAvailableSemaphore};// VkSemaphore[] waitSemaphores = {CurrentImageAvailableSemaphore};
         UInt32* waitStages  = stackalloc UInt32[1]{(uint)VkPipelineStageFlagBits.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT }; //*VkPipelineStageFlags*/UInt32[] waitStages = {(uint)VkPipelineStageFlagBits.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
         VkSemaphore*   signalSemaphores  = stackalloc VkSemaphore[1] {CurrentRenderFinishedSemaphore} ;// VkSemaphore[] signalSemaphores = {CurrentRenderFinishedSemaphore};
-        VkSwapchainKHR* swapChains = stackalloc  VkSwapchainKHR[1]{ data.Handles.SwapChain };// VkSwapchainKHR[] swapChains = { data.Handles.SwapChain };
-        VkCommandBuffer commandBuffer =data.Handles.CommandBuffers[/*data.*/CurrentFrame];
+        VkSwapchainKHR* swapChains = stackalloc  VkSwapchainKHR[1]{ data.SwapChain };// VkSwapchainKHR[] swapChains = { data.SwapChain };
+        VkCommandBuffer commandBuffer =data.CommandBuffers[/*data.*/CurrentFrame];
 
-        func.vkWaitForFences(data.Handles.Device, 1,&CurrentinFlightFence, VK.VK_TRUE, data.Info.tick_timeout).Check("Acquire Image");
+        func.Device.vkWaitForFences(data.Device, 1,&CurrentinFlightFence, VK.VK_TRUE, config.Render.Tick_timeout).Check("Acquire Image");
 
-        VkResult result = func.vkAcquireNextImageKHR(data.Handles.Device, data.Handles.SwapChain, data.Info.tick_timeout,CurrentImageAvailableSemaphore, VkFence.Null, &imageIndex);
+        VkResult result = func.Device.vkAcquireNextImageKHR(data.Device, data.SwapChain, config.Render.Tick_timeout,CurrentImageAvailableSemaphore, VkFence.Null, &imageIndex);
 
         if ( result == VkResult.VK_ERROR_OUT_OF_DATE_KHR)
         {
-            // ReCreateSwapChain( ref func,ref data);
+            SwapChain. ReCreateSwapChain( ref func,ref data, ref config);
             return ;
         }
         else if (result != VkResult.VK_SUCCESS && result != VkResult.VK_SUBOPTIMAL_KHR )
@@ -1324,10 +1436,10 @@ VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated fr
 
         // UpdateUniformBuffer( func,ref  data);
                 
-        func.vkResetFences(data.Handles.Device, 1, &CurrentinFlightFence);
+        func.Device.vkResetFences(data.Device, 1, &CurrentinFlightFence);
 
- 
-        RecordCommandBuffer(  func,ref data, in  commandBuffer, imageIndex);
+
+        RecordCommandBuffer( ref func,ref data,ref config, commandBuffer, imageIndex);
 
 
         VkSubmitInfo submitInfo = default;
@@ -1341,7 +1453,7 @@ VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated fr
         submitInfo.pSignalSemaphores = signalSemaphores ;
         submitInfo.pNext = null;
         
-        func.vkQueueSubmit(data.Handles.GraphicQueue, 1, &submitInfo,  CurrentinFlightFence ).Check("failed to submit draw command buffer!");
+        func.Device.vkQueueSubmit(data.Device_GraphicQueue, 1, &submitInfo,  CurrentinFlightFence ).Check("failed to submit draw command buffer!");
         
         VkPresentInfoKHR presentInfo =  default;
         presentInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PRESENT_INFO_KHR; 
@@ -1353,23 +1465,23 @@ VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated fr
         presentInfo.pNext =null;
         presentInfo.pResults = null;
         
-        result = func.vkQueuePresentKHR(data.Handles.GraphicQueue, &presentInfo); 
+        result = func.Device.vkQueuePresentKHR(data.Device_PresentQueue, &presentInfo); 
 
         if ( result == VkResult.VK_ERROR_OUT_OF_DATE_KHR || result == VkResult.VK_SUBOPTIMAL_KHR )
         {
-        //    ReCreateSwapChain( ref func,ref data);
+            SwapChain. ReCreateSwapChain( ref func,ref data, ref config);
         }
         else if (result != VkResult.VK_SUCCESS )
         {
             throw new Exception("Failed to  present swap chain Images");
         }
 
-       CurrentFrame = ((CurrentFrame + 1) % data.Info.MAX_FRAMES_IN_FLIGHT);   
+       CurrentFrame = ((CurrentFrame + 1) % config.Render.MAX_FRAMES_IN_FLIGHT);   
     }
 
-    private static unsafe void RecordCommandBuffer(in GraphicDeviceFunctions  func,ref GraphicDeviceData data, in VkCommandBuffer commandBuffer, uint imageIndex)
+    private static unsafe void RecordCommandBuffer(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config, in VkCommandBuffer commandBuffer, uint imageIndex)
     {
-        func.vkResetCommandBuffer(commandBuffer, (uint)VkCommandBufferResetFlagBits.VK_COMMAND_BUFFER_RESET_RELEASE_NONE);
+        func.Device.vkResetCommandBuffer(commandBuffer, (uint)VkCommandBufferResetFlagBits.VK_COMMAND_BUFFER_RESET_RELEASE_NONE);
     // COMMAND BUFFER ----------------------------------------------------------------------------------------------------
         VkCommandBufferBeginInfo beginInfo = default;
         beginInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO; 
@@ -1377,20 +1489,22 @@ VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated fr
         beginInfo.flags =(uint)VkCommandBufferUsageFlagBits.VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
         beginInfo.pInheritanceInfo= null;
         
-        func.vkBeginCommandBuffer(commandBuffer, &beginInfo).Check("Failed to Begin command buffer");
+        func.Device.vkBeginCommandBuffer(commandBuffer, &beginInfo).Check("Failed to Begin command buffer");
 
-            VkClearValue* clearValues = stackalloc VkClearValue[2] {data.Info.ClearColor,data.Info.ClearColor2 };
+            // VkClearValue* clearValues = stackalloc VkClearValue[2] {data.Info.ClearColor,data.Info.ClearColor2 };
         // RENDER PASS --------------------------------------------------------------------------------------------------
             VkRenderPassBeginInfo renderPassInfo = default;
             renderPassInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO; 
-            renderPassInfo.renderPass = data.Handles.RenderPass;
-            renderPassInfo.framebuffer = data.Handles.Framebuffers[imageIndex];
-            renderPassInfo.clearValueCount = 2;
-            renderPassInfo.pClearValues = clearValues;
+            renderPassInfo.renderPass = data.RenderPass;
+            renderPassInfo.framebuffer = data.Framebuffers[imageIndex];
+            renderPassInfo.clearValueCount = (uint)data.RenderPass_ClearColors.Length;
+            fixed(VkClearValue* clearValues = &data.RenderPass_ClearColors[0] ){
+                renderPassInfo.pClearValues = clearValues;
+            }           
             renderPassInfo.pNext = null;
-            renderPassInfo.renderArea =data.Info.RenderArea;
+            renderPassInfo.renderArea =data.RenderPass_RenderArea;
             
-            func.vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VkSubpassContents.VK_SUBPASS_CONTENTS_INLINE);
+            func.Device.vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VkSubpassContents.VK_SUBPASS_CONTENTS_INLINE);
 
 // ALL LINE COMMENT  IS EMPTY PIPELINE 
             // // PUSH CONSTANTS ---------- ( do before bin pipeline)
@@ -1422,16 +1536,125 @@ VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated fr
             // // DRAW CALLS  ------------ VERTEX INDEXED  
             //     func.vkCmdDrawIndexed(commandBuffer, data.Handles.IndicesSize, 1, 0, 0, 0);
 
-            func.vkCmdEndRenderPass(commandBuffer);
+            func.Device.vkCmdEndRenderPass(commandBuffer);
         // RENDER PASS --------------------------------------------------------------------------------------------------        
-        func.vkEndCommandBuffer(commandBuffer).Check("Failed to End command buffer ");
+        func.Device.vkEndCommandBuffer(commandBuffer).Check("Failed to End command buffer ");
     // COMMAND BUFFER ----------------------------------------------------------------------------------------------------    
     }
 }
 
 [SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
-public static partial class Render_Pipeline
+public static partial class Pipeline
 {
+    public unsafe static void Build(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config )
+    {
+        CreateRenderPass(ref func , ref data, ref config);
+    }
+
+    public unsafe static void Dispose(ref VulkanFunctions func,ref GraphicsData data  )
+    {
+        DisposeRenderPass(ref func , ref data);
+    }
+        
+    #region RenderPass
+
+    public static unsafe void CreateRenderPass(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config) 
+    {
+        data.RenderPass_ClearColors[0] = new(ColorHelper.PaletteToRGBA( config.Render.BackColorARGB));
+        data.RenderPass_ClearColors[0] = new(depth:1.0f,stencil:0);
+        
+        data.RenderPass_RenderArea = new();
+        data.RenderPass_RenderArea.offset = new( );
+        data.RenderPass_RenderArea.offset.x =0 ;data.RenderPass_RenderArea.offset.x =0 ; //TODO put in config
+        data.RenderPass_RenderArea.extent  = data.Device_SurfaceSize;
+
+        // COLOR 
+        VkAttachmentDescription colorAttachment =new();
+        colorAttachment.format = data.Device_ImageFormat;
+        colorAttachment.samples = VkSampleCountFlagBits.VK_SAMPLE_COUNT_1_BIT;
+        colorAttachment.loadOp = VkAttachmentLoadOp.VK_ATTACHMENT_LOAD_OP_CLEAR;
+        colorAttachment.storeOp = VkAttachmentStoreOp. VK_ATTACHMENT_STORE_OP_STORE;
+        colorAttachment.stencilLoadOp = VkAttachmentLoadOp.VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        colorAttachment.stencilStoreOp =VkAttachmentStoreOp. VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        colorAttachment.initialLayout = VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED;
+        colorAttachment.finalLayout = VkImageLayout.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        colorAttachment.flags = (uint)VkAttachmentDescriptionFlagBits.VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT;
+
+        //ONLY IF DEPTH RESOURCE
+        VkAttachmentDescription depthAttachment =new();
+        depthAttachment.format = data.Device_DepthBufferImageFormat;
+        depthAttachment.samples = VkSampleCountFlagBits.VK_SAMPLE_COUNT_1_BIT;
+        depthAttachment.loadOp = VkAttachmentLoadOp.VK_ATTACHMENT_LOAD_OP_CLEAR;
+        depthAttachment.storeOp = VkAttachmentStoreOp. VK_ATTACHMENT_STORE_OP_STORE;
+        depthAttachment.stencilLoadOp = VkAttachmentLoadOp.VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        depthAttachment.stencilStoreOp =VkAttachmentStoreOp. VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depthAttachment.initialLayout = VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED;
+        depthAttachment.finalLayout = VkImageLayout.VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        depthAttachment.flags = (uint)VkAttachmentDescriptionFlagBits.VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT;
+
+        VkAttachmentDescription* attachments = stackalloc VkAttachmentDescription[] { colorAttachment, depthAttachment };
+
+        // SUBPASS  -> COLOR POST PROCESSING       
+        VkAttachmentReference colorAttachmentRef = new();
+        colorAttachmentRef.attachment =0 ;
+        colorAttachmentRef.layout =VkImageLayout. VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+         
+        // SUBPASS -> DEPTH POST PROCESSING
+        VkAttachmentReference depthAttachmentRef = new();
+        depthAttachmentRef.attachment =1;
+        depthAttachmentRef.layout =VkImageLayout.VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+        // SUBPASS
+        VkSubpassDescription subpass = new() ;
+        subpass.pipelineBindPoint = VkPipelineBindPoint. VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpass.colorAttachmentCount = 1;
+        subpass.pColorAttachments = &colorAttachmentRef;
+        subpass.pDepthStencilAttachment =&depthAttachmentRef;
+        subpass.flags =0;
+        subpass.inputAttachmentCount=0;
+        subpass.pInputAttachments = null;
+        subpass.pPreserveAttachments = null;
+        subpass.preserveAttachmentCount=0;
+
+        VkSubpassDependency dependency =new();
+        dependency.srcSubpass = VK.VK_SUBPASS_EXTERNAL;
+        dependency.dstSubpass = 0;
+        dependency.srcStageMask = (uint)VkPipelineStageFlagBits. VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | (uint)VkPipelineStageFlagBits.VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        dependency.srcAccessMask = 0;
+        dependency.dstStageMask =(uint) VkPipelineStageFlagBits.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT| (uint)VkPipelineStageFlagBits.VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        dependency.dstAccessMask =(uint)VkAccessFlagBits. VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT| (uint)VkAccessFlagBits.VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        dependency.dependencyFlags =0;
+
+        VkRenderPassCreateInfo renderPassInfo = new();
+        renderPassInfo.sType = VkStructureType. VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        renderPassInfo.attachmentCount = 2 ;
+        renderPassInfo.pAttachments = attachments ;
+        renderPassInfo.subpassCount = 1;
+        renderPassInfo.pSubpasses = &subpass;
+        renderPassInfo.dependencyCount = 1;
+        renderPassInfo.pDependencies = &dependency;
+        renderPassInfo.flags =0;
+        renderPassInfo.pNext =null;
+
+        fixed( VkRenderPass* renderPass= &data.RenderPass )
+        {
+            func.Device.vkCreateRenderPass(data.Device, &renderPassInfo, null, renderPass).Check("failed to create render pass!");
+        }
+
+        Log.Info($"Create Render Pass : {data.RenderPass}");
+    }
+
+    public static unsafe void DisposeRenderPass(ref VulkanFunctions func,ref GraphicsData data  )
+    {
+        if (!data.Device.IsNull && !data.RenderPass.IsNull)
+        {
+            Log.Info($"Destroy Render Pass : {data.RenderPass}");
+            func.Device.vkDestroyRenderPass(data.Device,data.RenderPass,null);
+        }
+    }
+
+    #endregion
+
 
 }
 

@@ -36,6 +36,9 @@ public static class Sample_0003
             RitaEngine.Graphic.GraphicsImplement.Instance.Init(ref func,ref data,ref graphicsConfig , in window );    
             RitaEngine.Graphic.GraphicsImplement.Device.Init(ref func,ref data,ref graphicsConfig , in window );    
             RitaEngine.Graphic.GraphicsImplement.SwapChain.Init(ref func,ref data,ref graphicsConfig , in window ); 
+            RitaEngine.Graphic.GraphicsImplement.Render.Init(ref func,ref data,ref graphicsConfig  ); 
+
+            RitaEngine.Graphic.GraphicsImplement.Pipeline.Build(ref func,ref data,ref graphicsConfig  ); 
 
             window.Show();
             clock.Reset();
@@ -47,6 +50,8 @@ public static class Sample_0003
                 }
 
                 
+                RitaEngine.Graphic.GraphicsImplement.Render.Draw(ref func, ref data, ref graphicsConfig);
+
                 window.DispatchPending();
                 input.Update();
                 clock.Update();
@@ -59,6 +64,8 @@ public static class Sample_0003
         }
         finally
         {
+            RitaEngine.Graphic.GraphicsImplement.Pipeline.Dispose(ref func, ref data);
+            RitaEngine.Graphic.GraphicsImplement.Render.Dispose(ref func, ref data);
             RitaEngine.Graphic.GraphicsImplement.SwapChain.Dispose(ref func, ref data);
             RitaEngine.Graphic.GraphicsImplement.Device.Dispose(ref func, ref data);
             RitaEngine.Graphic.GraphicsImplement.Instance.Dispose(ref func, ref data);
