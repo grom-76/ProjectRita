@@ -143,6 +143,11 @@ public unsafe  struct VkExtent3D {
 	public  UInt32  width;
 	public  UInt32  height;
 	public  UInt32  depth;
+
+	public VkExtent3D( UInt32  pwidth,UInt32  pheight,UInt32  pdepth)
+	{
+		width= pwidth ; height = pheight; depth = pdepth;
+	}
 }
 
 [StructLayout(LayoutKind.Sequential)]
