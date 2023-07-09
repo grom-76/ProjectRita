@@ -1210,4 +1210,229 @@ public static partial class Memories
     
 }
 
+[SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
+public static partial class Render_Commands
+{
+    
+    #region COMMAND BUFFERS 
+
+    public static unsafe void CreateCommandPool(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data  ) 
+    {
+        VkCommandPoolCreateInfo poolInfo = new();
+        poolInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        poolInfo.pNext = null;
+        poolInfo.flags = (uint)VkCommandPoolCreateFlagBits.VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        poolInfo.queueFamilyIndex =data.Info.VkGraphicFamilyIndice;
+
+        /*
+        K_COMMAND_POOL_CREATE_TRANSIENT_BIT specifies that command buffers allocated from the pool will be short-lived, meaning that they will be reset or freed in a relatively short timeframe. This flag may be used by the implementation to control memory allocation behavior within the pool.
+        spécifie que les tampons de commande alloués à partir du pool seront de courte durée, ce qui signifie qu'ils seront réinitialisés ou libérés dans un délai relativement court. Cet indicateur peut être utilisé par l'implémentation pour contrôler le comportement de l'allocation de mémoire au sein du pool.
+VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT allows any command buffer allocated from a pool to be individually reset to the initial state; either by calling vkResetCommandBuffer, or via the implicit reset when calling vkBeginCommandBuffer. If this flag is not set on a pool, then vkResetCommandBuffer must not be called for any command buffer allocated from that pool.
+permet à tout tampon de commande alloué à partir d'un pool d'être individuellement réinitialisé à l'état initial, soit en appelant vkResetCommandBuffer, soit via la réinitialisation implicite lors de l'appel à vkBeginCommandBuffer. Si ce drapeau n'est pas activé pour un pool, vkResetCommandBuffer ne doit pas être appelé pour un tampon de commande alloué à partir de ce pool.
+VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated from the pool are protected command buffers.
+        */
+
+        fixed( VkCommandPool* pool =  &data.Handles.CommandPool)
+        {
+            func.vkCreateCommandPool(data.Handles.Device, &poolInfo, null, pool ).Check("failed to create command pool!");
+        }
+
+        Log.Info($"Create Command Pool {data.Handles.CommandPool}  with {VkCommandPoolCreateFlagBits.VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT}");
+    }
+
+     public static unsafe void CreateCommandPoolForCompute(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data  ) 
+    {
+        
+        VkCommandPoolCreateInfo poolInfo = new();
+        poolInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        poolInfo.flags = (uint)VkCommandPoolCreateFlagBits.VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+        poolInfo.queueFamilyIndex =data.Info.VkGraphicFamilyIndice;
+
+        fixed( VkCommandPool* pool =  &data.Handles.CommandPoolForCompute)
+        {
+            func.vkCreateCommandPool(data.Handles.Device, &poolInfo, null, pool ).Check("failed to create command pool!");
+        }
+
+        Log.Info($"Create Command Pool {data.Handles.CommandPoolForCompute}  with {VkCommandPoolCreateFlagBits.VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT}");
+    }
+
+    public static unsafe void CreateCommandBuffer(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data ) 
+    {
+        data.Handles.CommandBuffers = new VkCommandBuffer[data.Info.MAX_FRAMES_IN_FLIGHT]; 
+
+        VkCommandBufferAllocateInfo allocInfo =new();
+        allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.commandPool = data.Handles.CommandPool;
+        allocInfo.level = VkCommandBufferLevel.VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandBufferCount = (uint)data.Handles.CommandBuffers.Length;
+        
+        fixed(VkCommandBuffer* commandBuffer = &data.Handles.CommandBuffers[0] )
+        {
+            func.vkAllocateCommandBuffers(data.Handles.Device, &allocInfo, commandBuffer ).Check("failed to allocate command buffers!"); 
+        }
+
+        Log.Info($"Create Allocate Command buffer count : {data.Info.MAX_FRAMES_IN_FLIGHT}");
+    }
+
+    public unsafe static void DisposeCommandPool(in GraphicDeviceFunctions  func,ref GraphicDeviceData data )
+    {
+        if (!data.Handles.Device.IsNull && !data.Handles.CommandPool.IsNull)
+        {
+            Log.Info($"Destroy Command Pool {data.Handles.CommandPool}");
+            func.vkDestroyCommandPool(data.Handles.Device, data.Handles.CommandPool , null);
+        }
+    }
+
+        public unsafe static void DisposeCommandPoolForCompute(in GraphicDeviceFunctions  func,ref GraphicDeviceData data )
+    {
+        if (!data.Handles.Device.IsNull && !data.Handles.CommandPoolForCompute.IsNull)
+        {
+            Log.Info($"Destroy Command Pool {data.Handles.CommandPoolForCompute}");
+            func.vkDestroyCommandPool(data.Handles.Device, data.Handles.CommandPoolForCompute , null);
+        }
+    }
+   
+    #endregion
+
+
+    private static int CurrentFrame =0;
+    public static unsafe  void Draw(ref GraphicDeviceFunctions func, ref GraphicDeviceData data )
+    {
+        uint imageIndex=0;
+        VkFence CurrentinFlightFence = data.Handles.InFlightFences[/*data.*/CurrentFrame];
+        VkSemaphore CurrentImageAvailableSemaphore =  data.Handles.ImageAvailableSemaphores[/*data.*/CurrentFrame];
+        VkSemaphore CurrentRenderFinishedSemaphore = data.Handles.RenderFinishedSemaphores[/*data.*/CurrentFrame];
+        VkSemaphore* waitSemaphores = stackalloc VkSemaphore[1] {CurrentImageAvailableSemaphore};// VkSemaphore[] waitSemaphores = {CurrentImageAvailableSemaphore};
+        UInt32* waitStages  = stackalloc UInt32[1]{(uint)VkPipelineStageFlagBits.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT }; //*VkPipelineStageFlags*/UInt32[] waitStages = {(uint)VkPipelineStageFlagBits.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+        VkSemaphore*   signalSemaphores  = stackalloc VkSemaphore[1] {CurrentRenderFinishedSemaphore} ;// VkSemaphore[] signalSemaphores = {CurrentRenderFinishedSemaphore};
+        VkSwapchainKHR* swapChains = stackalloc  VkSwapchainKHR[1]{ data.Handles.SwapChain };// VkSwapchainKHR[] swapChains = { data.Handles.SwapChain };
+        VkCommandBuffer commandBuffer =data.Handles.CommandBuffers[/*data.*/CurrentFrame];
+
+        func.vkWaitForFences(data.Handles.Device, 1,&CurrentinFlightFence, VK.VK_TRUE, data.Info.tick_timeout).Check("Acquire Image");
+
+        VkResult result = func.vkAcquireNextImageKHR(data.Handles.Device, data.Handles.SwapChain, data.Info.tick_timeout,CurrentImageAvailableSemaphore, VkFence.Null, &imageIndex);
+
+        if ( result == VkResult.VK_ERROR_OUT_OF_DATE_KHR)
+        {
+            // ReCreateSwapChain( ref func,ref data);
+            return ;
+        }
+        else if (result != VkResult.VK_SUCCESS && result != VkResult.VK_SUBOPTIMAL_KHR )
+        {
+            throw new Exception("Failed to acquire swap chain Images");
+        }
+
+        // UpdateUniformBuffer( func,ref  data);
+                
+        func.vkResetFences(data.Handles.Device, 1, &CurrentinFlightFence);
+
+ 
+        RecordCommandBuffer(  func,ref data, in  commandBuffer, imageIndex);
+
+
+        VkSubmitInfo submitInfo = default;
+        submitInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.pWaitSemaphores = waitSemaphores;
+        submitInfo.pWaitDstStageMask =  waitStages;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &commandBuffer;      
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = signalSemaphores ;
+        submitInfo.pNext = null;
+        
+        func.vkQueueSubmit(data.Handles.GraphicQueue, 1, &submitInfo,  CurrentinFlightFence ).Check("failed to submit draw command buffer!");
+        
+        VkPresentInfoKHR presentInfo =  default;
+        presentInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PRESENT_INFO_KHR; 
+        presentInfo.waitSemaphoreCount = 1;
+        presentInfo.pWaitSemaphores = signalSemaphores;
+        presentInfo.pImageIndices = &imageIndex;
+        presentInfo.swapchainCount = 1;
+        presentInfo.pSwapchains = swapChains;
+        presentInfo.pNext =null;
+        presentInfo.pResults = null;
+        
+        result = func.vkQueuePresentKHR(data.Handles.GraphicQueue, &presentInfo); 
+
+        if ( result == VkResult.VK_ERROR_OUT_OF_DATE_KHR || result == VkResult.VK_SUBOPTIMAL_KHR )
+        {
+        //    ReCreateSwapChain( ref func,ref data);
+        }
+        else if (result != VkResult.VK_SUCCESS )
+        {
+            throw new Exception("Failed to  present swap chain Images");
+        }
+
+       CurrentFrame = ((CurrentFrame + 1) % data.Info.MAX_FRAMES_IN_FLIGHT);   
+    }
+
+    private static unsafe void RecordCommandBuffer(in GraphicDeviceFunctions  func,ref GraphicDeviceData data, in VkCommandBuffer commandBuffer, uint imageIndex)
+    {
+        func.vkResetCommandBuffer(commandBuffer, (uint)VkCommandBufferResetFlagBits.VK_COMMAND_BUFFER_RESET_RELEASE_NONE);
+    // COMMAND BUFFER ----------------------------------------------------------------------------------------------------
+        VkCommandBufferBeginInfo beginInfo = default;
+        beginInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO; 
+        beginInfo.pNext =null;
+        beginInfo.flags =(uint)VkCommandBufferUsageFlagBits.VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+        beginInfo.pInheritanceInfo= null;
+        
+        func.vkBeginCommandBuffer(commandBuffer, &beginInfo).Check("Failed to Begin command buffer");
+
+            VkClearValue* clearValues = stackalloc VkClearValue[2] {data.Info.ClearColor,data.Info.ClearColor2 };
+        // RENDER PASS --------------------------------------------------------------------------------------------------
+            VkRenderPassBeginInfo renderPassInfo = default;
+            renderPassInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO; 
+            renderPassInfo.renderPass = data.Handles.RenderPass;
+            renderPassInfo.framebuffer = data.Handles.Framebuffers[imageIndex];
+            renderPassInfo.clearValueCount = 2;
+            renderPassInfo.pClearValues = clearValues;
+            renderPassInfo.pNext = null;
+            renderPassInfo.renderArea =data.Info.RenderArea;
+            
+            func.vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VkSubpassContents.VK_SUBPASS_CONTENTS_INLINE);
+
+// ALL LINE COMMENT  IS EMPTY PIPELINE 
+            // // PUSH CONSTANTS ---------- ( do before bin pipeline)
+            // // void* ptr = new IntPtr( data.Info.PushConstants).ToPointer();
+            // fixed(void* ptr = &data.Info.PushConstants ){
+            //     func.vkCmdPushConstants(commandBuffer,data.Handles.PipelineLayout, (uint) VkShaderStageFlagBits.VK_SHADER_STAGE_VERTEX_BIT, 0,(uint)sizeof(PushConstantsMesh), ptr );
+            // }
+            
+            // // USE SHADER   FOREACH PIPELINE or FOREACH SHADER
+            //     func.vkCmdBindPipeline(commandBuffer, VkPipelineBindPoint.VK_PIPELINE_BIND_POINT_GRAPHICS, data.Handles.Pipeline);
+                
+            // //  FOREACN  MATERIALS  or FOREACH UNIFORMS & TEXTURES(sampler)
+            //     fixed(VkDescriptorSet* desc =  &data.Handles.DescriptorSets[CurrentFrame] )
+            //     {
+            //         func.vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint.VK_PIPELINE_BIND_POINT_GRAPHICS, data.Handles.PipelineLayout, 0, 1, desc, 0, null);
+            //     }
+                
+            // // SET DYNAMIC STATES
+            //     fixed(VkViewport* viewport = &data.Info.Viewport ){ func.vkCmdSetViewport(commandBuffer, 0, 1,viewport); }
+            //     fixed( VkRect2D* scissor = &data.Info.Scissor) { func.vkCmdSetScissor(commandBuffer, 0, 1, scissor); }
+            //     func.vkCmdSetLineWidth( commandBuffer,data.Handles.DynamicStatee_LineWidth);
+               
+
+            // //  FOREACH OBJECT/ GEOMETRY 
+            //     VkDeviceSize* offsets = stackalloc VkDeviceSize[]{0};
+            //     VkBuffer* vertexBuffers = stackalloc VkBuffer[] { data.Handles.VertexBuffer};
+            //     func.vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+            //     func.vkCmdBindIndexBuffer(commandBuffer, data.Handles.IndicesBuffer, 0, VkIndexType.VK_INDEX_TYPE_UINT16);
+            // // DRAW CALLS  ------------ VERTEX INDEXED  
+            //     func.vkCmdDrawIndexed(commandBuffer, data.Handles.IndicesSize, 1, 0, 0, 0);
+
+            func.vkCmdEndRenderPass(commandBuffer);
+        // RENDER PASS --------------------------------------------------------------------------------------------------        
+        func.vkEndCommandBuffer(commandBuffer).Check("Failed to End command buffer ");
+    // COMMAND BUFFER ----------------------------------------------------------------------------------------------------    
+    }
+}
+
+[SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
+public static partial class Render_Pipeline
+{
+
+}
+
 }
