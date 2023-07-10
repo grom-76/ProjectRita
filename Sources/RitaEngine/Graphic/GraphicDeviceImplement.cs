@@ -61,6 +61,11 @@ public struct GraphicsData : IEquatable<GraphicsData>
     public VkRect2D RenderPass_RenderArea = new();
     public VkClearValue[] RenderPass_ClearColors = new VkClearValue[2];
 
+    public VkDescriptorSetLayout DescriptorSetLayout = VkDescriptorSetLayout.Null;
+    public VkDescriptorPool DescriptorPool = VkDescriptorPool.Null;
+    public VkPipelineLayout PipelineLayout = VkPipelineLayout.Null;
+    public VkPipeline Pipeline = VkPipeline.Null;
+
     
     public GraphicsData() { }
     #region OVERRIDE    
@@ -1663,8 +1668,6 @@ public static partial class RenderPass
 
     #region RenderPass
 
-    //create attachements
-
     public static unsafe void CreateRenderPass(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config) 
     {
         data.RenderPass_ClearColors[0] = new(ColorHelper.PaletteToRGBA( config.Render.BackGroundColor));
@@ -1762,7 +1765,6 @@ public static partial class RenderPass
     }
 
     #endregion
-
     
     #region FrameBuffer
 
@@ -2060,9 +2062,6 @@ public static partial class Pipelines
             dynamicStateCreateInfo.pDynamicStates =dynamicStates;
         }
 
-        
-        
-        
         // Pipeline.CreateTessellation(out VkPipelineTessellationStateCreateInfo tessellationStateCreateInfo); 
         #region Tesslation
            //not used 
@@ -2094,7 +2093,7 @@ public static partial class Pipelines
         pipelineInfo.pViewportState = &viewportState;
         pipelineInfo.pRasterizationState = &rasterizer;
         pipelineInfo.pMultisampleState = &multisampling;
-        // pipelineInfo.layout = data.Handles.PipelineLayout;
+        pipelineInfo.layout = data.PipelineLayout;
         pipelineInfo.pTessellationState = &tessellationStateCreateInfo;
         pipelineInfo.pDepthStencilState = &depthStencilStateCreateInfo;
         pipelineInfo.pDynamicState = &dynamicStateCreateInfo;
@@ -2102,10 +2101,10 @@ public static partial class Pipelines
         pipelineInfo.basePipelineIndex =0;
         pipelineInfo.basePipelineHandle = VkPipeline.Null;
         
-        // fixed( VkPipeline* gfxpipeline = &data.Handles.Pipeline )
-        // {    
-        //     func.vkCreateGraphicsPipelines(data.Handles.Device, VkPipelineCache.Null, 1, &pipelineInfo, null, gfxpipeline).Check("failed to create graphics pipeline!");
-        // }
+        fixed( VkPipeline* gfxpipeline = &data.Pipeline )
+        {    
+            func.Device.vkCreateGraphicsPipelines(data.Device, VkPipelineCache.Null, 1, &pipelineInfo, null, gfxpipeline).Check("failed to create graphics pipeline!");
+        }
 
         for( int i = 0 ; i< shaderModules.Length ; i++ )
         {
@@ -2115,17 +2114,17 @@ public static partial class Pipelines
             }
         }
 
-        // Log.Info($"Create PIPELINE : {data.Handles.Pipeline}");
+        Log.Info($"Create PIPELINE : {data.Pipeline}");
     }
 
     
     public static unsafe void DisposePipeline(ref VulkanFunctions func,ref GraphicsData data )
     {  
-        // if (!data.Handles.Device.IsNull && !data.Handles.Pipeline.IsNull)
-        // {
-        //     Log.Info($"Destroy PIPELINE : {data.Handles.Pipeline}");
-        //     func.vkDestroyPipeline(data.Handles.Device,data.Handles.Pipeline, null);
-        // }
+        if (!data.Device.IsNull && !data.Pipeline.IsNull)
+        {
+            Log.Info($"Destroy PIPELINE : {data.Pipeline}");
+            func.Device.vkDestroyPipeline(data.Device,data.Pipeline, null);
+        }
     }
 
     
@@ -2725,9 +2724,7 @@ public static partial class ResourceCreation
 public static partial class ResourceDeccriptor
 {
 
-    #region Descriptor
-
-    public unsafe static void CreateDescriptors( )
+    public unsafe static void CreateDescriptors(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig.RenderConfig config )
     {
         //:KNOW SHADER DESCIRPTION INSIDE 
 
@@ -2812,7 +2809,7 @@ public static partial class ResourceDeccriptor
 
     }
 
-    public unsafe static void UpdateDescriptors( )
+    public unsafe static void UpdateDescriptors(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig.RenderConfig config )
     {
         /*
         BEFORE UPDATE NEED TO CREATE 
@@ -2856,7 +2853,7 @@ public static partial class ResourceDeccriptor
         // }
     }
 
-     public unsafe static void DisposeDescriptors( )
+     public unsafe static void DisposeDescriptors(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig.RenderConfig config )
     {
         //  if ( !data.Handles.DescriptorPool.IsNull)
         // {
@@ -2873,7 +2870,7 @@ public static partial class ResourceDeccriptor
 
     }
 
-    public unsafe static void UpdatePushConstant( ref GraphicDeviceFunctions  func,ref GraphicDeviceData data)
+    public unsafe static void UpdatePushConstant( ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig.RenderConfig config)
     {
         // PUSH CONSTANTS ---------- ( do before bin pipeline)
         // void* ptr = new IntPtr( data.Info.PushConstants).ToPointer();
@@ -2914,7 +2911,6 @@ public static partial class ResourceDeccriptor
         pipelineLayoutInfo.pushConstantRangeCount = 1;    // Optionnel
         pipelineLayoutInfo.pPushConstantRanges = &push_constant; 
 
-
         fixed( VkPipelineLayout* layout = &data.Handles.PipelineLayout )
         {
             func.vkCreatePipelineLayout(data.Handles.Device, &pipelineLayoutInfo, null, layout).Check ("failed to create pipeline layout!");
@@ -2932,8 +2928,6 @@ public static partial class ResourceDeccriptor
         
     }
 
-
-    #endregion
 
 }
 
