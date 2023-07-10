@@ -33,11 +33,13 @@ public static class Sample_0003
             window.Init(config, clock);
             input.Init(config, window);
 
+            graphicsConfig.Device.SetVSync(true);
             RitaEngine.Graphic.GraphicsImplement.Instance.Init(ref func,ref data,ref graphicsConfig , in window );    
             RitaEngine.Graphic.GraphicsImplement.Device.Init(ref func,ref data,ref graphicsConfig , in window );    
             RitaEngine.Graphic.GraphicsImplement.SwapChain.Init(ref func,ref data,ref graphicsConfig , in window ); 
             RitaEngine.Graphic.GraphicsImplement.Render.Init(ref func,ref data,ref graphicsConfig  ); 
 
+            graphicsConfig.Render.BackGroundColor = RitaEngine.Math.Color.Palette.SkyBlue;
             RitaEngine.Graphic.GraphicsImplement.Pipeline.Build(ref func,ref data,ref graphicsConfig  ); 
 
             window.Show();
