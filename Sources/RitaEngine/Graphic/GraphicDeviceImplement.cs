@@ -61,7 +61,7 @@ public struct GraphicsData : IEquatable<GraphicsData>
     public VkRect2D RenderPass_RenderArea = new();
     public VkClearValue[] RenderPass_ClearColors = new VkClearValue[2];
 
-
+    
     public GraphicsData() { }
     #region OVERRIDE    
     public override string ToString() => string.Format($"Graphics  Data" );
@@ -90,6 +90,8 @@ public struct GraphicsConfig : IEquatable<GraphicsConfig>
         public MultisamplingConfigData Pipeline_Multisampling = new();
         public DepthStencilConfigData Pipeline_DepthStencil = new();
         public DynamicStatesConfigData Pipeline_DynamicStates = new();
+        public VkViewport Pipeline_DynamicStatesViewport = new();
+        public VkRect2D Pipeline_DynamicStatesScissor = new();   
         public ColorBlendingConfigData Pipeline_ColorBlending = new();
         public int MAX_FRAMES_IN_FLIGHT = 2;
         public ulong Tick_timeout = ulong.MaxValue;
@@ -1826,7 +1828,7 @@ public static partial class Pipelines
 
         
         //do most stuff before Resource Cretion then resource descriptor 
-        CreatePipeline(ref  func,ref  data , ref config);
+        CreatePipeline(ref  func,ref  data , ref config.Render);
     }
 
     public unsafe static void Dispose(ref VulkanFunctions func,ref GraphicsData data  )
@@ -1872,17 +1874,17 @@ public static partial class Pipelines
         
     #region  Compute Pipeline 
     
-    public static unsafe void CreatePipeline(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config)
+    public static unsafe void CreatePipeline(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig.RenderConfig config)
     {
         // #region SHADERS
-
+        VkShaderModule[] shaderModules = new  VkShaderModule[2];
         // Pipeline_CreateShaderModule( out VkShaderModule  vertShaderModule , ref func, ref data , data.Info.VertexShaderFileNameSPV);
         // Pipeline_CreateShaderModule( out VkShaderModule  fragShaderModule , ref func, ref data , data.Info.FragmentShaderFileNameSPV);
         // using RitaEngine.Base.Strings.StrUnsafe fragentryPoint = new(data.Info.FragmentEntryPoint);
         // using RitaEngine.Base.Strings.StrUnsafe vertentryPoint = new(data.Info.VertexEntryPoint);
        
         // VkPipelineShaderStageCreateInfo* shaderStages = stackalloc VkPipelineShaderStageCreateInfo[2];        
-        
+        VkPipelineShaderStageCreateInfo[] shaderStages = new VkPipelineShaderStageCreateInfo[2] ;
         // shaderStages[0] = new();
         // shaderStages[0].sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         // shaderStages[0].stage = VkShaderStageFlagBits.VK_SHADER_STAGE_VERTEX_BIT;
@@ -1948,111 +1950,170 @@ public static partial class Pipelines
         // inputAssembly.pNext =null;       
         // #endregion
 
-        // #region COLOR BLENDING
+        #region COLOR BLENDING
 
-        // VkPipelineColorBlendAttachmentState colorBlendAttachment =new();
-        // colorBlendAttachment.colorWriteMask = (uint)(VkColorComponentFlagBits.VK_COLOR_COMPONENT_R_BIT | VkColorComponentFlagBits.VK_COLOR_COMPONENT_G_BIT | VkColorComponentFlagBits.VK_COLOR_COMPONENT_B_BIT | VkColorComponentFlagBits.VK_COLOR_COMPONENT_A_BIT);
-        // colorBlendAttachment.blendEnable = VK.VK_FALSE;
-        // colorBlendAttachment.srcColorBlendFactor = VkBlendFactor.VK_BLEND_FACTOR_ZERO;
-        // colorBlendAttachment.srcAlphaBlendFactor = VkBlendFactor.VK_BLEND_FACTOR_ZERO;
-        // colorBlendAttachment.alphaBlendOp = VkBlendOp.VK_BLEND_OP_ADD;
-        // colorBlendAttachment.colorBlendOp =  VkBlendOp.VK_BLEND_OP_ADD;
-        // colorBlendAttachment.dstAlphaBlendFactor =VkBlendFactor.VK_BLEND_FACTOR_ZERO;
-        // colorBlendAttachment.dstColorBlendFactor =VkBlendFactor.VK_BLEND_FACTOR_ZERO;
+        VkPipelineColorBlendAttachmentState colorBlendAttachment =new();
+        colorBlendAttachment.colorWriteMask = (uint)(VkColorComponentFlagBits.VK_COLOR_COMPONENT_R_BIT | VkColorComponentFlagBits.VK_COLOR_COMPONENT_G_BIT | VkColorComponentFlagBits.VK_COLOR_COMPONENT_B_BIT | VkColorComponentFlagBits.VK_COLOR_COMPONENT_A_BIT);
+        colorBlendAttachment.blendEnable = VK.VK_FALSE;
+        colorBlendAttachment.srcColorBlendFactor = VkBlendFactor.VK_BLEND_FACTOR_ZERO;
+        colorBlendAttachment.srcAlphaBlendFactor = VkBlendFactor.VK_BLEND_FACTOR_ZERO;
+        colorBlendAttachment.alphaBlendOp = VkBlendOp.VK_BLEND_OP_ADD;
+        colorBlendAttachment.colorBlendOp =  VkBlendOp.VK_BLEND_OP_ADD;
+        colorBlendAttachment.dstAlphaBlendFactor =VkBlendFactor.VK_BLEND_FACTOR_ZERO;
+        colorBlendAttachment.dstColorBlendFactor =VkBlendFactor.VK_BLEND_FACTOR_ZERO;
         
-        // VkPipelineColorBlendStateCreateInfo colorBlending=new();
-        // colorBlending.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-        // colorBlending.logicOpEnable = VK.VK_FALSE;
-        // colorBlending.logicOp = VkLogicOp. VK_LOGIC_OP_COPY;
-        // colorBlending.attachmentCount = 1;
-        // colorBlending.pAttachments = &colorBlendAttachment;
-        // colorBlending.blendConstants[0] = 0.0f;
-        // colorBlending.blendConstants[1] = 0.0f;
-        // colorBlending.blendConstants[2] = 0.0f;
-        // colorBlending.blendConstants[3] = 0.0f;
-        // colorBlending.flags =0;
-        // colorBlending.pNext=null;
-        // #endregion
+        VkPipelineColorBlendStateCreateInfo colorBlending=new();
+        colorBlending.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+        colorBlending.logicOpEnable = VK.VK_FALSE;
+        colorBlending.logicOp = VkLogicOp. VK_LOGIC_OP_COPY;
+        colorBlending.attachmentCount = 1;
+        colorBlending.pAttachments = &colorBlendAttachment;
+        colorBlending.blendConstants[0] = 0.0f;
+        colorBlending.blendConstants[1] = 0.0f;
+        colorBlending.blendConstants[2] = 0.0f;
+        colorBlending.blendConstants[3] = 0.0f;
+        colorBlending.flags =0;
+        colorBlending.pNext=null;
+        #endregion
 
         // #region VIEWPORT
+// TODO if VIEWPORT NOT CHANGE DELETE DYNAMIC STATE
+        config.Pipeline_DynamicStatesViewport.x = 0.0f;
+        config.Pipeline_DynamicStatesViewport.y = 0.0f;
+        config.Pipeline_DynamicStatesViewport.width = (float) data.Device_SurfaceSize.width;
+        config.Pipeline_DynamicStatesViewport.height = (float) data.Device_SurfaceSize.height;
+        config.Pipeline_DynamicStatesViewport.minDepth = 0.0f;
+        config.Pipeline_DynamicStatesViewport.maxDepth = 1.0f;
 
-        // data.Info.Viewport.x = 0.0f;
-        // data.Info.Viewport.y = 0.0f;
-        // data.Info.Viewport.width = (float) data.Info.VkSurfaceArea.width;
-        // data.Info.Viewport.height = (float) data.Info.VkSurfaceArea.height;
-        // data.Info.Viewport.minDepth = 0.0f;
-        // data.Info.Viewport.maxDepth = 1.0f;
-
-        // VkOffset2D offset = new();
-        // offset.x = 0;
-        // offset.y = 0;
-        // data.Info.Scissor.offset = offset;
-        // data.Info.Scissor.extent = data.Info.VkSurfaceArea;
-
-        // VkPipelineViewportStateCreateInfo viewportState =new();
-        // viewportState.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-        // viewportState.viewportCount = 1;
-        // // fixed( VkViewport* viewport = &data.Info.Viewport)
-        // // {    
-        // //     viewportState.pViewports =viewport;    
-        // // }
-        // viewportState.scissorCount = 1;
-        // // fixed( VkRect2D* scissor = &data.Info.Scissor )
-        // // {  
-        // //     viewportState.pScissors = scissor;          
-        // // }
-        // viewportState.flags=0;
-        // viewportState.pNext = null;
+        config.Pipeline_DynamicStatesScissor.offset = new();
+        config.Pipeline_DynamicStatesScissor.extent = data.Device_SurfaceSize ;
+        
+        VkPipelineViewportStateCreateInfo viewportState =new();
+        viewportState.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+        viewportState.viewportCount = 1;
+        fixed( VkViewport* viewport = &config.Pipeline_DynamicStatesViewport)
+        {    
+            viewportState.pViewports =viewport;    
+        }
+        viewportState.scissorCount = 1;
+        fixed( VkRect2D* scissor = &config.Pipeline_DynamicStatesScissor )
+        {  
+            viewportState.pScissors = scissor;          
+        }
+        viewportState.flags=0;
+        viewportState.pNext = null;
         // #endregion
 
         // // Pipeline.CreateColorBlending(ref renderConfig.Pipeline_ColorBlending ,out VkPipelineColorBlendStateCreateInfo colorBlending );
         // Pipeline.CreateRasterization( ref renderConfig.Pipeline_Rasterization , out VkPipelineRasterizationStateCreateInfo rasterizer) ;
+        VkPipelineRasterizationStateCreateInfo rasterizer =new();
+        rasterizer.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+        rasterizer.rasterizerDiscardEnable = config.Pipeline_Rasterization .RasterizerDiscardEnable?   VK.VK_TRUE : VK.VK_FALSE ;// VK.VK_FALSE;
+        rasterizer.polygonMode = (VkPolygonMode) config.Pipeline_Rasterization.PolygonFillMode ;//  VkPolygonMode. VK_POLYGON_MODE_FILL;
+        rasterizer.lineWidth = config.Pipeline_Rasterization.LineWidth;// 1.0f;
+        rasterizer.cullMode =  (uint)config.Pipeline_Rasterization.FaceCullMode ; //( uint)VkCullModeFlagBits.VK_CULL_MODE_BACK_BIT;
+        rasterizer.frontFace = (VkFrontFace) config.Pipeline_Rasterization.FrontFace ; //VkFrontFace.VK_FRONT_FACE_COUNTER_CLOCKWISE;
+        rasterizer.flags =0;
+        rasterizer.pNext = null;
+        rasterizer.depthBiasEnable = config.Pipeline_Rasterization.DepthBiasEnable? VK.VK_TRUE : VK.VK_FALSE ;// VK.VK_FALSE;
+        rasterizer.depthClampEnable = config.Pipeline_Rasterization.DepthClampEnable? VK.VK_TRUE : VK.VK_FALSE ;   // VK.VK_FALSE;
+        rasterizer.depthBiasClamp = config.Pipeline_Rasterization.DepthBiasClamp ; // 0.0f;
+        rasterizer.depthBiasConstantFactor =config.Pipeline_Rasterization.DepthBiasConstantFactor ;  // 1.0f;
+        rasterizer.depthBiasSlopeFactor = config.Pipeline_Rasterization.DepthBiasSlopeFactor ;   //1.0f;
         // Pipeline.CreateMultisampling(ref renderConfig.Pipeline_Multisampling, out VkPipelineMultisampleStateCreateInfo multisampling );
+        VkPipelineMultisampleStateCreateInfo multisampling=new();
+        multisampling.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+        multisampling.pNext = null;
+        multisampling.flags =0;
+        multisampling.sampleShadingEnable =config.Pipeline_Multisampling .SampleShadingEnable ? VK.VK_TRUE:  VK.VK_FALSE;
+        multisampling.rasterizationSamples =(VkSampleCountFlagBits) config.Pipeline_Multisampling.RasterizationSamples ;
+        multisampling.alphaToCoverageEnable =  config.Pipeline_Multisampling.AlphaToCoverageEnable ? VK.VK_TRUE:  VK.VK_FALSE;
+        multisampling.alphaToOneEnable = config.Pipeline_Multisampling.AlphaToOneEnable  ? VK.VK_TRUE:  VK.VK_FALSE;       
+        multisampling.minSampleShading =config.Pipeline_Multisampling.MinSampleShading;
+        uint* samplemask = null;
+        multisampling.pSampleMask =samplemask;
         // Pipeline.CreateDepthStencil( ref renderConfig.Pipeline_DepthStencil , out VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo);
+        VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo=new();
+        depthStencilStateCreateInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+        depthStencilStateCreateInfo.pNext = null;
+        depthStencilStateCreateInfo.depthTestEnable = config.Pipeline_DepthStencil.DepthTestEnable ?  VK.VK_TRUE : VK.VK_FALSE;
+        depthStencilStateCreateInfo.depthWriteEnable =config.Pipeline_DepthStencil.DepthWriteEnable  ?  VK.VK_TRUE : VK.VK_FALSE;
+        depthStencilStateCreateInfo.depthCompareOp = (VkCompareOp)config.Pipeline_DepthStencil.DepthCompareOp;
+        depthStencilStateCreateInfo.depthBoundsTestEnable =config.Pipeline_DepthStencil.DepthBoundsTestEnable ?  VK.VK_TRUE : VK.VK_FALSE;
+        depthStencilStateCreateInfo.stencilTestEnable = config.Pipeline_DepthStencil.StencilTestEnable ? VK.VK_TRUE : VK.VK_FALSE;
+        depthStencilStateCreateInfo.maxDepthBounds = config.Pipeline_DepthStencil.MaxDepthBounds;
+        depthStencilStateCreateInfo.minDepthBounds = config.Pipeline_DepthStencil.MinDepthBounds;
+        depthStencilStateCreateInfo.flags = (uint)config.Pipeline_DepthStencil.Flags;
+        depthStencilStateCreateInfo.front = config.Pipeline_DepthStencil.Front ;
+        depthStencilStateCreateInfo.back = config.Pipeline_DepthStencil.Back ;
         // Pipeline.CreateDynamicStates( ref renderConfig.Pipeline_DynamicStates , out  VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo );
-        // Pipeline.CreateTessellation(out VkPipelineTessellationStateCreateInfo tessellationStateCreateInfo);
-    
+        VkDynamicState[] dynamicStates2  = new VkDynamicState[2];
+        dynamicStates2[0] = VkDynamicState.VK_DYNAMIC_STATE_VIEWPORT;
+        dynamicStates2[1] = VkDynamicState.VK_DYNAMIC_STATE_SCISSOR;
 
-        // VkGraphicsPipelineCreateInfo pipelineInfo =new();
-        // pipelineInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        // pipelineInfo.pNext = null;
+        VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo = new();
+        dynamicStateCreateInfo.sType = VkStructureType. VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+        dynamicStateCreateInfo.pNext = null;
+        dynamicStateCreateInfo.flags =0;
+        dynamicStateCreateInfo.dynamicStateCount = (uint)dynamicStates2.Length;
+        fixed( VkDynamicState* dynamicStates = &dynamicStates2[0] ){
+            dynamicStateCreateInfo.pDynamicStates =dynamicStates;
+        }
 
-        // pipelineInfo.flags = (uint)VkPipelineCreateFlagBits.VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT ;
         
-        // pipelineInfo.renderPass = data.Handles.RenderPass;
-        // pipelineInfo.subpass = 0;
         
-        // pipelineInfo.stageCount =2;
-        // pipelineInfo.pStages = shaderStages;
+        
+        // Pipeline.CreateTessellation(out VkPipelineTessellationStateCreateInfo tessellationStateCreateInfo); 
+        #region Tesslation
+           //not used 
+        VkPipelineTessellationStateCreateInfo tessellationStateCreateInfo = new();
+        tessellationStateCreateInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
+        tessellationStateCreateInfo.pNext = null;
+        tessellationStateCreateInfo.flags =0 ;
+        uint numberOfControlPointsPerPatch =0;
+        tessellationStateCreateInfo.patchControlPoints = numberOfControlPointsPerPatch;
+        #endregion
+        VkGraphicsPipelineCreateInfo pipelineInfo =new();
+        pipelineInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+        pipelineInfo.pNext = null;
 
+        pipelineInfo.flags = (uint)VkPipelineCreateFlagBits.VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT ;
+        
+        pipelineInfo.renderPass = data.RenderPass;
+        pipelineInfo.subpass = 0;
+        
+        pipelineInfo.stageCount =(uint)shaderStages.Length;
+        fixed(VkPipelineShaderStageCreateInfo* ss = &shaderStages[0]){
+            pipelineInfo.pStages = ss;
+        }
+        
         // pipelineInfo.pVertexInputState = &vertexInputInfo;
         // pipelineInfo.pInputAssemblyState = &inputAssembly;
         
-        // pipelineInfo.pColorBlendState = &colorBlending;
-        // pipelineInfo.pViewportState = &viewportState;
-        // pipelineInfo.pRasterizationState = &rasterizer;
-        // pipelineInfo.pMultisampleState = &multisampling;
+        pipelineInfo.pColorBlendState = &colorBlending;
+        pipelineInfo.pViewportState = &viewportState;
+        pipelineInfo.pRasterizationState = &rasterizer;
+        pipelineInfo.pMultisampleState = &multisampling;
         // pipelineInfo.layout = data.Handles.PipelineLayout;
-        // pipelineInfo.pTessellationState = &tessellationStateCreateInfo;
-        // pipelineInfo.pDepthStencilState = &depthStencilStateCreateInfo;
-        // pipelineInfo.pDynamicState = &dynamicStateCreateInfo;
+        pipelineInfo.pTessellationState = &tessellationStateCreateInfo;
+        pipelineInfo.pDepthStencilState = &depthStencilStateCreateInfo;
+        pipelineInfo.pDynamicState = &dynamicStateCreateInfo;
         
-        // pipelineInfo.basePipelineIndex =0;
-        // pipelineInfo.basePipelineHandle = VkPipeline.Null;
+        pipelineInfo.basePipelineIndex =0;
+        pipelineInfo.basePipelineHandle = VkPipeline.Null;
         
         // fixed( VkPipeline* gfxpipeline = &data.Handles.Pipeline )
         // {    
         //     func.vkCreateGraphicsPipelines(data.Handles.Device, VkPipelineCache.Null, 1, &pipelineInfo, null, gfxpipeline).Check("failed to create graphics pipeline!");
         // }
 
-        // if( fragShaderModule != VkShaderModule.Null)
-        // {
-        //     func.vkDestroyShaderModule(data.Handles.Device, fragShaderModule, null);
-        // }
-        // if( vertShaderModule != VkShaderModule.Null)
-        // {
-        //     func.vkDestroyShaderModule(data.Handles.Device, vertShaderModule, null);
-        // }
+        for( int i = 0 ; i< shaderModules.Length ; i++ )
+        {
+            if(shaderModules[i] != VkShaderModule.Null)
+            {
+                func.Device.vkDestroyShaderModule(data.Device, shaderModules[i], null);
+            }
+        }
 
         // Log.Info($"Create PIPELINE : {data.Handles.Pipeline}");
     }
@@ -2067,118 +2128,7 @@ public static partial class Pipelines
         // }
     }
 
-    private unsafe static void CreateDepthStencil(ref GraphicsConfig.RenderConfig.DepthStencilConfigData data , out VkPipelineDepthStencilStateCreateInfo depthStencilState )
-    {
-        depthStencilState.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-        depthStencilState.pNext = null;
-
-        depthStencilState.depthTestEnable = data.DepthTestEnable ?  VK.VK_TRUE : VK.VK_FALSE;
-        depthStencilState.depthWriteEnable =data.DepthWriteEnable  ?  VK.VK_TRUE : VK.VK_FALSE;
-        depthStencilState.depthCompareOp = (VkCompareOp)data.DepthCompareOp;
-        depthStencilState.depthBoundsTestEnable =data.DepthBoundsTestEnable ?  VK.VK_TRUE : VK.VK_FALSE;
-        depthStencilState.stencilTestEnable = data.StencilTestEnable ? VK.VK_TRUE : VK.VK_FALSE;
-        depthStencilState.maxDepthBounds = data.MaxDepthBounds;
-        depthStencilState.minDepthBounds = data.MinDepthBounds;
-        depthStencilState.flags = (uint)data.Flags;
-        depthStencilState.front = data.Front ;
-        depthStencilState.back = data.Back ;
-    }
     
-    public unsafe static void CreateDynamicStates(ref GraphicsConfig.RenderConfig.DynamicStatesConfigData data , out VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo )
-    {
-        VkDynamicState[ ] dynamicStates2  = new VkDynamicState[2];
-
-        dynamicStates2[0] = VkDynamicState.VK_DYNAMIC_STATE_VIEWPORT;
-        dynamicStates2[1] = VkDynamicState.VK_DYNAMIC_STATE_SCISSOR;
-
-    
-        dynamicStateCreateInfo.sType = VkStructureType. VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-        dynamicStateCreateInfo.dynamicStateCount = 2;
-        fixed( VkDynamicState* dynamicStates = &dynamicStates2[0] ){
-            dynamicStateCreateInfo.pDynamicStates =dynamicStates;
-        }
-        
-        dynamicStateCreateInfo.pNext = null;
-        dynamicStateCreateInfo.flags =0;
-   
-    }
-
-    public unsafe static void CreateMultisampling(ref GraphicsConfig.RenderConfig.MultisamplingConfigData data , out VkPipelineMultisampleStateCreateInfo multisampling , uint* samplemask = null)
-    {
-        // VkPipelineMultisampleStateCreateInfo multisampling=new();
-        multisampling.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-        multisampling.pNext = null;
-        multisampling.flags =0;
-        multisampling.sampleShadingEnable =data.SampleShadingEnable ? VK.VK_TRUE:  VK.VK_FALSE;
-        multisampling.rasterizationSamples =(VkSampleCountFlagBits) data.RasterizationSamples ;
-        multisampling.alphaToCoverageEnable =  data.AlphaToCoverageEnable ? VK.VK_TRUE:  VK.VK_FALSE;
-        multisampling.alphaToOneEnable = data.AlphaToOneEnable  ? VK.VK_TRUE:  VK.VK_FALSE;       
-        multisampling.minSampleShading =data.MinSampleShading;
-        multisampling.pSampleMask =samplemask;
-    }
-
-    public unsafe static void CreateRasterization( ref GraphicsConfig.RenderConfig.RasterizationConfigData data ,out VkPipelineRasterizationStateCreateInfo rasterizer)
-    {
-        // VkPipelineRasterizationStateCreateInfo rasterizer =new();
-        rasterizer.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-        rasterizer.rasterizerDiscardEnable = data.RasterizerDiscardEnable?   VK.VK_TRUE : VK.VK_FALSE ;// VK.VK_FALSE;
-        rasterizer.polygonMode = (VkPolygonMode) data.PolygonFillMode ;//  VkPolygonMode. VK_POLYGON_MODE_FILL;
-        rasterizer.lineWidth = data.LineWidth;// 1.0f;
-        rasterizer.cullMode =  (uint)data.FaceCullMode ; //( uint)VkCullModeFlagBits.VK_CULL_MODE_BACK_BIT;
-        rasterizer.frontFace = (VkFrontFace) data.FrontFace ; //VkFrontFace.VK_FRONT_FACE_COUNTER_CLOCKWISE;
-        rasterizer.flags =0;
-        rasterizer.pNext = null;
-        rasterizer.depthBiasEnable = data.DepthBiasEnable? VK.VK_TRUE : VK.VK_FALSE ;// VK.VK_FALSE;
-        rasterizer.depthClampEnable = data.DepthClampEnable? VK.VK_TRUE : VK.VK_FALSE ;   // VK.VK_FALSE;
-        rasterizer.depthBiasClamp = data.DepthBiasClamp ; // 0.0f;
-        rasterizer.depthBiasConstantFactor =data.DepthBiasConstantFactor ;  // 1.0f;
-        rasterizer.depthBiasSlopeFactor = data.DepthBiasSlopeFactor ;   //1.0f;
-    }
-
-    public unsafe static void CreateTessellation(out VkPipelineTessellationStateCreateInfo tessellationStateCreateInfo , uint numberOfControlPointsPerPatch =0)
-    {
-            
-        #region Tesslation
-           //not used 
-        // VkPipelineTessellationStateCreateInfo tessellationStateCreateInfo = new();
-        tessellationStateCreateInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
-        tessellationStateCreateInfo.pNext = null;
-        tessellationStateCreateInfo.flags =0 ;
-        tessellationStateCreateInfo.patchControlPoints = numberOfControlPointsPerPatch;
-        #endregion
-    }
-
-    public unsafe static void CreateColorBlending(ref  GraphicsConfig.RenderConfig.ColorBlendingConfigData data, out VkPipelineColorBlendStateCreateInfo colorBlending , out VkPipelineColorBlendAttachmentState colorBlendAttachment)
-    {
-        // VkPipelineColorBlendAttachmentState colorBlendAttachment =new();
-        colorBlendAttachment.colorWriteMask = (uint)(VkColorComponentFlagBits.VK_COLOR_COMPONENT_R_BIT | VkColorComponentFlagBits.VK_COLOR_COMPONENT_G_BIT | VkColorComponentFlagBits.VK_COLOR_COMPONENT_B_BIT | VkColorComponentFlagBits.VK_COLOR_COMPONENT_A_BIT);
-        colorBlendAttachment.blendEnable = VK.VK_FALSE;
-        colorBlendAttachment.srcColorBlendFactor = VkBlendFactor.VK_BLEND_FACTOR_ZERO;
-        colorBlendAttachment.srcAlphaBlendFactor = VkBlendFactor.VK_BLEND_FACTOR_ZERO;
-        colorBlendAttachment.alphaBlendOp = VkBlendOp.VK_BLEND_OP_ADD;
-        colorBlendAttachment.colorBlendOp =  VkBlendOp.VK_BLEND_OP_ADD;
-        colorBlendAttachment.dstAlphaBlendFactor =VkBlendFactor.VK_BLEND_FACTOR_ZERO;
-        colorBlendAttachment.dstColorBlendFactor =VkBlendFactor.VK_BLEND_FACTOR_ZERO;
-        
-        // VkPipelineColorBlendStateCreateInfo colorBlending=new();
-        colorBlending.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-        colorBlending.logicOpEnable = VK.VK_FALSE;
-        colorBlending.logicOp = VkLogicOp. VK_LOGIC_OP_COPY;
-        colorBlending.attachmentCount = 1;
-        fixed(VkPipelineColorBlendAttachmentState* cb =  &colorBlendAttachment  )
-        {
-            colorBlending.pAttachments =cb ;
-        }
-        
-        colorBlending.blendConstants[0] = 0.0f;
-        colorBlending.blendConstants[1] = 0.0f;
-        colorBlending.blendConstants[2] = 0.0f;
-        colorBlending.blendConstants[3] = 0.0f;
-        colorBlending.flags =0;
-        colorBlending.pNext=null;
-
-    }
-
     #endregion
 
     #region Objects geometry 
@@ -2391,46 +2341,7 @@ public static partial class Pipelines
         shader = fragShaderModule;
     }
 
-    private unsafe static void CreateShaderStages( ref VulkanFunctions func,ref GraphicsData data ,out VkShaderModule[] shaderModules,  out VkPipelineShaderStageCreateInfo[] shaderStages )
-    {
-        shaderModules = new  VkShaderModule[2];
-        // Pipeline_CreateShaderModule( out   shaderModules[0] , ref func, ref data , data.Info.VertexShaderFileNameSPV);
-        // Pipeline_CreateShaderModule( out shaderModules[1]   , ref func, ref data , data.Info.FragmentShaderFileNameSPV);
-        // using RitaEngine.Base.Strings.StrUnsafe fragentryPoint = new(data.Info.FragmentEntryPoint);
-        // using RitaEngine.Base.Strings.StrUnsafe vertentryPoint = new(data.Info.VertexEntryPoint);
-       
-        // // VkPipelineShaderStageCreateInfo* shaderStages = stackalloc VkPipelineShaderStageCreateInfo[2];        
-        shaderStages = new VkPipelineShaderStageCreateInfo[2]; // stackalloc VkPipelineShaderStageCreateInfo[2];        
-        // shaderStages[0] = new();
-        // shaderStages[0].sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        // shaderStages[0].stage = VkShaderStageFlagBits.VK_SHADER_STAGE_VERTEX_BIT;
-        // shaderStages[0].module =  shaderModules[0];
-        // shaderStages[0].pName = vertentryPoint;
-        // shaderStages[0].flags =0;
-        // shaderStages[0].pNext =null;
-        // shaderStages[0].pSpecializationInfo =null;
-
-        // shaderStages[1] = new();
-        // shaderStages[1].sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        // shaderStages[1].stage = VkShaderStageFlagBits.VK_SHADER_STAGE_FRAGMENT_BIT;
-        // shaderStages[1].module =  shaderModules[1];
-        // shaderStages[1].pName = fragentryPoint;
-        // shaderStages[1].flags =0;
-        // shaderStages[1].pNext =null;
-        // shaderStages[1].pSpecializationInfo =null;
-    }
-
-    private unsafe static void DisposeShaderModule( ref VulkanFunctions func,ref GraphicsData data , VkShaderModule[] shaderModules  )
-    {
-        for( int i = 0 ; i< shaderModules.Length ; i++ )
-        {
-            if(shaderModules[i] != VkShaderModule.Null)
-            {
-                func.Device.vkDestroyShaderModule(data.Device, shaderModules[i], null);
-            }
-        }
-    }
-
+    
     #endregion
 
 }
