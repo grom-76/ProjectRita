@@ -1642,7 +1642,7 @@ VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated fr
             data.Info.UboMapped[i] = ptr;
           
             Log.Info($"-[{i}] Create Uniform Buffer : {data.Info.UniformBuffers[i]} Mem {data.Info.UniformBuffersMemory[i]}");
-           
+            func.vkUnmapMemory(data.Handles.Device,data.Info.UniformBuffersMemory[i]);
         }   
        
     }
@@ -1727,6 +1727,7 @@ VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated fr
 
         poolSizes[0].type =VkDescriptorType. VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         poolSizes[0].descriptorCount = (uint)(data.Info.MAX_FRAMES_IN_FLIGHT);
+        
         poolSizes[1].type = VkDescriptorType.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         poolSizes[1].descriptorCount =(uint)(data.Info.MAX_FRAMES_IN_FLIGHT);
 
@@ -2069,21 +2070,20 @@ VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated fr
 
     #endregion
 
-    public static unsafe void CreatePipeline(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data , in GraphicRenderConfig renderConfig)
+    private unsafe static void CreateShaderStages(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data ,out VkShaderModule[] shaderModules,  out VkPipelineShaderStageCreateInfo[] shaderStages )
     {
-        #region SHADERS
-
-        Pipeline_CreateShaderModule( out VkShaderModule  vertShaderModule , ref func, ref data , data.Info.VertexShaderFileNameSPV);
-        Pipeline_CreateShaderModule( out VkShaderModule  fragShaderModule , ref func, ref data , data.Info.FragmentShaderFileNameSPV);
+        shaderModules = new  VkShaderModule[2];
+        Pipeline_CreateShaderModule( out   shaderModules[0] , ref func, ref data , data.Info.VertexShaderFileNameSPV);
+        Pipeline_CreateShaderModule( out shaderModules[1]   , ref func, ref data , data.Info.FragmentShaderFileNameSPV);
         using RitaEngine.Base.Strings.StrUnsafe fragentryPoint = new(data.Info.FragmentEntryPoint);
         using RitaEngine.Base.Strings.StrUnsafe vertentryPoint = new(data.Info.VertexEntryPoint);
        
-        VkPipelineShaderStageCreateInfo* shaderStages = stackalloc VkPipelineShaderStageCreateInfo[2];        
-        
+        // VkPipelineShaderStageCreateInfo* shaderStages = stackalloc VkPipelineShaderStageCreateInfo[2];        
+        shaderStages = new VkPipelineShaderStageCreateInfo[2]; // stackalloc VkPipelineShaderStageCreateInfo[2];        
         shaderStages[0] = new();
         shaderStages[0].sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         shaderStages[0].stage = VkShaderStageFlagBits.VK_SHADER_STAGE_VERTEX_BIT;
-        shaderStages[0].module = vertShaderModule;
+        shaderStages[0].module =  shaderModules[0];
         shaderStages[0].pName = vertentryPoint;
         shaderStages[0].flags =0;
         shaderStages[0].pNext =null;
@@ -2092,13 +2092,17 @@ VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated fr
         shaderStages[1] = new();
         shaderStages[1].sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         shaderStages[1].stage = VkShaderStageFlagBits.VK_SHADER_STAGE_FRAGMENT_BIT;
-        shaderStages[1].module = fragShaderModule;
+        shaderStages[1].module =  shaderModules[1];
         shaderStages[1].pName = fragentryPoint;
         shaderStages[1].flags =0;
         shaderStages[1].pNext =null;
         shaderStages[1].pSpecializationInfo =null;
       
-        #endregion
+    }
+
+    public static unsafe void CreatePipeline(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data , in GraphicRenderConfig renderConfig)
+    {
+        
 
         #region VERTEX BUFFER
 
@@ -2145,32 +2149,6 @@ VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated fr
         inputAssembly.pNext =null;       
         #endregion
 
-        #region COLOR BLENDING
-
-        VkPipelineColorBlendAttachmentState colorBlendAttachment =new();
-        colorBlendAttachment.colorWriteMask = (uint)(VkColorComponentFlagBits.VK_COLOR_COMPONENT_R_BIT | VkColorComponentFlagBits.VK_COLOR_COMPONENT_G_BIT | VkColorComponentFlagBits.VK_COLOR_COMPONENT_B_BIT | VkColorComponentFlagBits.VK_COLOR_COMPONENT_A_BIT);
-        colorBlendAttachment.blendEnable = VK.VK_FALSE;
-        colorBlendAttachment.srcColorBlendFactor = VkBlendFactor.VK_BLEND_FACTOR_ZERO;
-        colorBlendAttachment.srcAlphaBlendFactor = VkBlendFactor.VK_BLEND_FACTOR_ZERO;
-        colorBlendAttachment.alphaBlendOp = VkBlendOp.VK_BLEND_OP_ADD;
-        colorBlendAttachment.colorBlendOp =  VkBlendOp.VK_BLEND_OP_ADD;
-        colorBlendAttachment.dstAlphaBlendFactor =VkBlendFactor.VK_BLEND_FACTOR_ZERO;
-        colorBlendAttachment.dstColorBlendFactor =VkBlendFactor.VK_BLEND_FACTOR_ZERO;
-        
-        VkPipelineColorBlendStateCreateInfo colorBlending=new();
-        colorBlending.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-        colorBlending.logicOpEnable = VK.VK_FALSE;
-        colorBlending.logicOp = VkLogicOp. VK_LOGIC_OP_COPY;
-        colorBlending.attachmentCount = 1;
-        colorBlending.pAttachments = &colorBlendAttachment;
-        colorBlending.blendConstants[0] = 0.0f;
-        colorBlending.blendConstants[1] = 0.0f;
-        colorBlending.blendConstants[2] = 0.0f;
-        colorBlending.blendConstants[3] = 0.0f;
-        colorBlending.flags =0;
-        colorBlending.pNext=null;
-        #endregion
-
         #region VIEWPORT
 
         data.Info.Viewport.x = 0.0f;
@@ -2202,7 +2180,9 @@ VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated fr
         viewportState.pNext = null;
         #endregion
 
-        // Pipeline.CreateColorBlending(ref renderConfig.Pipeline_ColorBlending ,out VkPipelineColorBlendStateCreateInfo colorBlending );
+        CreateShaderStages(ref   func,ref data , out VkShaderModule[] shaderModules,out VkPipelineShaderStageCreateInfo[] shaderStages );
+        Pipeline.ColorBlendingConfigData cb = new( );
+        Pipeline.CreateColorBlending(ref cb, out VkPipelineColorBlendStateCreateInfo colorBlending,out VkPipelineColorBlendAttachmentState colorBlendAttachment);
         Pipeline.CreateRasterization( ref renderConfig.Pipeline_Rasterization , out VkPipelineRasterizationStateCreateInfo rasterizer) ;
         Pipeline.CreateMultisampling(ref renderConfig.Pipeline_Multisampling, out VkPipelineMultisampleStateCreateInfo multisampling );
         Pipeline.CreateDepthStencil( ref renderConfig.Pipeline_DepthStencil , out VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo);
@@ -2213,23 +2193,23 @@ VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated fr
         VkGraphicsPipelineCreateInfo pipelineInfo =new();
         pipelineInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
         pipelineInfo.pNext = null;
-
         pipelineInfo.flags = (uint)VkPipelineCreateFlagBits.VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT ;
-        
         pipelineInfo.renderPass = data.Handles.RenderPass;
-        pipelineInfo.subpass = 0;
-        
-        pipelineInfo.stageCount =2;
-        pipelineInfo.pStages = shaderStages;
+        pipelineInfo.layout = data.Handles.PipelineLayout;
 
+        pipelineInfo.subpass = 0;
+        pipelineInfo.stageCount =2;
+        fixed(VkPipelineShaderStageCreateInfo*ss = &shaderStages[0] )
+        {
+            pipelineInfo.pStages = ss;
+        }
         pipelineInfo.pVertexInputState = &vertexInputInfo;
         pipelineInfo.pInputAssemblyState = &inputAssembly;
-        
         pipelineInfo.pColorBlendState = &colorBlending;
         pipelineInfo.pViewportState = &viewportState;
         pipelineInfo.pRasterizationState = &rasterizer;
         pipelineInfo.pMultisampleState = &multisampling;
-        pipelineInfo.layout = data.Handles.PipelineLayout;
+        
         pipelineInfo.pTessellationState = &tessellationStateCreateInfo;
         pipelineInfo.pDepthStencilState = &depthStencilStateCreateInfo;
         pipelineInfo.pDynamicState = &dynamicStateCreateInfo;
@@ -2242,15 +2222,14 @@ VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated fr
             func.vkCreateGraphicsPipelines(data.Handles.Device, VkPipelineCache.Null, 1, &pipelineInfo, null, gfxpipeline).Check("failed to create graphics pipeline!");
         }
 
-        if( fragShaderModule != VkShaderModule.Null)
+        for( int i = 0 ; i< shaderModules.Length ; i++ )
         {
-            func.vkDestroyShaderModule(data.Handles.Device, fragShaderModule, null);
+            if(shaderModules[i] != VkShaderModule.Null)
+            {
+                func.vkDestroyShaderModule(data.Handles.Device, shaderModules[i], null);
+            }
         }
-        if( vertShaderModule != VkShaderModule.Null)
-        {
-            func.vkDestroyShaderModule(data.Handles.Device, vertShaderModule, null);
-        }
-
+  
         Log.Info($"Create PIPELINE : {data.Handles.Pipeline}");
     }
 

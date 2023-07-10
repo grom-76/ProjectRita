@@ -40,7 +40,7 @@ public static class Sample_0003
             RitaEngine.Graphic.GraphicsImplement.Render.Init(ref func,ref data,ref graphicsConfig  ); 
 
             graphicsConfig.Render.BackGroundColor = RitaEngine.Math.Color.Palette.SkyBlue;
-            RitaEngine.Graphic.GraphicsImplement.Pipeline.Build(ref func,ref data,ref graphicsConfig  ); 
+            RitaEngine.Graphic.GraphicsImplement.Pipelines.Build(ref func,ref data,ref graphicsConfig  ); 
 
             window.Show();
             clock.Reset();
@@ -66,7 +66,7 @@ public static class Sample_0003
         }
         finally
         {
-            RitaEngine.Graphic.GraphicsImplement.Pipeline.Dispose(ref func, ref data);
+            RitaEngine.Graphic.GraphicsImplement.Pipelines.Dispose(ref func, ref data);
             RitaEngine.Graphic.GraphicsImplement.Render.Dispose(ref func, ref data);
             RitaEngine.Graphic.GraphicsImplement.SwapChain.Dispose(ref func, ref data);
             RitaEngine.Graphic.GraphicsImplement.Device.Dispose(ref func, ref data);

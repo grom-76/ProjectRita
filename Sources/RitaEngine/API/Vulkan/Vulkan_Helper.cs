@@ -22,6 +22,9 @@ public unsafe static partial class VkHelper
 		_=version;
 		// if ( vesion < VK.VK_VERsion_1.0) guard.Throw()
 		VK.VK_VERSION_1_0 =true; //obligatoire 
+		VK.VK_VERSION_1_1 =true; //obligatoire 
+		VK.VK_VERSION_1_2 =true; //obligatoire 
+		VK.VK_VERSION_1_3 =true; //obligatoire 
 		for ( int i = 0 ; i< extensions.Length; i++ )
 		{
 			string extension = extensions[i].ToString();

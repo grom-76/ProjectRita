@@ -317,9 +317,9 @@ public static class Pipeline
         #endregion
     }
 
-    public unsafe static void CreateColorBlending(ref ColorBlendingConfigData data, out VkPipelineColorBlendStateCreateInfo colorBlending)
+    public unsafe static void CreateColorBlending(ref ColorBlendingConfigData data, out VkPipelineColorBlendStateCreateInfo colorBlending , out VkPipelineColorBlendAttachmentState colorBlendAttachment)
     {
-        VkPipelineColorBlendAttachmentState colorBlendAttachment =new();
+        // VkPipelineColorBlendAttachmentState colorBlendAttachment =new();
         colorBlendAttachment.colorWriteMask = (uint)(VkColorComponentFlagBits.VK_COLOR_COMPONENT_R_BIT | VkColorComponentFlagBits.VK_COLOR_COMPONENT_G_BIT | VkColorComponentFlagBits.VK_COLOR_COMPONENT_B_BIT | VkColorComponentFlagBits.VK_COLOR_COMPONENT_A_BIT);
         colorBlendAttachment.blendEnable = VK.VK_FALSE;
         colorBlendAttachment.srcColorBlendFactor = VkBlendFactor.VK_BLEND_FACTOR_ZERO;
@@ -334,7 +334,11 @@ public static class Pipeline
         colorBlending.logicOpEnable = VK.VK_FALSE;
         colorBlending.logicOp = VkLogicOp. VK_LOGIC_OP_COPY;
         colorBlending.attachmentCount = 1;
-        colorBlending.pAttachments = &colorBlendAttachment;
+        fixed(VkPipelineColorBlendAttachmentState* cb =  &colorBlendAttachment  )
+        {
+            colorBlending.pAttachments =cb ;
+        }
+        
         colorBlending.blendConstants[0] = 0.0f;
         colorBlending.blendConstants[1] = 0.0f;
         colorBlending.blendConstants[2] = 0.0f;
@@ -342,6 +346,34 @@ public static class Pipeline
         colorBlending.flags =0;
         colorBlending.pNext=null;
 
+    }
+
+    public unsafe static VkPipelineColorBlendStateCreateInfo  CreateColorBlendingRef(ref ColorBlendingConfigData data)
+    {
+        VkPipelineColorBlendAttachmentState colorBlendAttachment =new();
+        colorBlendAttachment.colorWriteMask = (uint)(VkColorComponentFlagBits.VK_COLOR_COMPONENT_R_BIT | VkColorComponentFlagBits.VK_COLOR_COMPONENT_G_BIT | VkColorComponentFlagBits.VK_COLOR_COMPONENT_B_BIT | VkColorComponentFlagBits.VK_COLOR_COMPONENT_A_BIT);
+        colorBlendAttachment.blendEnable = VK.VK_FALSE;
+        colorBlendAttachment.srcColorBlendFactor = VkBlendFactor.VK_BLEND_FACTOR_ZERO;
+        colorBlendAttachment.srcAlphaBlendFactor = VkBlendFactor.VK_BLEND_FACTOR_ZERO;
+        colorBlendAttachment.alphaBlendOp = VkBlendOp.VK_BLEND_OP_ADD;
+        colorBlendAttachment.colorBlendOp =  VkBlendOp.VK_BLEND_OP_ADD;
+        colorBlendAttachment.dstAlphaBlendFactor =VkBlendFactor.VK_BLEND_FACTOR_ZERO;
+        colorBlendAttachment.dstColorBlendFactor =VkBlendFactor.VK_BLEND_FACTOR_ZERO;
+        
+        VkPipelineColorBlendStateCreateInfo colorBlending=default;
+        colorBlending.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+        colorBlending.logicOpEnable = VK.VK_FALSE;
+        colorBlending.logicOp = VkLogicOp. VK_LOGIC_OP_COPY;
+        colorBlending.attachmentCount = 1;
+      
+        colorBlending.pAttachments =&colorBlendAttachment ;
+        colorBlending.blendConstants[0] = 0.0f;
+        colorBlending.blendConstants[1] = 0.0f;
+        colorBlending.blendConstants[2] = 0.0f;
+        colorBlending.blendConstants[3] = 0.0f;
+        colorBlending.flags =0;
+        colorBlending.pNext=null;
+        return colorBlending;
     }
 }
 
