@@ -33,15 +33,15 @@ public static class Sample_0003
             window.Init(config, clock);
             input.Init(config, window);
 
-            graphicsConfig.Device.SetVSync(true);
-            RitaEngine.Graphic.GraphicsImplement.Instance.Init(ref func,ref data,ref graphicsConfig , in window );    
+            graphicsConfig.Device.SetVerticalSynchro(true);
             RitaEngine.Graphic.GraphicsImplement.Device.Init(ref func,ref data,ref graphicsConfig , in window );    
-            RitaEngine.Graphic.GraphicsImplement.SwapChain.Init(ref func,ref data,ref graphicsConfig , in window ); 
             RitaEngine.Graphic.GraphicsImplement.Render.Init(ref func,ref data,ref graphicsConfig  ); 
 
             graphicsConfig.Render.BackGroundColor = RitaEngine.Math.Color.Palette.SkyBlue;
-            RitaEngine.Graphic.GraphicsImplement.Pipelines.Build(ref func,ref data,ref graphicsConfig  ); 
+            RitaEngine.Graphic.GraphicsImplement.Pipelines.Load(ref func,ref data,ref graphicsConfig ); 
 
+
+            RitaEngine.Graphic.GraphicsImplement.Pipelines.Build(ref func,ref data,ref graphicsConfig  ); 
             window.Show();
             clock.Reset();
             while(window.ShouldClose())
@@ -68,9 +68,8 @@ public static class Sample_0003
         {
             RitaEngine.Graphic.GraphicsImplement.Pipelines.Dispose(ref func, ref data);
             RitaEngine.Graphic.GraphicsImplement.Render.Dispose(ref func, ref data);
-            RitaEngine.Graphic.GraphicsImplement.SwapChain.Dispose(ref func, ref data);
             RitaEngine.Graphic.GraphicsImplement.Device.Dispose(ref func, ref data);
-            RitaEngine.Graphic.GraphicsImplement.Instance.Dispose(ref func, ref data);
+
             input.Release();
             window.Release();
             clock.Release();

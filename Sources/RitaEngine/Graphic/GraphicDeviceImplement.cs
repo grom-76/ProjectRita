@@ -86,237 +86,17 @@ public struct GraphicsConfig : IEquatable<GraphicsConfig>
     public DeviceConfig Device = new();
     public RenderConfig Render = new();
 
+    public PipelineConfig Pipeline = new();
+
     public GraphicsConfig() { }
 
     [StructLayout(LayoutKind.Sequential, Pack = RitaEngine.Base.BaseHelper.FORCE_ALIGNEMENT), SkipLocalsInit]
     public struct RenderConfig
     {
-        public RasterizationConfigData Pipeline_Rasterization = new();
-        public MultisamplingConfigData Pipeline_Multisampling = new();
-        public DepthStencilConfigData Pipeline_DepthStencil = new();
-        public DynamicStatesConfigData Pipeline_DynamicStates = new();
-        public VkViewport Pipeline_DynamicStatesViewport = new();
-        public VkRect2D Pipeline_DynamicStatesScissor = new();   
-        public ColorBlendingConfigData Pipeline_ColorBlending = new();
         public int MAX_FRAMES_IN_FLIGHT = 2;
         public ulong Tick_timeout = ulong.MaxValue;
         public Palette BackGroundColor = Palette.LavenderBlush;
-        public Camera Camera = new();
-
         public RenderConfig() { }
-
-        [StructLayout(LayoutKind.Sequential, Pack = RitaEngine.Base.BaseHelper.FORCE_ALIGNEMENT), SkipLocalsInit]
-        public struct DepthStencilConfigData
-        {
-            public bool                                  DepthTestEnable = true;
-            public bool                                  DepthWriteEnable = true;
-            public CompareOp                           DepthCompareOp = CompareOp.VK_COMPARE_OP_LESS;
-            public bool                                  DepthBoundsTestEnable = false;
-            public bool                                  StencilTestEnable=false;
-            public VkStencilOpState                      Front = new();
-            public VkStencilOpState                      Back = new();
-            public float                                 MinDepthBounds=0.0f;
-            public float                                 MaxDepthBounds=1.0f;
-            public DepthStencilState    Flags = DepthStencilState.VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM ;
-            public DepthStencilConfigData()  { }
-            
-            #region OVERRIDE    
-            public override string ToString() => string.Format($"Depth Stencil" );
-            public override int GetHashCode() => HashCode.Combine(DepthTestEnable,DepthWriteEnable ,DepthBoundsTestEnable, MinDepthBounds ,MaxDepthBounds );
-            public override bool Equals(object? obj) => obj is DepthStencilConfigData data && this.Equals(data) ;
-            public bool Equals(DepthStencilConfigData other)=>  false;
-            public static bool operator ==(DepthStencilConfigData left, DepthStencilConfigData right) => left.Equals(right);
-            public static bool operator !=(DepthStencilConfigData left, DepthStencilConfigData  right) => !left.Equals(right);
-            #endregion
-        }
-
-        [StructLayout(LayoutKind.Sequential, Pack = RitaEngine.Base.BaseHelper.FORCE_ALIGNEMENT), SkipLocalsInit]
-        public struct DynamicStatesConfigData
-        {
-            public bool WithViewport = true;
-            public bool WithScissor = true;
-            public bool WithLineWidth = false;
-            public bool WithPrimitiveTopology = false;
-            public bool WithCullMode = false;
-
-            public DynamicStatesConfigData()  { }
-            
-            #region OVERRIDE    
-            public override string ToString() => string.Format($"Dynamic states config" );
-            public override int GetHashCode() => HashCode.Combine(WithViewport,WithScissor ,WithLineWidth, WithPrimitiveTopology ,WithCullMode );
-            public override bool Equals(object? obj) => obj is DynamicStatesConfigData data && this.Equals(data) ;
-            public bool Equals(DynamicStatesConfigData other)=>  false;
-            public static bool operator ==(DynamicStatesConfigData left, DynamicStatesConfigData right) => left.Equals(right);
-            public static bool operator !=(DynamicStatesConfigData left, DynamicStatesConfigData  right) => !left.Equals(right);
-            #endregion
-            
-        }
-        
-        [StructLayout(LayoutKind.Sequential, Pack = RitaEngine.Base.BaseHelper.FORCE_ALIGNEMENT), SkipLocalsInit]
-        public struct MultisamplingConfigData
-        {
-            public SampleCount  RasterizationSamples = SampleCount.VK_SAMPLE_COUNT_1_BIT;
-            public bool                   SampleShadingEnable  = false;
-            public float                  MinSampleShading=  0.0f;
-            public bool                   AlphaToCoverageEnable = false;
-            public bool                   AlphaToOneEnable = false ;
-
-            public MultisamplingConfigData()  { }
-            
-            #region OVERRIDE    
-            public override string ToString() => string.Format($"Multisampling" );
-            public override int GetHashCode() => HashCode.Combine(MinSampleShading,AlphaToCoverageEnable ,AlphaToOneEnable, SampleShadingEnable  );
-            public override bool Equals(object? obj) => obj is MultisamplingConfigData data && this.Equals(data) ;
-            public bool Equals(MultisamplingConfigData other)=>  false;
-            public static bool operator ==(MultisamplingConfigData left, MultisamplingConfigData right) => left.Equals(right);
-            public static bool operator !=(MultisamplingConfigData left, MultisamplingConfigData  right) => !left.Equals(right);
-            #endregion
-        }
-        
-        [StructLayout(LayoutKind.Sequential, Pack = RitaEngine.Base.BaseHelper.FORCE_ALIGNEMENT), SkipLocalsInit]
-        public struct RasterizationConfigData : IEquatable<RasterizationConfigData>
-        {
-            public FaceCullMode FaceCullMode  = FaceCullMode.Back;
-            /// <summary>polygonMode is the triangle rendering mode. See VkPolygonMode.  </summary>
-            public PolygonFillMode PolygonFillMode = PolygonFillMode.Solid;
-            public float LineWidth =1.0f;
-            public FrontFace FrontFace = FrontFace.CounterClockwise;
-            /// <summary>is a scalar factor controlling the constant depth value added to each fragment. </summary>
-            public float DepthBiasConstantFactor=1.0f;
-            /// <summary>is the maximum (or minimum) depth bias of a fragment. </summary>
-            public float DepthBiasClamp=0.0f;
-            /// <summary>is a scalar factor applied to a fragment’s slope in depth bias calculations </summary>
-            public float DepthBiasSlopeFactor=1.0f;
-            /// <summary>  permet de contrôler si les valeurs de profondeur du fragment doivent être bloquées, comme décrit dans Depth Test (test de profondeur). 
-            ///  Si le pipeline n'est pas créé avec VkPipelineRasterizationDepthClipStateCreateInfoEXT présent, l'activation de l'écrêtage de profondeur désactivera également les primitives d'écrêtage sur les plans z du frustrum, comme décrit dans l'écrêtage des primitives.
-            /// Sinon, l'écrêtage en profondeur est contrôlé par l'état défini dans VkPipelineRasterizationDepthClipStateCreateInfoEXT.
-            /// </summary>
-            public bool DepthClampEnable = false;
-            /// <summary> depthBiasEnable controls whether to bias fragment depth values </summary>
-            public bool DepthBiasEnable = false;
-            /// <summary>controls whether primitives are discarded immediately before the rasterization stage. </summary>
-            public bool RasterizerDiscardEnable = false;
-            public RasterizationConfigData() {  }
-            public void Release()
-            {
-            }
-
-            #region OVERRIDE    
-            public override string ToString() => string.Format($"RasterizationConfigData" );
-            public override int GetHashCode() => HashCode.Combine(LineWidth,DepthBiasSlopeFactor ,DepthBiasClamp, DepthBiasConstantFactor  );
-            public override bool Equals(object? obj) => obj is RasterizationConfigData data && this.Equals(data) ;
-            public bool Equals(RasterizationConfigData other)=>  false;
-            public static bool operator ==(RasterizationConfigData left, RasterizationConfigData right) => left.Equals(right);
-            public static bool operator !=(RasterizationConfigData left, RasterizationConfigData  right) => !left.Equals(right);
-            #endregion
-
-        }
-
-         [StructLayout(LayoutKind.Sequential, Pack = RitaEngine.Base.BaseHelper.FORCE_ALIGNEMENT), SkipLocalsInit]
-        public struct ColorBlendingConfigData
-        {
-            public VkBlendFactor ColorBlendFactor = VkBlendFactor.VK_BLEND_FACTOR_ZERO;
-            public VkBlendFactor AlphaBlendFactor = VkBlendFactor.VK_BLEND_FACTOR_ZERO;
-            public VkBlendOp ColorBlendOperation = VkBlendOp.VK_BLEND_OP_ADD;
-            public VkBlendOp AlphaBlendOperation = VkBlendOp.VK_BLEND_OP_ADD;
-
-            public VkBlendFactor[] ColorBlendFactors = null!;
-            public VkBlendFactor[] AlphaBlendFactors =null!;
-            public VkBlendOp[] ColorBlendOperations = null!;
-            public VkBlendOp[] AlphaBlendOperations = null!;
-        
-            public ColorBlendingConfigData()  { }
-            
-            #region OVERRIDE    
-            public override string ToString() => string.Format($"Multisampling" );
-            public override int GetHashCode() => HashCode.Combine(ColorBlendFactor, AlphaBlendFactor );
-            public override bool Equals(object? obj) => obj is ColorBlendingConfigData data && this.Equals(data) ;
-            public bool Equals(ColorBlendingConfigData other)=>  false;
-            public static bool operator ==(ColorBlendingConfigData left, ColorBlendingConfigData right) => left.Equals(right);
-            public static bool operator !=(ColorBlendingConfigData left, ColorBlendingConfigData  right) => !left.Equals(right);
-            #endregion
-        }
-
-        public enum DepthStencilState 
-        {
-        // Provided by VK_EXT_rasterization_order_attachment_access
-            VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_EXT = 0x00000001,
-        // Provided by VK_EXT_rasterization_order_attachment_access
-            VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_EXT = 0x00000002,
-        // Provided by VK_ARM_rasterization_order_attachment_access
-            VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM = VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_EXT,
-        // Provided by VK_ARM_rasterization_order_attachment_access
-            VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_ARM = VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_EXT,
-        }
-
-        public enum StencilOp 
-        {
-            VK_STENCIL_OP_KEEP = 0,
-            VK_STENCIL_OP_ZERO = 1,
-            VK_STENCIL_OP_REPLACE = 2,
-            VK_STENCIL_OP_INCREMENT_AND_CLAMP = 3,
-            VK_STENCIL_OP_DECREMENT_AND_CLAMP = 4,
-            VK_STENCIL_OP_INVERT = 5,
-            VK_STENCIL_OP_INCREMENT_AND_WRAP = 6,
-            VK_STENCIL_OP_DECREMENT_AND_WRAP = 7,
-            VK_STENCIL_OP_MAX_ENUM = 0x7FFFFFFF
-        }
-    
-        public enum CompareOp {
-            VK_COMPARE_OP_NEVER = 0,
-            VK_COMPARE_OP_LESS = 1,
-            VK_COMPARE_OP_EQUAL = 2,
-            VK_COMPARE_OP_LESS_OR_EQUAL = 3,
-            VK_COMPARE_OP_GREATER = 4,
-            VK_COMPARE_OP_NOT_EQUAL = 5,
-            VK_COMPARE_OP_GREATER_OR_EQUAL = 6,
-            VK_COMPARE_OP_ALWAYS = 7,
-            VK_COMPARE_OP_MAX_ENUM = 0x7FFFFFFF
-        }
-
-        public  enum SampleCount {
-            VK_SAMPLE_COUNT_1_BIT = 0x00000001,
-            VK_SAMPLE_COUNT_2_BIT = 0x00000002,
-            VK_SAMPLE_COUNT_4_BIT = 0x00000004,
-            VK_SAMPLE_COUNT_8_BIT = 0x00000008,
-            VK_SAMPLE_COUNT_16_BIT = 0x00000010,
-            VK_SAMPLE_COUNT_32_BIT = 0x00000020,
-            VK_SAMPLE_COUNT_64_BIT = 0x00000040,
-        } 
-
-         /// <summary>  Indicates which face will be culled. </summary>
-        public enum FaceCullMode : uint
-        {
-            /// <summary> The back face. </summary>
-            Back = VkCullModeFlagBits.VK_CULL_MODE_BACK_BIT,
-            /// <summary> The front face. </summary>
-            Front = VkCullModeFlagBits.VK_CULL_MODE_FRONT_BIT,
-            /// <summary>  No face culling. </summary>
-            None = VkCullModeFlagBits.VK_CULL_MODE_NONE,
-
-            Both = VkCullModeFlagBits.VK_CULL_MODE_FRONT_AND_BACK
-        }
-
-        /// <summary> Indicates how the rasterizer will fill polygons. </summary>
-        public enum PolygonFillMode : uint
-        {
-            /// <summary> Polygons are filled completely. </summary>
-            Solid = VkPolygonMode.VK_POLYGON_MODE_FILL,
-            /// <summary> Polygons are outlined in a "wireframe" style. </summary>
-            Wireframe = VkPolygonMode.VK_POLYGON_MODE_LINE,
-            /// <summary> specifies that polygon vertices are drawn as points. </summary>
-            Point = VkPolygonMode.VK_POLYGON_MODE_POINT,
-        }
-
-        /// <summary>  The winding order used to determine the front face of a primitive. </summary>
-        public enum FrontFace :uint
-        {
-            /// <summary>  Clockwise winding order. specifies that a triangle with negative area is considered front-facing.
-            /// any triangle which is not front-facing is back-facing, including zero-area triangles. </summary>
-            Clockwise =VkFrontFace.VK_FRONT_FACE_CLOCKWISE,
-            /// <summary> Counter-clockwise winding order.specifies that a triangle with positive area is considered front-facing. </summary>
-            CounterClockwise = VkFrontFace.VK_FRONT_FACE_COUNTER_CLOCKWISE,
-        }
 
     }
 
@@ -344,9 +124,9 @@ public struct GraphicsConfig : IEquatable<GraphicsConfig>
     [StructLayout(LayoutKind.Sequential, Pack = RitaEngine.Base.BaseHelper.FORCE_ALIGNEMENT), SkipLocalsInit]
     public struct DeviceConfig
     {
-        public  void SetVSync(bool active )
+        public void SetVerticalSynchro(bool activeVSynchro = true )
         {
-            PresentModePreferred = active ? VkPresentModeKHR.VK_PRESENT_MODE_MAILBOX_KHR : VkPresentModeKHR.VK_PRESENT_MODE_IMMEDIATE_KHR ;
+            PresentModePreferred = activeVSynchro ? VkPresentModeKHR.VK_PRESENT_MODE_MAILBOX_KHR : VkPresentModeKHR.VK_PRESENT_MODE_IMMEDIATE_KHR ;
         }
         public string[] DeviceExtensionsManualAdd = new string[] { VK.VK_KHR_SWAPCHAIN_EXTENSION_NAME  };
         public VkPresentModeKHR PresentModePreferred = VkPresentModeKHR.VK_PRESENT_MODE_MAILBOX_KHR ;
@@ -363,12 +143,6 @@ public struct GraphicsConfig : IEquatable<GraphicsConfig>
         public VkImageTiling  DepthImageTilingPreferred =   VkImageTiling.VK_IMAGE_TILING_OPTIMAL;
         public VkFormatFeatureFlagBits DepthFormatFeature = VkFormatFeatureFlagBits.VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
-        public void Vsync( bool disable )
-        {
-            PresentModePreferred = disable ? VkPresentModeKHR.VK_PRESENT_MODE_IMMEDIATE_KHR : VkPresentModeKHR.VK_PRESENT_MODE_MAILBOX_KHR ;
-        }
-
-
         public DeviceConfig() { }
     }        
 
@@ -383,7 +157,161 @@ public struct GraphicsConfig : IEquatable<GraphicsConfig>
         public SwapChainConfig() { }
     }        
 
-     #region OVERRIDE    
+    [StructLayout(LayoutKind.Sequential, Pack = RitaEngine.Base.BaseHelper.FORCE_ALIGNEMENT), SkipLocalsInit]
+    public struct PipelineConfig
+    {
+        public bool              DepthTestEnable = true;
+        public bool              DepthWriteEnable = true;
+        public CompareOp        DepthCompareOp = CompareOp.VK_COMPARE_OP_LESS;
+        public bool              DepthBoundsTestEnable = false;
+        public bool              DepthStencilTestEnable=false;
+        public VkStencilOpState  DepthFront = new();
+        public VkStencilOpState  DepthBack = new();
+        public float             DepthMinDepthBounds=0.0f;
+        public float             DepthMaxDepthBounds=1.0f;
+        public DepthStencilState    DepthFlags = DepthStencilState.VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM ;
+        
+        public bool DynamicStatesWithViewport = true;
+        public bool DynamicStatesWithScissor = true;
+        public bool DynamicStatesWithLineWidth = false;
+        public bool DynamicStatesWithPrimitiveTopology = false;
+        public bool DynamicStatesWithCullMode = false;
+        public VkViewport DynamicStatesViewport = new();
+        public VkRect2D DynamicStatesScissor = new();   
+        public float DynamicStatesLineWidth =1.0f;
+
+        public SampleCount  RasterizationSamples = SampleCount.VK_SAMPLE_COUNT_1_BIT;
+        public bool                   SampleShadingEnable  = false;
+        public float                  MinSampleShading=  0.0f;
+        public bool                   AlphaToCoverageEnable = false;
+        public bool                   AlphaToOneEnable = false ;
+
+            public FaceCullMode FaceCullMode  = FaceCullMode.Back;
+        /// <summary>polygonMode is the triangle rendering mode. See VkPolygonMode.  </summary>
+        public PolygonFillMode PolygonFillMode = PolygonFillMode.Solid;
+        public float LineWidth =1.0f;
+        public FrontFace FrontFace = FrontFace.CounterClockwise;
+        /// <summary>is a scalar factor controlling the constant depth value added to each fragment. </summary>
+        public float DepthBiasConstantFactor=1.0f;
+        /// <summary>is the maximum (or minimum) depth bias of a fragment. </summary>
+        public float DepthBiasClamp=0.0f;
+        /// <summary>is a scalar factor applied to a fragment’s slope in depth bias calculations </summary>
+        public float DepthBiasSlopeFactor=1.0f;
+        /// <summary>  permet de contrôler si les valeurs de profondeur du fragment doivent être bloquées, comme décrit dans Depth Test (test de profondeur). 
+        ///  Si le pipeline n'est pas créé avec VkPipelineRasterizationDepthClipStateCreateInfoEXT présent, l'activation de l'écrêtage de profondeur désactivera également les primitives d'écrêtage sur les plans z du frustrum, comme décrit dans l'écrêtage des primitives.
+        /// Sinon, l'écrêtage en profondeur est contrôlé par l'état défini dans VkPipelineRasterizationDepthClipStateCreateInfoEXT.
+        /// </summary>
+        public bool DepthClampEnable = false;
+        /// <summary> depthBiasEnable controls whether to bias fragment depth values </summary>
+        public bool DepthBiasEnable = false;
+        /// <summary>controls whether primitives are discarded immediately before the rasterization stage. </summary>
+        public bool RasterizerDiscardEnable = false;
+
+        public VkBlendFactor ColorBlendFactor = VkBlendFactor.VK_BLEND_FACTOR_ZERO;
+        public VkBlendFactor AlphaBlendFactor = VkBlendFactor.VK_BLEND_FACTOR_ZERO;
+        public VkBlendOp ColorBlendOperation = VkBlendOp.VK_BLEND_OP_ADD;
+        public VkBlendOp AlphaBlendOperation = VkBlendOp.VK_BLEND_OP_ADD;
+
+        public VkBlendFactor[] ColorBlendFactors = null!;
+        public VkBlendFactor[] AlphaBlendFactors =null!;
+        public VkBlendOp[] ColorBlendOperations = null!;
+        public VkBlendOp[] AlphaBlendOperations = null!;
+
+        public Camera Camera = new();
+        public PipelineConfig()  { }
+        
+        #region OVERRIDE    
+        public override string ToString() => string.Format($"Depth Stencil" );
+        public override int GetHashCode() => HashCode.Combine(DepthTestEnable,DepthWriteEnable ,DepthBoundsTestEnable, DepthMinDepthBounds ,DepthMaxDepthBounds );
+        public override bool Equals(object? obj) => obj is PipelineConfig data && this.Equals(data) ;
+        public bool Equals(PipelineConfig other)=>  false;
+        public static bool operator ==(PipelineConfig left, PipelineConfig right) => left.Equals(right);
+        public static bool operator !=(PipelineConfig left, PipelineConfig  right) => !left.Equals(right);
+        #endregion
+    }
+
+    public enum DepthStencilState 
+    {
+    // Provided by VK_EXT_rasterization_order_attachment_access
+        VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_EXT = 0x00000001,
+    // Provided by VK_EXT_rasterization_order_attachment_access
+        VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_EXT = 0x00000002,
+    // Provided by VK_ARM_rasterization_order_attachment_access
+        VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM = VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_EXT,
+    // Provided by VK_ARM_rasterization_order_attachment_access
+        VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_ARM = VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_EXT,
+    }
+
+    public enum StencilOp 
+    {
+        VK_STENCIL_OP_KEEP = 0,
+        VK_STENCIL_OP_ZERO = 1,
+        VK_STENCIL_OP_REPLACE = 2,
+        VK_STENCIL_OP_INCREMENT_AND_CLAMP = 3,
+        VK_STENCIL_OP_DECREMENT_AND_CLAMP = 4,
+        VK_STENCIL_OP_INVERT = 5,
+        VK_STENCIL_OP_INCREMENT_AND_WRAP = 6,
+        VK_STENCIL_OP_DECREMENT_AND_WRAP = 7,
+        VK_STENCIL_OP_MAX_ENUM = 0x7FFFFFFF
+    }
+
+    public enum CompareOp {
+        VK_COMPARE_OP_NEVER = 0,
+        VK_COMPARE_OP_LESS = 1,
+        VK_COMPARE_OP_EQUAL = 2,
+        VK_COMPARE_OP_LESS_OR_EQUAL = 3,
+        VK_COMPARE_OP_GREATER = 4,
+        VK_COMPARE_OP_NOT_EQUAL = 5,
+        VK_COMPARE_OP_GREATER_OR_EQUAL = 6,
+        VK_COMPARE_OP_ALWAYS = 7,
+        VK_COMPARE_OP_MAX_ENUM = 0x7FFFFFFF
+    }
+
+    public  enum SampleCount {
+        VK_SAMPLE_COUNT_1_BIT = 0x00000001,
+        VK_SAMPLE_COUNT_2_BIT = 0x00000002,
+        VK_SAMPLE_COUNT_4_BIT = 0x00000004,
+        VK_SAMPLE_COUNT_8_BIT = 0x00000008,
+        VK_SAMPLE_COUNT_16_BIT = 0x00000010,
+        VK_SAMPLE_COUNT_32_BIT = 0x00000020,
+        VK_SAMPLE_COUNT_64_BIT = 0x00000040,
+    } 
+
+        /// <summary>  Indicates which face will be culled. </summary>
+    public enum FaceCullMode : uint
+    {
+        /// <summary> The back face. </summary>
+        Back = VkCullModeFlagBits.VK_CULL_MODE_BACK_BIT,
+        /// <summary> The front face. </summary>
+        Front = VkCullModeFlagBits.VK_CULL_MODE_FRONT_BIT,
+        /// <summary>  No face culling. </summary>
+        None = VkCullModeFlagBits.VK_CULL_MODE_NONE,
+
+        Both = VkCullModeFlagBits.VK_CULL_MODE_FRONT_AND_BACK
+    }
+
+    /// <summary> Indicates how the rasterizer will fill polygons. </summary>
+    public enum PolygonFillMode : uint
+    {
+        /// <summary> Polygons are filled completely. </summary>
+        Solid = VkPolygonMode.VK_POLYGON_MODE_FILL,
+        /// <summary> Polygons are outlined in a "wireframe" style. </summary>
+        Wireframe = VkPolygonMode.VK_POLYGON_MODE_LINE,
+        /// <summary> specifies that polygon vertices are drawn as points. </summary>
+        Point = VkPolygonMode.VK_POLYGON_MODE_POINT,
+    }
+
+    /// <summary>  The winding order used to determine the front face of a primitive. </summary>
+    public enum FrontFace :uint
+    {
+        /// <summary>  Clockwise winding order. specifies that a triangle with negative area is considered front-facing.
+        /// any triangle which is not front-facing is back-facing, including zero-area triangles. </summary>
+        Clockwise =VkFrontFace.VK_FRONT_FACE_CLOCKWISE,
+        /// <summary> Counter-clockwise winding order.specifies that a triangle with positive area is considered front-facing. </summary>
+        CounterClockwise = VkFrontFace.VK_FRONT_FACE_COUNTER_CLOCKWISE,
+    }
+
+    #region OVERRIDE    
     public override string ToString() => string.Format($"Graphics Config" );
     public override int GetHashCode() => (int)0;
     public override bool Equals(object? obj) => obj is GraphicsConfig data && this.Equals(data) ;
@@ -400,18 +328,6 @@ public static partial class GraphicsImplement
 [SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public static partial class Instance
 {
-    public unsafe static void Init(ref VulkanFunctions funcs , ref GraphicsData data, ref GraphicsConfig config , in Window window  )
-    {
-        funcs.Loader = new( config.Instance.LibraryName_Vulkan);
-        CreateInstanceDebugAndSurface(ref funcs, ref data , ref config , in window);
-    }
-
-    public unsafe static void Dispose(ref VulkanFunctions func,ref GraphicsData data)
-    {
-        DisposeInstanceDebugAndSurface(ref func ,ref data);
-        func.Dispose();   
-    }
-    
     #region INSTANCE , DEBUG & SURFACE 
 
     public unsafe static void CreateInstanceDebugAndSurface(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config , in Window window )
@@ -583,12 +499,31 @@ public static partial class Device
 {
     public unsafe static void Init(ref VulkanFunctions funcs , ref GraphicsData data, ref GraphicsConfig config , in Window window  )
     {
-        CreateDevicePhysicalLogicQueues(ref funcs, ref data , ref config , in window);        
+        funcs.Loader = new( config.Instance.LibraryName_Vulkan);
+        Instance.CreateInstanceDebugAndSurface(ref funcs, ref data , ref config , in window);
+
+        Device.CreateDevicePhysicalLogicQueues(ref funcs, ref data , ref config , in window);        
+
+        data.SwapChain_GetFrameBufferCallback = window.GetFrameBuffer;
+        SwapChain.CreateSwapChain(ref funcs,ref data, ref config.SwapChain);
+        SwapChain.CreateSwapChainImages(ref funcs, ref data, ref config.SwapChain);
+        SwapChain.CreateDepthResources( ref funcs, ref data, ref config.SwapChain);
+        // RenderPass. CreateFramebuffers(ref func, ref data);
     }
 
     public unsafe static void Dispose(ref VulkanFunctions func,ref GraphicsData data)
     {
-        DisposeDevicePhysicalLogicQueues(ref func , ref data);
+        if ( data.SwapChain == VkSwapchainKHR.Null)return ;
+
+        SynchronizationCachControl.  Pause(ref func,ref data);
+        SwapChain.DisposeDepthResources(ref  func , ref data);
+        // RenderPass.DisposeFrameBuffer(ref func, ref data);
+        SwapChain.DisposeSwapChain(ref func , ref data);
+
+        Device.DisposeDevicePhysicalLogicQueues(ref func , ref data);
+
+        Instance.DisposeInstanceDebugAndSurface(ref func ,ref data);
+        func.Dispose();   
     }
     
     #region PHYSICAL DEVICE & Device
@@ -746,21 +681,18 @@ public static partial class Device
 
 // TEST queue Family 2 
         // uint graphic = uint.MaxValue; uint present = uint.MaxValue; uint compute = uint.MaxValue; uint transfert = uint.MaxValue;
-        uint queueFamilyPropertyCount2 = 0;
-        func.Instance.vkGetPhysicalDeviceQueueFamilyProperties2(data.Device_Physical, &queueFamilyPropertyCount2, null);
+        // uint queueFamilyPropertyCount2 = 0;
+        // func.Instance.vkGetPhysicalDeviceQueueFamilyProperties2(data.Device_Physical, &queueFamilyPropertyCount2, null);
 
-        ReadOnlySpan<VkQueueFamilyProperties2> queueFamilyProperties2 = new VkQueueFamilyProperties2[queueFamilyPropertyCount2];
-        fixed (VkQueueFamilyProperties2* queueFamilyPropertiesPtr2 = queueFamilyProperties2){
-            func.Instance.vkGetPhysicalDeviceQueueFamilyProperties2(data.Device_Physical, &queueFamilyPropertyCount2, queueFamilyPropertiesPtr2);
-        }
-
-
-// ----------------------------------------------
+        // ReadOnlySpan<VkQueueFamilyProperties2> queueFamilyProperties2 = new VkQueueFamilyProperties2[queueFamilyPropertyCount2];
+        // fixed (VkQueueFamilyProperties2* queueFamilyPropertiesPtr2 = queueFamilyProperties2){
+        //     func.Instance.vkGetPhysicalDeviceQueueFamilyProperties2(data.Device_Physical, &queueFamilyPropertyCount2, queueFamilyPropertiesPtr2);
+        // }
         // if( data.Device_Properties.deviceType ==   VkPhysicalDeviceType.VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU ) 
         // {
         //     //Always better
         // }
-
+// ----------------------------------------------
         // Capabilities
         VkSurfaceCapabilitiesKHR Capabilities;
         func.Instance.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(data.Device_Physical, data.App_Surface, &Capabilities ).Check("vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
@@ -772,7 +704,6 @@ public static partial class Device
            
             data.Device_SurfaceSize.width = ClampUInt( (uint)window.GetWindowWidth(), Capabilities.minImageExtent.width, Capabilities.maxImageExtent.width);
             data.Device_SurfaceSize.height = ClampUInt( (uint)window.GetWindowheight(), Capabilities.minImageExtent.height, Capabilities.maxImageExtent.height);
-          
         }
 
         data.Device_ImageCount = Capabilities.minImageCount + 1;
@@ -906,7 +837,6 @@ public static partial class Device
 
     private static uint ClampUInt(uint value, uint min, uint max) =>value < min ? min : value > max ? max : value;
 
-    
     #endregion
    
 }
@@ -914,28 +844,8 @@ public static partial class Device
 [SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public static partial class SwapChain
 {
-    public unsafe static void Init( ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config , in Window window)
-    {
-        data.SwapChain_GetFrameBufferCallback = window.GetFrameBuffer;
-        CreateSwapChain(ref func,ref data, ref config);
-        CreateSwapChainImages(ref func, ref data, ref config);
-        CreateDepthResources( ref func, ref data, ref config);
-        // RenderPass. CreateFramebuffers(ref func, ref data);
-    }
 
-    public unsafe static void Dispose(ref VulkanFunctions func,ref GraphicsData data  )
-    {
-        if ( data.SwapChain == VkSwapchainKHR.Null)return ;
-
-        SynchronizationCachControl.  Pause(ref func,ref data);
-        DisposeDepthResources(ref  func , ref data);
-        // RenderPass.DisposeFrameBuffer(ref func, ref data);
-        DisposeSwapChain(ref func , ref data);
-    }
-
-
-
-    public unsafe static void ReCreateSwapChain(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config)
+    public unsafe static void ReCreateSwapChain(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig.SwapChainConfig config)
     {
         if ( data.SwapChain == VkSwapchainKHR.Null)return ;
 
@@ -952,7 +862,7 @@ public static partial class SwapChain
         RenderPass.CreateFramebuffers(ref func, ref data);
     }
 
-    public static unsafe void CreateSwapChain(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config)
+    public static unsafe void CreateSwapChain(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig.SwapChainConfig config)
     {
 
         uint* queueFamilyIndices = stackalloc uint[2]{data.Device_QueueFamilies[0], data.Device_QueueFamilies[2]};
@@ -965,7 +875,7 @@ public static partial class SwapChain
         createInfo.imageFormat =  data.Device_ImageFormat;
         createInfo.imageColorSpace = data.Device_ImageColor;
         createInfo.imageExtent = data.Device_SurfaceSize;
-        createInfo.imageArrayLayers = config.SwapChain.Stereoscopic3DApp ? (uint)2 : (uint)1;
+        createInfo.imageArrayLayers = config.Stereoscopic3DApp ? (uint)2 : (uint)1;
 
         createInfo.imageUsage = (uint)VkImageUsageFlagBits.VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         
@@ -979,9 +889,9 @@ public static partial class SwapChain
         }
         
         createInfo.preTransform = data.Device_Transform;
-        createInfo.compositeAlpha = config.SwapChain.CompositeAlpha;
+        createInfo.compositeAlpha = config.CompositeAlpha;
         createInfo.presentMode = data.Device_PresentMode;
-        createInfo.clipped = config.SwapChain.Clipped ? VK.VK_TRUE : VK.VK_FALSE;
+        createInfo.clipped = config.Clipped ? VK.VK_TRUE : VK.VK_FALSE;
         createInfo.oldSwapchain = VkSwapchainKHR.Null;
 
         fixed (VkSwapchainKHR* swapchainPtr = &data.SwapChain)
@@ -992,7 +902,7 @@ public static partial class SwapChain
         Log.Info($"Create SwapChain {data.SwapChain}");
     }
 
-    public static unsafe void CreateSwapChainImages(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config )
+    public static unsafe void CreateSwapChainImages(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig.SwapChainConfig config )
     {
         // SWWAP CHAIN IMAGES  ----------------------------------------------------------------------
         uint imageCount = 0 ;
@@ -1048,23 +958,32 @@ public static partial class SwapChain
 
     #region DEpth Buffering 
 
-    public unsafe static void CreateDepthResources(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config)
+    public unsafe static void CreateDepthResources(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig.SwapChainConfig config)
     {
-       //Create IMAge
-        ResourceCreation.ImageConfig imageconfig = new(  new(data.Device_SurfaceSize.width,data.Device_SurfaceSize.height, 1) ,data.Device_DepthBufferImageFormat,VkImageTiling.VK_IMAGE_TILING_OPTIMAL  , VkImageUsageFlagBits.VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VkImageUsageFlagBits.VK_IMAGE_USAGE_SAMPLED_BIT );
-        ResourceCreation.CreateImage( ref func , ref data , imageconfig , out data.SwapChain_DepthBufferImages);
 
-        ResourceCreation.ImageMemoryConfig imageMemoryConfig = new( data.SwapChain_DepthBufferImages,VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT  );
-        ResourceCreation.CreateImageMemory(ref func , ref data , imageMemoryConfig , out data.SwapChain_DepthBufferImageMemory);
+        ResourceCreation.CreateImage2( ref func ,ref data, ref data.SwapChain_DepthBufferImages,ref data.SwapChain_DepthBufferImageMemory,
+        new(data.Device_SurfaceSize.width,data.Device_SurfaceSize.height, 1) , data.Device_DepthBufferImageFormat,VkImageTiling.VK_IMAGE_TILING_OPTIMAL  , VkImageUsageFlagBits.VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VkImageUsageFlagBits.VK_IMAGE_USAGE_SAMPLED_BIT  
+        ,VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         
-        ResourceCreation.ImageViewConfig temp = new( data.SwapChain_DepthBufferImages, data.Device_DepthBufferImageFormat, VkImageAspectFlagBits.VK_IMAGE_ASPECT_DEPTH_BIT,5);
+        // FOR FRAMEBUFFER
+        ResourceCreation.ImageViewConfig temp = new( data.SwapChain_DepthBufferImages, data.Device_DepthBufferImageFormat, VkImageAspectFlagBits.VK_IMAGE_ASPECT_DEPTH_BIT,0);
         ResourceCreation.CreateImageView( ref func,ref data, in temp, out data.SwapChain_DepthBufferImageViews);
     }
 
     public unsafe static void DisposeDepthResources(ref VulkanFunctions func,ref GraphicsData data )
     {
-        ResourceCreation.DisposeImageImageViewImageMemoryConfig config = new( data.SwapChain_DepthBufferImageViews ,data.SwapChain_DepthBufferImages , data.SwapChain_DepthBufferImageMemory );
-        ResourceCreation.DisposeImageImageViewImageMemory( ref func , ref data , in config);
+        if (  !data.Device.IsNull && data.SwapChain_DepthBufferImageViews != VkImageView.Null )
+        {
+            func.Device.vkDestroyImageView(data.Device,data.SwapChain_DepthBufferImageViews, null);
+        }
+        if (  !data.Device.IsNull && data.SwapChain_DepthBufferImageMemory != VkDeviceMemory.Null)
+        {
+            func.Device.vkFreeMemory(data.Device, data.SwapChain_DepthBufferImageMemory, null);
+        }
+        if( !data.Device.IsNull && data.SwapChain_DepthBufferImages != VkImage.Null )
+        {
+            func.Device.vkDestroyImage(data.Device,data.SwapChain_DepthBufferImages, null);
+        }
     }
 
     #endregion
@@ -1074,7 +993,7 @@ public static partial class SwapChain
 [SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public static partial class Memories
 {
-    #region  HELPER    
+  
     public unsafe static uint FindMemoryType(ref VulkanFunctions func,ref GraphicsData data , uint memoryTypeBits, VkMemoryPropertyFlagBits properties)
     {
         uint count = data.Device_MemoryProperties.memoryTypeCount;
@@ -1089,8 +1008,51 @@ public static partial class Memories
 
         return uint.MaxValue;
     }
-    #endregion
 
+    public static unsafe void AllocateMemoryForBuffer(ref VulkanFunctions func, ref GraphicsData data, VkMemoryPropertyFlagBits properties,ref  VkBuffer buffer, ref  VkDeviceMemory bufferMemory )
+    {
+        VkMemoryRequirements memRequirements = new();
+        func.Device.vkGetBufferMemoryRequirements(data.Device, buffer, &memRequirements);
+
+        VkMemoryAllocateInfo allocInfo = new();
+        allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = Memories.FindMemoryType(ref func, ref data, memRequirements.memoryTypeBits, properties);
+        allocInfo.pNext = null;
+        fixed(VkDeviceMemory* memory =  &bufferMemory) 
+        {
+            func.Device.vkAllocateMemory(data.Device, &allocInfo, null, memory).Check("failed to allocate memory!");
+        }
+    }
+
+    public unsafe static void AllocateMemoryForImage( ref VulkanFunctions func, ref GraphicsData data,
+       VkImage Image,VkMemoryPropertyFlagBits MemoryProperties , out VkDeviceMemory imageMemory )
+    {
+        VkMemoryRequirements memRequirements;
+        func.Device.vkGetImageMemoryRequirements(data.Device, Image, &memRequirements);
+
+        VkMemoryAllocateInfo allocInfo = new();
+        allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = Memories.FindMemoryType(ref func , ref data, memRequirements.memoryTypeBits,MemoryProperties);
+
+        fixed (VkDeviceMemory* imgMem = &imageMemory  )
+        {
+            func.Device.vkAllocateMemory(data.Device, &allocInfo, null, imgMem).Check("failed to allocate image memory!");
+        }
+
+    }
+
+    public unsafe static void TransfertMemory(ref VulkanFunctions func,ref GraphicsData data,void* ptr , VkDeviceSize bufferSize,ref VkDeviceMemory stagingBufferMemory)
+    {
+        void* indicesdataPtr = null;
+
+        func.Device.vkMapMemory(data.Device, stagingBufferMemory, 0, bufferSize, 0, &indicesdataPtr ).Check("Impossible to map memory  for indice");
+
+        Unsafe.CopyBlock( indicesdataPtr , ptr ,(uint)bufferSize);
+        
+        func.Device.vkUnmapMemory(data.Device, stagingBufferMemory);
+    }
 }
 
 [SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
@@ -1165,8 +1127,12 @@ VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated fr
         Log.Info($"Create Allocate Command buffer count : {config.Render.MAX_FRAMES_IN_FLIGHT}");
     }
     
-    public static unsafe void RecordCommandBuffer(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config, in VkCommandBuffer commandBuffer, uint imageIndex)
+    /// <summary>
+    /// // RECORD COMMANDS WICH CAN THEN BE SUBMITED TO DEVICE QUEUE FOR EXECUTION
+    /// </summary>
+    public static unsafe void RecordCommandBuffer(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig.PipelineConfig config, in VkCommandBuffer commandBuffer, uint imageIndex)
     {
+// START A THREAD  ?
         func.Device.vkResetCommandBuffer(commandBuffer, (uint)VkCommandBufferResetFlagBits.VK_COMMAND_BUFFER_RESET_RELEASE_NONE);
         
         VkCommandBufferBeginInfo beginInfo = default;
@@ -1182,41 +1148,41 @@ VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated fr
         func.Device.vkEndCommandBuffer(commandBuffer).Check("Failed to End command buffer ");
     }
     
-    public unsafe static VkCommandBuffer BeginSingleTimeCommands(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data)
+    public unsafe static VkCommandBuffer BeginSingleTimeCommands(ref VulkanFunctions func,ref GraphicsData data)
     {
         
         VkCommandBufferAllocateInfo allocInfo = new();
         allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         allocInfo.level = VkCommandBufferLevel.VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandPool = data.Handles.CommandPool;
+        allocInfo.commandPool = data.CommandPool;
         allocInfo.commandBufferCount = 1;
 
         VkCommandBuffer commandBuffer = VkCommandBuffer.Null;
 
-        func.vkAllocateCommandBuffers(data.Handles.Device, &allocInfo, &commandBuffer);
+        func.Device.vkAllocateCommandBuffers(data.Device, &allocInfo, &commandBuffer);
 
         VkCommandBufferBeginInfo beginInfo = new();
         beginInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         beginInfo.flags =(uint) VkCommandBufferUsageFlagBits.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-        func.vkBeginCommandBuffer(commandBuffer, &beginInfo);
+        func.Device.vkBeginCommandBuffer(commandBuffer, &beginInfo);
 
         return commandBuffer;
     }
 
-    public unsafe static void EndSingleTimeCommands(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data, VkCommandBuffer commandBuffer) 
+    public unsafe static void EndSingleTimeCommands(ref VulkanFunctions func,ref GraphicsData data, VkCommandBuffer commandBuffer) 
     {
-        func.vkEndCommandBuffer(commandBuffer);
+        func.Device.vkEndCommandBuffer(commandBuffer);
        
         VkSubmitInfo submitInfo = new();
         submitInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers =&commandBuffer;
         
-        func.vkQueueSubmit(data.Handles.GraphicQueue, 1, &submitInfo, VkFence.Null);
-        func.vkQueueWaitIdle(data.Handles.GraphicQueue);
+        func.Device.vkQueueSubmit(data.Device_GraphicQueue, 1, &submitInfo, VkFence.Null);
+        func.Device.vkQueueWaitIdle(data.Device_GraphicQueue);
 
-        func.vkFreeCommandBuffers(data.Handles.Device, data.Handles.CommandPool, 1, &commandBuffer);
+        func.Device.vkFreeCommandBuffers(data.Device, data.CommandPool, 1, &commandBuffer);
     }
 
 }
@@ -1566,6 +1532,7 @@ public static partial class Render
 
     public static unsafe  void Draw(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config )
     {
+// PREPARE A FRAME         
         uint imageIndex=0;
         VkFence CurrentinFlightFence = data.InFlightFences[/*data.*/CurrentFrame];
         VkSemaphore CurrentImageAvailableSemaphore =  data.ImageAvailableSemaphores[/*data.*/CurrentFrame];
@@ -1576,13 +1543,16 @@ public static partial class Render
         VkSwapchainKHR* swapChains = stackalloc  VkSwapchainKHR[1]{ data.SwapChain };// VkSwapchainKHR[] swapChains = { data.SwapChain };
         VkCommandBuffer commandBuffer =data.CommandBuffers[/*data.*/CurrentFrame];
 
+
+//SYNCHRONISATION OBJECTS :  USED TO CONTROL THE ORDER OF EXECUTION OF ASYNCHRONOUS OPERATION
         func.Device.vkWaitForFences(data.Device, 1,&CurrentinFlightFence, VK.VK_TRUE, config.Render.Tick_timeout).Check("Acquire Image");
 
+// ACQUIRE NEXT IMAGE 
         VkResult result = func.Device.vkAcquireNextImageKHR(data.Device, data.SwapChain, config.Render.Tick_timeout,CurrentImageAvailableSemaphore, VkFence.Null, &imageIndex);
 
         if ( result == VkResult.VK_ERROR_OUT_OF_DATE_KHR)
         {
-            SwapChain. ReCreateSwapChain( ref func,ref data, ref config);
+            SwapChain. ReCreateSwapChain( ref func,ref data, ref config.SwapChain);
             return ;
         }
         else if (result != VkResult.VK_SUCCESS && result != VkResult.VK_SUBOPTIMAL_KHR )
@@ -1595,7 +1565,8 @@ public static partial class Render
         func.Device.vkResetFences(data.Device, 1, &CurrentinFlightFence);
 
 
-        CommandBuffers. RecordCommandBuffer( ref func,ref data,ref config, commandBuffer, imageIndex);
+// RECORD COMMANDS WICH CAN THEN BE SUBMITED TO DEVICE QUEUE FOR EXECUTION
+        CommandBuffers. RecordCommandBuffer( ref func,ref data,ref config.Pipeline, commandBuffer, imageIndex);
 
         VkSubmitInfo submitInfo = default;
         submitInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -1607,7 +1578,7 @@ public static partial class Render
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores ;
         submitInfo.pNext = null;
-        
+// SUBMIT GRAPHICS COMMAND BUFFERS        
         func.Device.vkQueueSubmit(data.Device_GraphicQueue, 1, &submitInfo,  CurrentinFlightFence ).Check("failed to submit draw command buffer!");
         
         VkPresentInfoKHR presentInfo =  default;
@@ -1619,29 +1590,89 @@ public static partial class Render
         presentInfo.pSwapchains = swapChains;
         presentInfo.pNext =null;
         presentInfo.pResults = null;
-        
+// PRESENT IMAGE        
         result = func.Device.vkQueuePresentKHR(data.Device_PresentQueue, &presentInfo); 
 
         if ( result == VkResult.VK_ERROR_OUT_OF_DATE_KHR || result == VkResult.VK_SUBOPTIMAL_KHR )
         {
-            SwapChain. ReCreateSwapChain( ref func,ref data, ref config);
+            SwapChain. ReCreateSwapChain( ref func,ref data, ref config.SwapChain);
         }
         else if (result != VkResult.VK_SUCCESS )
         {
             throw new Exception("Failed to  present swap chain Images");
         }
-
+        // FOR NEXT FRAME 
        CurrentFrame = ((CurrentFrame + 1) % config.Render.MAX_FRAMES_IN_FLIGHT);   
     }
    private static int CurrentFrame =0;
 
 }
 
+public unsafe struct QueuesTest
+{
+    public unsafe readonly  delegate* unmanaged< VkQueue,UInt32,VkSubmitInfo*,VkFence,VkResult > vkQueueSubmit = null;
+    public unsafe readonly  delegate* unmanaged< VkQueue,VkPresentInfoKHR*,VkResult > vkQueuePresentKHR = null;
+    public unsafe readonly  delegate* unmanaged< VkDevice,UInt32,UInt32,VkQueue*,void > vkGetDeviceQueue = null;
+    private readonly VkDevice _device;
+    private readonly VkQueue _present;
+    private readonly VkQueue _graphic;
+    private readonly VkQueue _compute;
+
+    public QueuesTest( VkDevice device , uint[] queueFamiliyIndices )
+    {
+        _device = device;
+        fixed ( VkQueue* graphic = &_graphic){
+            vkGetDeviceQueue(_device, queueFamiliyIndices[0], 0, graphic); 
+        }
+        fixed ( VkQueue* compute = &_compute){
+            vkGetDeviceQueue(_device, queueFamiliyIndices[1], 0, compute); 
+        }
+        fixed ( VkQueue* present = &_present){
+            vkGetDeviceQueue(_device, queueFamiliyIndices[2], 0,present); 
+        }
+    }
+
+    // SUBMIT GRAPHICS COMMAND BUFFERS
+    public unsafe void SubmitGraphicCommandBuffer(VkCommandBuffer commandBuffer, VkSemaphore* waitSemaphores,UInt32* waitStages,VkSemaphore*   signalSemaphores , VkFence CurrentinFlightFence)
+    {
+        VkSubmitInfo submitInfo = default;
+        submitInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.pWaitSemaphores = waitSemaphores;
+        submitInfo.pWaitDstStageMask =  waitStages;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &commandBuffer;      
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = signalSemaphores ;
+        submitInfo.pNext = null;    
+        vkQueueSubmit(_graphic, 1, &submitInfo,  CurrentinFlightFence ).Check("failed to submit draw command buffer!");
+    }
+
+    public unsafe VkResult PresentImage(VkSwapchainKHR* swapChains , VkSemaphore* signalSemaphores, uint imageIndex )
+    {
+        VkPresentInfoKHR presentInfo =  default;
+        presentInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PRESENT_INFO_KHR; 
+        presentInfo.waitSemaphoreCount = 1;
+        presentInfo.pWaitSemaphores = signalSemaphores;
+        presentInfo.pImageIndices = &imageIndex;
+        presentInfo.swapchainCount = 1;
+        presentInfo.pSwapchains = swapChains;
+        presentInfo.pNext =null;
+        presentInfo.pResults = null;   
+        return  vkQueuePresentKHR(_present, &presentInfo); 
+    }
+
+    public void Dispose()
+    {
+
+    }
+}
+
 [SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public static partial class RenderPass
 {
     
-    public unsafe static void DrawRenderPass(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config, in VkCommandBuffer commandBuffer , uint imageIndex )
+    public unsafe static void DrawRenderPass(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig.PipelineConfig config, in VkCommandBuffer commandBuffer , uint imageIndex )
     {
     // FOREACH RENDER PASS 
     // for ( int i = 0 ; i < renderPasses; i++){        
@@ -1670,14 +1701,7 @@ public static partial class RenderPass
 
     public static unsafe void CreateRenderPass(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config) 
     {
-        data.RenderPass_ClearColors[0] = new(ColorHelper.PaletteToRGBA( config.Render.BackGroundColor));
-        data.RenderPass_ClearColors[1] = new(depth:1.0f,stencil:0);
-        
-        data.RenderPass_RenderArea = new();
-        data.RenderPass_RenderArea.offset = new( );
-        data.RenderPass_RenderArea.offset.x =0 ;data.RenderPass_RenderArea.offset.x =0 ; //TODO put in config
-        data.RenderPass_RenderArea.extent  = data.Device_SurfaceSize;
-
+       
         // COLOR 
         VkAttachmentDescription colorAttachment =new();
         colorAttachment.format = data.Device_ImageFormat;
@@ -1822,6 +1846,39 @@ public static partial class RenderPass
 [SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public static partial class Pipelines
 {
+    public unsafe static void Load(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config )
+    {
+       // Preperae Texture data        
+        // VkFormat format = VkFormat.VK_FORMAT_UNDEFINED;
+        uint texWidth=512, texHeight=512, texChannels=4;
+        // //TODO CreateTextureImage  File.ReadAllBytes( data.Info.TextureName) do this outside 
+        // var file = File.ReadAllBytes( data.Info.TextureName);
+        // // StbImage.stbi__vertically_flip_on_load_set = 1;
+        // ImageResult result = ImageResult.FromMemory(file , ColorComponents.RedGreenBlueAlpha);
+        // texWidth = (uint)result.Width;
+        // texHeight = (uint)result.Height;
+        // texChannels = (uint)result.Comp;
+        // if (result.Comp == ColorComponents.RedGreenBlue  )
+        //     format = VkFormat.VK_FORMAT_R8G8B8_SRGB;
+        // else if (result.Comp == ColorComponents.RedGreenBlueAlpha )    
+        //     format = VkFormat.VK_FORMAT_R8G8B8A8_SRGB;
+
+        VkDeviceSize imageSize = (ulong)(texWidth * texHeight * texChannels);
+        //--------------------------------------------------   
+
+        Span<byte> shaderBytes = System.IO.File.ReadAllBytes("");
+
+        //--------------------------------------------------
+
+        data.RenderPass_ClearColors[0] = new(ColorHelper.PaletteToRGBA( config.Render.BackGroundColor));
+        data.RenderPass_ClearColors[1] = new(depth:1.0f,stencil:0);
+        
+        data.RenderPass_RenderArea = new();
+        data.RenderPass_RenderArea.offset = new( );
+        data.RenderPass_RenderArea.offset.x =0 ;data.RenderPass_RenderArea.offset.x =0 ; //TODO put in config
+        data.RenderPass_RenderArea.extent  = data.Device_SurfaceSize;
+
+    }
     public unsafe static void Build(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config )
     {
         // TODO :  see if redner pass init in Render or pipelines?  
@@ -1830,7 +1887,7 @@ public static partial class Pipelines
 
         
         //do most stuff before Resource Cretion then resource descriptor 
-        CreatePipeline(ref  func,ref  data , ref config.Render);
+        CreatePipeline(ref  func,ref  data , ref config.Pipeline);
     }
 
     public unsafe static void Dispose(ref VulkanFunctions func,ref GraphicsData data  )
@@ -1841,7 +1898,7 @@ public static partial class Pipelines
         DisposePipeline(ref  func,ref  data );
     }
 
-    public unsafe static void DrawPipeline(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config, in VkCommandBuffer commandBuffer )
+    public unsafe static void DrawPipeline(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig.PipelineConfig config, in VkCommandBuffer commandBuffer )
     {
         // ALL LINE COMMENT  IS EMPTY PIPELINE 
         // // PUSH CONSTANTS ---------- ( do before bin pipeline)
@@ -1851,7 +1908,7 @@ public static partial class Pipelines
         // }
         
         // // USE SHADER   FOREACH PIPELINE or FOREACH SHADER
-        //     func.vkCmdBindPipeline(commandBuffer, VkPipelineBindPoint.VK_PIPELINE_BIND_POINT_GRAPHICS, data.Handles.Pipeline);
+        func.Device.vkCmdBindPipeline(commandBuffer, VkPipelineBindPoint.VK_PIPELINE_BIND_POINT_GRAPHICS, data.Pipeline);
             
         // //  FOREACN  MATERIALS  or FOREACH UNIFORMS & TEXTURES(sampler)
         //     fixed(VkDescriptorSet* desc =  &data.Handles.DescriptorSets[CurrentFrame] )
@@ -1860,11 +1917,15 @@ public static partial class Pipelines
         //     }
             
         // // SET DYNAMIC STATES
-        //     fixed(VkViewport* viewport = &data.Info.Viewport ){ func.vkCmdSetViewport(commandBuffer, 0, 1,viewport); }
-        //     fixed( VkRect2D* scissor = &data.Info.Scissor) { func.vkCmdSetScissor(commandBuffer, 0, 1, scissor); }
-        //     func.vkCmdSetLineWidth( commandBuffer,data.Handles.DynamicStatee_LineWidth);
-            
 
+        if ( config.DynamicStatesWithViewport && config.DynamicStatesWithScissor ){
+            fixed(VkViewport* viewport = &config.DynamicStatesViewport ){ func.Device.vkCmdSetViewport(commandBuffer, 0, 1,viewport); }
+            fixed( VkRect2D* scissor = &config.DynamicStatesScissor) { func.Device.vkCmdSetScissor(commandBuffer, 0, 1, scissor); }
+        } 
+        if ( config.DynamicStatesWithLineWidth){
+            func.Device.vkCmdSetLineWidth( commandBuffer,config.DynamicStatesLineWidth);
+        } 
+      
         // //  FOREACH OBJECT/ GEOMETRY 
         //     VkDeviceSize* offsets = stackalloc VkDeviceSize[]{0};
         //     VkBuffer* vertexBuffers = stackalloc VkBuffer[] { data.Handles.VertexBuffer};
@@ -1876,7 +1937,7 @@ public static partial class Pipelines
         
     #region  Compute Pipeline 
     
-    public static unsafe void CreatePipeline(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig.RenderConfig config)
+    public static unsafe void CreatePipeline(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig.PipelineConfig config)
     {
         // #region SHADERS
         VkShaderModule[] shaderModules = new  VkShaderModule[2];
@@ -1978,93 +2039,106 @@ public static partial class Pipelines
         colorBlending.pNext=null;
         #endregion
 
-        // #region VIEWPORT
-// TODO if VIEWPORT NOT CHANGE DELETE DYNAMIC STATE
-        config.Pipeline_DynamicStatesViewport.x = 0.0f;
-        config.Pipeline_DynamicStatesViewport.y = 0.0f;
-        config.Pipeline_DynamicStatesViewport.width = (float) data.Device_SurfaceSize.width;
-        config.Pipeline_DynamicStatesViewport.height = (float) data.Device_SurfaceSize.height;
-        config.Pipeline_DynamicStatesViewport.minDepth = 0.0f;
-        config.Pipeline_DynamicStatesViewport.maxDepth = 1.0f;
+      
 
-        config.Pipeline_DynamicStatesScissor.offset = new();
-        config.Pipeline_DynamicStatesScissor.extent = data.Device_SurfaceSize ;
+        // // Pipeline.CreateColorBlending(ref renderConfig.Pipeline_ColorBlending ,out VkPipelineColorBlendStateCreateInfo colorBlending );
+        // Pipeline.CreateRasterization( ref renderConfig.Pipeline_Rasterization , out VkPipelineRasterizationStateCreateInfo rasterizer) ;
+        VkPipelineRasterizationStateCreateInfo rasterizer =new();
+        rasterizer.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+        rasterizer.rasterizerDiscardEnable = config.RasterizerDiscardEnable?   VK.VK_TRUE : VK.VK_FALSE ;// VK.VK_FALSE;
+        rasterizer.polygonMode = (VkPolygonMode) config.PolygonFillMode ;//  VkPolygonMode. VK_POLYGON_MODE_FILL;
+        rasterizer.lineWidth = config.LineWidth;// 1.0f;
+        rasterizer.cullMode =  (uint)config.FaceCullMode ; //( uint)VkCullModeFlagBits.VK_CULL_MODE_BACK_BIT;
+        rasterizer.frontFace = (VkFrontFace) config.FrontFace ; //VkFrontFace.VK_FRONT_FACE_COUNTER_CLOCKWISE;
+        rasterizer.flags =0;
+        rasterizer.pNext = null;
+        rasterizer.depthBiasEnable = config.DepthBiasEnable? VK.VK_TRUE : VK.VK_FALSE ;// VK.VK_FALSE;
+        rasterizer.depthClampEnable = config.DepthClampEnable? VK.VK_TRUE : VK.VK_FALSE ;   // VK.VK_FALSE;
+        rasterizer.depthBiasClamp = config.DepthBiasClamp ; // 0.0f;
+        rasterizer.depthBiasConstantFactor =config.DepthBiasConstantFactor ;  // 1.0f;
+        rasterizer.depthBiasSlopeFactor = config.DepthBiasSlopeFactor ;   //1.0f;
+        // CreateMultisampling(ref renderConfig.Pipeline, out VkPipelineMultisampleStateCreateInfo multisampling );
+        VkPipelineMultisampleStateCreateInfo multisampling=new();
+        multisampling.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+        multisampling.pNext = null;
+        multisampling.flags =0;
+        multisampling.sampleShadingEnable =config.SampleShadingEnable ? VK.VK_TRUE:  VK.VK_FALSE;
+        multisampling.rasterizationSamples =(VkSampleCountFlagBits) config.RasterizationSamples ;
+        multisampling.alphaToCoverageEnable =  config.AlphaToCoverageEnable ? VK.VK_TRUE:  VK.VK_FALSE;
+        multisampling.alphaToOneEnable = config.AlphaToOneEnable  ? VK.VK_TRUE:  VK.VK_FALSE;       
+        multisampling.minSampleShading =config.MinSampleShading;
+        uint* samplemask = null;
+        multisampling.pSampleMask =samplemask;
+        // Pipeline.CreateDepthStencil( ref renderConfig.Pipeline , out VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo);
+        VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo=new();
+        depthStencilStateCreateInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+        depthStencilStateCreateInfo.pNext = null;
+        depthStencilStateCreateInfo.depthTestEnable = config.DepthTestEnable ?  VK.VK_TRUE : VK.VK_FALSE;
+        depthStencilStateCreateInfo.depthWriteEnable =config.DepthWriteEnable  ?  VK.VK_TRUE : VK.VK_FALSE;
+        depthStencilStateCreateInfo.depthCompareOp = (VkCompareOp)config.DepthCompareOp;
+        depthStencilStateCreateInfo.depthBoundsTestEnable =config.DepthBoundsTestEnable ?  VK.VK_TRUE : VK.VK_FALSE;
+        depthStencilStateCreateInfo.stencilTestEnable = config.DepthStencilTestEnable ? VK.VK_TRUE : VK.VK_FALSE;
+        depthStencilStateCreateInfo.maxDepthBounds = config.DepthMaxDepthBounds;
+        depthStencilStateCreateInfo.minDepthBounds = config.DepthMinDepthBounds;
+        depthStencilStateCreateInfo.flags = (uint)config.DepthFlags;
+        depthStencilStateCreateInfo.front = config.DepthFront ;
+        depthStencilStateCreateInfo.back = config.DepthBack ;
+
+        uint dynamicCount =0 ;
+
+        if ( config.DynamicStatesWithViewport) dynamicCount++;
+        if ( config.DynamicStatesWithScissor) dynamicCount++;
+        if ( config.DynamicStatesWithLineWidth) dynamicCount++;
+
+        // Pipeline.CreateDynamicStates( ref renderConfig.Pipeline_DynamicStates , out  VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo );
+        VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo = new();
+        dynamicStateCreateInfo.sType = VkStructureType. VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+        dynamicStateCreateInfo.pNext = null;
+        dynamicStateCreateInfo.flags =0;
+        dynamicStateCreateInfo.dynamicStateCount =dynamicCount;
+        dynamicStateCreateInfo.pDynamicStates = null;
+        if ( dynamicCount != 0)
+        {
+            VkDynamicState[] dynamicStates2  = new VkDynamicState[dynamicCount];
+
+            if ( config.DynamicStatesWithViewport) dynamicStates2[--dynamicCount] = VkDynamicState.VK_DYNAMIC_STATE_VIEWPORT;
+            if ( config.DynamicStatesWithScissor) dynamicStates2[--dynamicCount] = VkDynamicState.VK_DYNAMIC_STATE_SCISSOR;
+            if ( config.DynamicStatesWithLineWidth) dynamicStates2[--dynamicCount] = VkDynamicState.VK_DYNAMIC_STATE_LINE_WIDTH;
+
+            fixed( VkDynamicState* dynamicStates = &dynamicStates2[0] ){
+                dynamicStateCreateInfo.pDynamicStates =dynamicStates;
+            }
+        }
+      
+        // #region VIEWPORT
+        // TODO if VIEWPORT NOT CHANGE DELETE DYNAMIC STATE
+        config.DynamicStatesViewport.x = 0.0f;
+        config.DynamicStatesViewport.y = 0.0f;
+        config.DynamicStatesViewport.width = (float) data.Device_SurfaceSize.width;
+        config.DynamicStatesViewport.height = (float) data.Device_SurfaceSize.height;
+        config.DynamicStatesViewport.minDepth = 0.0f;
+        config.DynamicStatesViewport.maxDepth = 1.0f;
+        config.DynamicStatesScissor.offset = new();
+        config.DynamicStatesScissor.extent = data.Device_SurfaceSize ;
         
         VkPipelineViewportStateCreateInfo viewportState =new();
         viewportState.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
         viewportState.viewportCount = 1;
-        fixed( VkViewport* viewport = &config.Pipeline_DynamicStatesViewport)
+        fixed( VkViewport* viewport = &config.DynamicStatesViewport)
         {    
             viewportState.pViewports =viewport;    
         }
         viewportState.scissorCount = 1;
-        fixed( VkRect2D* scissor = &config.Pipeline_DynamicStatesScissor )
+        fixed( VkRect2D* scissor = &config.DynamicStatesScissor )
         {  
             viewportState.pScissors = scissor;          
         }
         viewportState.flags=0;
         viewportState.pNext = null;
         // #endregion
-
-        // // Pipeline.CreateColorBlending(ref renderConfig.Pipeline_ColorBlending ,out VkPipelineColorBlendStateCreateInfo colorBlending );
-        // Pipeline.CreateRasterization( ref renderConfig.Pipeline_Rasterization , out VkPipelineRasterizationStateCreateInfo rasterizer) ;
-        VkPipelineRasterizationStateCreateInfo rasterizer =new();
-        rasterizer.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-        rasterizer.rasterizerDiscardEnable = config.Pipeline_Rasterization .RasterizerDiscardEnable?   VK.VK_TRUE : VK.VK_FALSE ;// VK.VK_FALSE;
-        rasterizer.polygonMode = (VkPolygonMode) config.Pipeline_Rasterization.PolygonFillMode ;//  VkPolygonMode. VK_POLYGON_MODE_FILL;
-        rasterizer.lineWidth = config.Pipeline_Rasterization.LineWidth;// 1.0f;
-        rasterizer.cullMode =  (uint)config.Pipeline_Rasterization.FaceCullMode ; //( uint)VkCullModeFlagBits.VK_CULL_MODE_BACK_BIT;
-        rasterizer.frontFace = (VkFrontFace) config.Pipeline_Rasterization.FrontFace ; //VkFrontFace.VK_FRONT_FACE_COUNTER_CLOCKWISE;
-        rasterizer.flags =0;
-        rasterizer.pNext = null;
-        rasterizer.depthBiasEnable = config.Pipeline_Rasterization.DepthBiasEnable? VK.VK_TRUE : VK.VK_FALSE ;// VK.VK_FALSE;
-        rasterizer.depthClampEnable = config.Pipeline_Rasterization.DepthClampEnable? VK.VK_TRUE : VK.VK_FALSE ;   // VK.VK_FALSE;
-        rasterizer.depthBiasClamp = config.Pipeline_Rasterization.DepthBiasClamp ; // 0.0f;
-        rasterizer.depthBiasConstantFactor =config.Pipeline_Rasterization.DepthBiasConstantFactor ;  // 1.0f;
-        rasterizer.depthBiasSlopeFactor = config.Pipeline_Rasterization.DepthBiasSlopeFactor ;   //1.0f;
-        // Pipeline.CreateMultisampling(ref renderConfig.Pipeline_Multisampling, out VkPipelineMultisampleStateCreateInfo multisampling );
-        VkPipelineMultisampleStateCreateInfo multisampling=new();
-        multisampling.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-        multisampling.pNext = null;
-        multisampling.flags =0;
-        multisampling.sampleShadingEnable =config.Pipeline_Multisampling .SampleShadingEnable ? VK.VK_TRUE:  VK.VK_FALSE;
-        multisampling.rasterizationSamples =(VkSampleCountFlagBits) config.Pipeline_Multisampling.RasterizationSamples ;
-        multisampling.alphaToCoverageEnable =  config.Pipeline_Multisampling.AlphaToCoverageEnable ? VK.VK_TRUE:  VK.VK_FALSE;
-        multisampling.alphaToOneEnable = config.Pipeline_Multisampling.AlphaToOneEnable  ? VK.VK_TRUE:  VK.VK_FALSE;       
-        multisampling.minSampleShading =config.Pipeline_Multisampling.MinSampleShading;
-        uint* samplemask = null;
-        multisampling.pSampleMask =samplemask;
-        // Pipeline.CreateDepthStencil( ref renderConfig.Pipeline_DepthStencil , out VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo);
-        VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo=new();
-        depthStencilStateCreateInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-        depthStencilStateCreateInfo.pNext = null;
-        depthStencilStateCreateInfo.depthTestEnable = config.Pipeline_DepthStencil.DepthTestEnable ?  VK.VK_TRUE : VK.VK_FALSE;
-        depthStencilStateCreateInfo.depthWriteEnable =config.Pipeline_DepthStencil.DepthWriteEnable  ?  VK.VK_TRUE : VK.VK_FALSE;
-        depthStencilStateCreateInfo.depthCompareOp = (VkCompareOp)config.Pipeline_DepthStencil.DepthCompareOp;
-        depthStencilStateCreateInfo.depthBoundsTestEnable =config.Pipeline_DepthStencil.DepthBoundsTestEnable ?  VK.VK_TRUE : VK.VK_FALSE;
-        depthStencilStateCreateInfo.stencilTestEnable = config.Pipeline_DepthStencil.StencilTestEnable ? VK.VK_TRUE : VK.VK_FALSE;
-        depthStencilStateCreateInfo.maxDepthBounds = config.Pipeline_DepthStencil.MaxDepthBounds;
-        depthStencilStateCreateInfo.minDepthBounds = config.Pipeline_DepthStencil.MinDepthBounds;
-        depthStencilStateCreateInfo.flags = (uint)config.Pipeline_DepthStencil.Flags;
-        depthStencilStateCreateInfo.front = config.Pipeline_DepthStencil.Front ;
-        depthStencilStateCreateInfo.back = config.Pipeline_DepthStencil.Back ;
-        // Pipeline.CreateDynamicStates( ref renderConfig.Pipeline_DynamicStates , out  VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo );
-        VkDynamicState[] dynamicStates2  = new VkDynamicState[2];
-        dynamicStates2[0] = VkDynamicState.VK_DYNAMIC_STATE_VIEWPORT;
-        dynamicStates2[1] = VkDynamicState.VK_DYNAMIC_STATE_SCISSOR;
-
-        VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo = new();
-        dynamicStateCreateInfo.sType = VkStructureType. VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-        dynamicStateCreateInfo.pNext = null;
-        dynamicStateCreateInfo.flags =0;
-        dynamicStateCreateInfo.dynamicStateCount = (uint)dynamicStates2.Length;
-        fixed( VkDynamicState* dynamicStates = &dynamicStates2[0] ){
-            dynamicStateCreateInfo.pDynamicStates =dynamicStates;
-        }
-
-        // Pipeline.CreateTessellation(out VkPipelineTessellationStateCreateInfo tessellationStateCreateInfo); 
+       
         #region Tesslation
-           //not used 
+        //not used 
         VkPipelineTessellationStateCreateInfo tessellationStateCreateInfo = new();
         tessellationStateCreateInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
         tessellationStateCreateInfo.pNext = null;
@@ -2072,6 +2146,7 @@ public static partial class Pipelines
         uint numberOfControlPointsPerPatch =0;
         tessellationStateCreateInfo.patchControlPoints = numberOfControlPointsPerPatch;
         #endregion
+
         VkGraphicsPipelineCreateInfo pipelineInfo =new();
         pipelineInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
         pipelineInfo.pNext = null;
@@ -2117,7 +2192,6 @@ public static partial class Pipelines
         Log.Info($"Create PIPELINE : {data.Pipeline}");
     }
 
-    
     public static unsafe void DisposePipeline(ref VulkanFunctions func,ref GraphicsData data )
     {  
         if (!data.Device.IsNull && !data.Pipeline.IsNull)
@@ -2127,16 +2201,45 @@ public static partial class Pipelines
         }
     }
 
-    
     #endregion
 
     #region Objects geometry 
 
-    //vertex
-    // indices
-
     //matrix model ?
+    public unsafe struct ObjectGeometryConfig
+    {
+        public readonly VkDeviceSize BufferSize;
+        public unsafe readonly void* DataPtr;
+      
 
+        public ObjectGeometryConfig(void* dataPtr, VkDeviceSize bufferSize )
+        {
+            BufferSize = bufferSize; 
+            DataPtr = dataPtr;
+        }
+    }
+
+    public unsafe static void CreateBuffers(ref VulkanFunctions func,ref GraphicsData data , ObjectGeometryConfig config ,ref VkBuffer buffer,ref VkDeviceMemory bufferMemory ) 
+    {
+        VkBuffer stagingBuffer = new();
+        VkDeviceMemory stagingBufferMemory = new();
+
+        ResourceCreation. CreateBuffer(ref func , ref data , config.BufferSize , VkBufferUsageFlagBits.VK_BUFFER_USAGE_TRANSFER_SRC_BIT ,         
+            VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+            ref stagingBuffer,  ref stagingBufferMemory);
+
+        Memories.TransfertMemory( ref func,ref data,config.DataPtr ,  config.BufferSize,ref  stagingBufferMemory);
+
+        ResourceCreation. CreateBuffer(ref func , ref data , config.BufferSize, 
+            VkBufferUsageFlagBits.VK_BUFFER_USAGE_TRANSFER_DST_BIT  | VkBufferUsageFlagBits.VK_BUFFER_USAGE_INDEX_BUFFER_BIT, 
+            VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
+            ref buffer,  ref bufferMemory);
+
+        ResourceCreation.CopyBuffer(ref func , ref data ,stagingBuffer,buffer, config.BufferSize);
+
+        func.Device.vkDestroyBuffer(data.Device, stagingBuffer, null);
+        func.Device.vkFreeMemory(data.Device, stagingBufferMemory, null);
+    }
     //drawcalls
 
     #endregion
@@ -2241,84 +2344,69 @@ public static partial class Pipelines
     
     #endregion
     
-    public unsafe static void CreateTextureImage(ref GraphicDeviceFunctions func,ref GraphicDeviceData data )
+    public unsafe struct TextureConfig
     {
-        // VkFormat format = VkFormat.VK_FORMAT_UNDEFINED;
-        // uint texWidth=512, texHeight=512;
-        // uint texChannels=4;
-        // //TODO CreateTextureImage  File.ReadAllBytes( data.Info.TextureName) do this outside 
-        // var file = File.ReadAllBytes( data.Info.TextureName);
-        // // StbImage.stbi__vertically_flip_on_load_set = 1;
-        // ImageResult result = ImageResult.FromMemory(file , ColorComponents.RedGreenBlueAlpha);
-        // texWidth = (uint)result.Width;
-        // texHeight = (uint)result.Height;
-        // texChannels = (uint)result.Comp;
+        public readonly VkDeviceSize ImageSize;
+        public unsafe readonly void* DataPtr;
+        public readonly VkFormat Format;
+        public readonly uint Width;
+        public readonly uint Height;
 
-        // VkDeviceSize imageSize = (ulong)(texWidth * texHeight * texChannels);
+        public TextureConfig(void* dataPtr, VkDeviceSize imageSize , VkFormat format , uint width, uint height)
+        {
+            ImageSize = imageSize; 
+            DataPtr = dataPtr;
+            Format = format;
+            Width =width;
+            Height= height;
+        }
+    }
 
-        // VkBuffer stagingBuffer = VkBuffer.Null;
-        // VkDeviceMemory stagingBufferMemory = VkDeviceMemory.Null;
+    public unsafe static void CreateTexture(ref VulkanFunctions func,ref GraphicsData data , ref TextureConfig config, ref VkImage image, ref VkDeviceMemory imageMemory )
+    {
+        VkBuffer stagingBuffer = VkBuffer.Null;
+        VkDeviceMemory stagingBufferMemory = VkDeviceMemory.Null;
 
-        // CreateStagingBuffer(ref func , ref data , imageSize, 
-        //     VkBufferUsageFlagBits.VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
-        //     VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
-        //     VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-        //     ref stagingBuffer, 
-        //     ref stagingBufferMemory);
+        ResourceCreation. CreateBuffer(ref func , ref data ,config.ImageSize, VkBufferUsageFlagBits.VK_BUFFER_USAGE_TRANSFER_SRC_BIT ,         
+            VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+            ref stagingBuffer,  ref stagingBufferMemory);
+        
+        Memories.TransfertMemory( ref func,ref data,config.DataPtr ,config.ImageSize,ref  stagingBufferMemory);       
 
-        // byte* imgPtr = null;
-        // func.vkMapMemory(data.Handles.Device, stagingBufferMemory, 0, imageSize, 0, (void**)&imgPtr).Check("Impossible to map memory for texture");
-       
-        //     // void* ptr = Unsafe.AsPointer( ref  result.Data[0]);
-        // fixed( byte* tex2D = &result.Data[0])
-        // {
-        //     Unsafe.CopyBlock(imgPtr  ,tex2D ,(uint)imageSize);
-        // }
-
-          
-        // func.vkUnmapMemory(data.Handles.Device, stagingBufferMemory);
-
-        // if (result.Comp == ColorComponents.RedGreenBlue  )
-        //     format = VkFormat.VK_FORMAT_R8G8B8_SRGB;
-        // else if (result.Comp == ColorComponents.RedGreenBlueAlpha )    
-        //     format = VkFormat.VK_FORMAT_R8G8B8A8_SRGB;
-
-        // CreateImage(ref func , ref data, ref data.Info.TextureImage, ref data.Info.TextureImageMemory, texWidth, texHeight, 
-        //     format,//VkFormat.VK_FORMAT_R8G8B8A8_SRGB, 
-        //     VkImageTiling.VK_IMAGE_TILING_OPTIMAL, 
-        //     VkImageUsageFlagBits.VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits.VK_IMAGE_USAGE_SAMPLED_BIT, 
-        //     VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT   );
-
+        ResourceCreation.CreateImage2( ref func ,ref data, ref image,ref imageMemory,
+            new(config.Width,config.Height, 1) , config.Format,VkImageTiling.VK_IMAGE_TILING_OPTIMAL  ,
+            VkImageUsageFlagBits.VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits.VK_IMAGE_USAGE_SAMPLED_BIT  
+            ,VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        
+//-------------------------------------------------- Update Record  Command buffer ( WITH MEMORY BARRIERE ) only if in loop 
         // TransitionImageLayout(ref func , ref data, format, VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED, VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        //     CopyBufferToImage(ref  func,ref  data,stagingBuffer, (texWidth), (texHeight));
+       ResourceCreation.CopyBufferToImage(ref  func,ref  data,ref image , ref stagingBuffer, config.Width,config.Height);
         // TransitionImageLayout(ref func , ref data,format, VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VkImageLayout.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-        // func.vkDestroyBuffer(data.Handles.Device, stagingBuffer, null);
-        // func.vkFreeMemory(data.Handles.Device, stagingBufferMemory, null);
-        
-        // file = null!;
-        // result.Data = null!;
-        
-        // Log.Info($"Create Texture Image {data.Info.TextureImage} ");
-        // Log.Info($"Create Texture Image Memory {data.Info.TextureImageMemory} ");
+        func.Device.vkDestroyBuffer(data.Device, stagingBuffer, null);
+        func.Device.vkFreeMemory(data.Device, stagingBufferMemory, null);
     }
+    
     public unsafe static void DisposeTextureImage(in GraphicDeviceFunctions  func, ref GraphicDeviceData data)
     {
-        if( !data.Info.TextureImage.IsNull)
-        {
-            Log.Info($"Create Texture Image {data.Info.TextureImage} ");
-            func.vkDestroyImage(data.Handles.Device, data.Info.TextureImage, null);
-        }
-        if( !data.Info.TextureImageMemory.IsNull)
-        {
-            Log.Info($"Create Texture Image Memory {data.Info.TextureImageMemory} ");
-            func.vkFreeMemory(data.Handles.Device, data.Info.TextureImageMemory, null);
-        }
-        if( !data.Info.TextureImageView.IsNull)
-        {
-            Log.Info($"Destroy Texture Image View {data.Info.TextureImageView}");
-            func.vkDestroyImageView(data.Handles.Device, data.Info.TextureImageView, null);
-        }
+        // if( !data.Info.TextureImage.IsNull)
+        // {
+        //     Log.Info($"Create Texture Image {data.Info.TextureImage} ");
+        //     func.vkDestroyImage(data.Handles.Device, data.Info.TextureImage, null);
+        // }
+        // if( !data.Info.TextureImageMemory.IsNull)
+        // {
+        //     Log.Info($"Create Texture Image Memory {data.Info.TextureImageMemory} ");
+        //     func.vkFreeMemory(data.Handles.Device, data.Info.TextureImageMemory, null);
+        // }
+
+
+        //This is for DEscriptor  NOt texture buffer Image
+        // if( !data.Info.TextureImageView.IsNull)
+        // {
+        //     Log.Info($"Destroy Texture Image View {data.Info.TextureImageView}");
+        //     func.vkDestroyImageView(data.Handles.Device, data.Info.TextureImageView, null);
+        // }
     }
 
     #endregion
@@ -2419,175 +2507,35 @@ public static partial class ResourceCreation
         
     }
     
-    public readonly struct ImageConfig
-    {
-        public readonly VkExtent3D Extend3D;
-        public readonly VkFormat Format;
-        public readonly VkImageTiling  Tiling;
-        public readonly VkImageUsageFlagBits Usage ;    
-
-        public ImageConfig(  VkExtent3D extend3D,VkFormat format, VkImageTiling  tiling , VkImageUsageFlagBits usage )
-        {
-            Extend3D= extend3D; Format=format;Tiling = tiling; Usage = usage;
-        }
-    }
-
-    public unsafe static void CreateImage( ref VulkanFunctions func, ref GraphicsData data, in ImageConfig config, out VkImage imageResult )
+    public unsafe static void CreateImage2( ref VulkanFunctions func, ref GraphicsData data,ref  VkImage image,ref VkDeviceMemory imageMemory, 
+        VkExtent3D extend3D, VkFormat format, VkImageTiling tiling,VkImageUsageFlagBits usage, VkMemoryPropertyFlagBits MemoryProperties   )
     {
         VkImageCreateInfo imageInfo = new();
         imageInfo.sType =VkStructureType.VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         imageInfo.imageType =VkImageType. VK_IMAGE_TYPE_2D;
 
-        imageInfo.extent = config.Extend3D;
+        imageInfo.extent = extend3D;
         imageInfo.mipLevels = 1;
         imageInfo.arrayLayers = 1;
-        imageInfo.format = config.Format;
-        imageInfo.tiling = config.Tiling;
+        imageInfo.format = format;
+        imageInfo.tiling = tiling;
         imageInfo.initialLayout =VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED;
-        imageInfo.usage = (uint)config.Usage;
+        imageInfo.usage = (uint)usage;
         imageInfo.samples =VkSampleCountFlagBits.VK_SAMPLE_COUNT_1_BIT;
         imageInfo.sharingMode = VkSharingMode. VK_SHARING_MODE_EXCLUSIVE;
         imageInfo.pNext = null;
 
-        fixed( VkImage* img = &imageResult)
+        fixed( VkImage* img = &image)
         {
             func.Device.vkCreateImage(data.Device, &imageInfo, null,img).Check("failed to create image!");
         }
-    }
 
-    public readonly struct ImageMemoryConfig
-    {
-        public readonly VkImage Image;
-        public readonly VkMemoryPropertyFlagBits MemoryProperties;
-
-        public ImageMemoryConfig(  VkImage image,VkMemoryPropertyFlagBits memoryProperties  )
-        {
-            Image = image;MemoryProperties = memoryProperties;
-        }
-    }
-
-    public unsafe static void CreateImageMemory( ref VulkanFunctions func, ref GraphicsData data, in ImageMemoryConfig config, out VkDeviceMemory imageMemory )
-    {
-        VkMemoryRequirements memRequirements;
-        func.Device.vkGetImageMemoryRequirements(data.Device, config.Image, &memRequirements);
-
-        VkMemoryAllocateInfo allocInfo = new();
-        allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = Memories.FindMemoryType(ref func , ref data, memRequirements.memoryTypeBits,config.MemoryProperties);
-
-        fixed (VkDeviceMemory* imgMem = &imageMemory  )
-        {
-            func.Device.vkAllocateMemory(data.Device, &allocInfo, null, imgMem).Check("failed to allocate image memory!");
-        }
-
-        func.Device.vkBindImageMemory(data.Device, config.Image, imageMemory, 0).Check("Bind Image Memory");
-    }
-    
-    public readonly struct DisposeImageImageViewImageMemoryConfig
-    {
-        public readonly VkImageView ImageView ;
-        public readonly VkImage Image ;
-        public readonly VkDeviceMemory DeviceMemory ;
-
-        public DisposeImageImageViewImageMemoryConfig(VkImageView imageView, VkImage image,  VkDeviceMemory deviceMemory )
-            =>(ImageView,Image,DeviceMemory)=(imageView,image,deviceMemory );
-    }
-
-    public unsafe static void DisposeImageImageViewImageMemory(ref VulkanFunctions func,ref GraphicsData data , in DisposeImageImageViewImageMemoryConfig  disposeConfig )
-    {
-        if (  !data.Device.IsNull && disposeConfig.ImageView != VkImageView.Null )
-        {
-            func.Device.vkDestroyImageView(data.Device,disposeConfig.ImageView, null);
-        }
-        if (  !data.Device.IsNull && disposeConfig.DeviceMemory != VkDeviceMemory.Null)
-        {
-            func.Device.vkFreeMemory(data.Device, disposeConfig.DeviceMemory, null);
-        }
-        if( !data.Device.IsNull && disposeConfig.Image != VkImage.Null )
-        {
-            func.Device.vkDestroyImage(data.Device,disposeConfig.Image, null);
-        }
-    }
-
-    #endregion
-    //Dispose
-    #region BUFFER
-    private unsafe static void CreateBuffer(ref GraphicDeviceFunctions func, ref GraphicDeviceData data ,
-        VkDeviceSize size, VkBufferUsageFlagBits usage, 
-        VkMemoryPropertyFlagBits  properties,ref VkBuffer buffer,ref VkDeviceMemory bufferMemory) 
-    {
-        // VkBufferCreateInfo bufferInfo = new();
-        // bufferInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        // bufferInfo.size = size;
-        // bufferInfo.usage = (uint)usage;
-        // bufferInfo.sharingMode = VkSharingMode.VK_SHARING_MODE_EXCLUSIVE;
-
-        // fixed(VkBuffer* buf =  &buffer)
-        // {
-        //     func.vkCreateBuffer(data.Handles.Device, &bufferInfo, null, buf).Check("failed to create  buffer!");
-        // }
+        Memories.AllocateMemoryForImage(ref func , ref data , image,VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT ,out  imageMemory);
         
-        // VkMemoryRequirements memRequirements = new();
-        // func.vkGetBufferMemoryRequirements(data.Handles.Device, buffer, &memRequirements);
-
-        // VkMemoryAllocateInfo allocInfo = new();
-        // allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        // allocInfo.allocationSize = memRequirements.size;
-        // allocInfo.memoryTypeIndex = FindMemoryType(ref func , ref data,memRequirements.memoryTypeBits, properties);
-        // allocInfo.pNext = null;
-
-        // fixed(VkDeviceMemory* memory =  &bufferMemory) 
-        // {
-        //     func.vkAllocateMemory(data.Handles.Device, &allocInfo, null, memory).Check("failed to allocate memory!");
-        // }
-        
-        // func.vkBindBufferMemory(data.Handles.Device, buffer, bufferMemory, 0).Check("failed to Bind buffer memory!");
+        func.Device.vkBindImageMemory(data.Device,  image, imageMemory, 0).Check("Bind Image Memory");
     }
 
-    private unsafe static void CopyBuffer(ref GraphicDeviceFunctions  func, ref GraphicDeviceData data, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
-    {
-        // BeginSingleTimeCommands ---------------------------------------------------------
-        // 
-        VkCommandBufferAllocateInfo allocInfo = new();
-        allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.level = VkCommandBufferLevel.VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandPool = data.Handles.CommandPool;
-        allocInfo.commandBufferCount = 1;
-
-        VkCommandBuffer commandBuffer = VkCommandBuffer.Null;
-        func.vkAllocateCommandBuffers(data.Handles.Device, &allocInfo, &commandBuffer);
-
-        VkCommandBufferBeginInfo beginInfo = new();
-        beginInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = (uint)VkCommandBufferUsageFlagBits.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-        func.vkBeginCommandBuffer(commandBuffer, &beginInfo);
-        //
-        // BeginSingleTimeCommands ---------------------------------------------------------
-
-        
-        VkBufferCopy copyRegion = new();
-        copyRegion.size = size;
-        func.vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
-
-
-        // EndSingleTimeCommands --------------------------------------------------
-        
-        func.vkEndCommandBuffer(commandBuffer);
-
-        VkSubmitInfo submitInfo = new();
-        submitInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffer;
-
-        func.vkQueueSubmit(data.Handles.GraphicQueue, 1, &submitInfo, VkFence.Null);
-        
-
-        func.vkFreeCommandBuffers(data.Handles.Device, data.Handles.CommandPool, 1, &commandBuffer);
-    }
-
-    private unsafe static void CopyBufferToImage(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data,VkBuffer buffer,  uint width, uint height) 
+    public unsafe static void CopyBufferToImage(ref VulkanFunctions func,ref GraphicsData data,ref VkImage image,ref  VkBuffer buffer,  uint width, uint height, uint depth = 1) 
     {
         VkCommandBuffer commandBuffer = CommandBuffers. BeginSingleTimeCommands(ref func , ref data);
 
@@ -2602,11 +2550,51 @@ public static partial class ResourceCreation
         
         VkOffset3D offset3D = new(); offset3D.x=0;offset3D.y=0;offset3D.z =0;
         region.imageOffset = offset3D;
-        VkExtent3D extent3D = new(); extent3D.width = width; extent3D.height = height; extent3D.depth =1;
+        VkExtent3D extent3D = new(); extent3D.width = width; extent3D.height = height; extent3D.depth =depth;
         region.imageExtent = extent3D;
 
-        func.vkCmdCopyBufferToImage(commandBuffer, buffer, data.Info.TextureImage, VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+        func.Device.vkCmdCopyBufferToImage(commandBuffer, buffer, image, VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
+        CommandBuffers.EndSingleTimeCommands(ref func , ref data, commandBuffer);
+    }
+
+    #endregion
+    //Dispose
+    #region BUFFER
+
+    public unsafe static void CreateBuffer(ref VulkanFunctions func,ref GraphicsData data,
+        VkDeviceSize size, VkBufferUsageFlagBits usage, VkMemoryPropertyFlagBits  properties,ref VkBuffer buffer,ref VkDeviceMemory bufferMemory)
+    {
+        VkBufferCreateInfo bufferInfo = new();
+        bufferInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.pNext = null;
+        bufferInfo.size = size;
+        bufferInfo.usage = (uint)usage;
+        bufferInfo.sharingMode = VkSharingMode.VK_SHARING_MODE_EXCLUSIVE;
+
+        fixed (VkBuffer* buf = &buffer)
+        {
+            func.Device.vkCreateBuffer(data.Device, &bufferInfo, null, buf).Check("failed to create  buffer!");
+        }
+        
+        Memories.AllocateMemoryForBuffer(ref func, ref data, properties,ref buffer , ref bufferMemory);
+
+        func.Device.vkBindBufferMemory(data.Device, buffer, bufferMemory, 0).Check("failed to Bind buffer memory!");
+    }
+
+    public unsafe static void CopyBuffer(ref VulkanFunctions func,ref GraphicsData data, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size , ulong offsetSrc =0 , ulong offsetDest =0)
+    {
+        // BeginSingleTimeCommands ---------------------------------------------------------
+        VkCommandBuffer commandBuffer = CommandBuffers. BeginSingleTimeCommands(ref func , ref data);
+        
+        VkBufferCopy copyRegion = new();
+        copyRegion.dstOffset = offsetDest;
+        copyRegion.srcOffset = offsetSrc;
+        copyRegion.size = size;
+
+        func.Device.vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+
+        // EndSingleTimeCommands --------------------------------------------------
         CommandBuffers.EndSingleTimeCommands(ref func , ref data, commandBuffer);
     }
 
@@ -2624,26 +2612,26 @@ public static partial class ResourceCreation
         
         data.Info.UboSize = (ulong) bufferSize;
         
-        data.Info.UniformBuffers = new VkBuffer[ data.Info.MAX_FRAMES_IN_FLIGHT];
-        data.Info.UniformBuffersMemory = new VkDeviceMemory[data.Info.MAX_FRAMES_IN_FLIGHT];
+        VkBuffer[] UniformBuffers = new VkBuffer[ data.Info.MAX_FRAMES_IN_FLIGHT];
+        VkDeviceMemory[] UniformBuffersMemory = new VkDeviceMemory[data.Info.MAX_FRAMES_IN_FLIGHT];
         data.Info.UboMapped = new void* [ data.Info.MAX_FRAMES_IN_FLIGHT] ;
         
-        for (int i = 0; i < data.Info.MAX_FRAMES_IN_FLIGHT; i++) 
-        {
-            CreateBuffer(ref func, ref data, bufferSize, 
-            VkBufferUsageFlagBits.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
-            VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
-            VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            ref data.Info.UniformBuffers[i],ref data.Info.UniformBuffersMemory[i]);
+        // for (int i = 0; i < data.Info.MAX_FRAMES_IN_FLIGHT; i++) 
+        // {
+        //     CreateBuffer(ref func, ref data, bufferSize, 
+        //     VkBufferUsageFlagBits.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
+        //     VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
+        //     VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        //     ref data.Info.UniformBuffers[i],ref data.Info.UniformBuffersMemory[i]);
 
-            void* ptr = null;
-            func.vkMapMemory(data.Handles.Device,data.Info.UniformBuffersMemory[i], 0, bufferSize, 0, &ptr ).Check("Map Memeory Unifommr pb");
-            Guard.ThrowWhenConditionIsTrue( ptr == null);
-            data.Info.UboMapped[i] = ptr;
+        //     void* ptr = null;
+        //     func.vkMapMemory(data.Handles.Device,data.Info.UniformBuffersMemory[i], 0, bufferSize, 0, &ptr ).Check("Map Memeory Unifommr pb");
+        //     Guard.ThrowWhenConditionIsTrue( ptr == null);
+        //     data.Info.UboMapped[i] = ptr;
           
-            Log.Info($"-[{i}] Create Uniform Buffer : {data.Info.UniformBuffers[i]} Mem {data.Info.UniformBuffersMemory[i]}");
-            func.vkUnmapMemory(data.Handles.Device,data.Info.UniformBuffersMemory[i]);
-        }   
+        //     Log.Info($"-[{i}] Create Uniform Buffer : {data.Info.UniformBuffers[i]} Mem {data.Info.UniformBuffersMemory[i]}");
+        //     func.vkUnmapMemory(data.Handles.Device,data.Info.UniformBuffersMemory[i]);
+        // }   
        
     }
 
@@ -2682,7 +2670,7 @@ public static partial class ResourceCreation
 
     #endregion
 
-    #region SAMPLER
+    #region SAMPLER OU DANS RESOURCE DESCRIPTOR ?
     public unsafe static void CreateTextureSampler(ref GraphicDeviceFunctions  func, ref GraphicDeviceData data)
     {
         VkSamplerCreateInfo samplerInfo = new();
@@ -2721,7 +2709,7 @@ public static partial class ResourceCreation
 }
 
 [SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
-public static partial class ResourceDeccriptor
+public static partial class ResourceDecriptor
 {
 
     public unsafe static void CreateDescriptors(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig.RenderConfig config )

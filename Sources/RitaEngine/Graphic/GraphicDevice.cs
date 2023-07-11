@@ -1262,36 +1262,14 @@ VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated fr
 
     private unsafe static void CopyStagingBuffer(ref GraphicDeviceFunctions  func, ref GraphicDeviceData data, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
     {
-        VkCommandBufferAllocateInfo allocInfo = new();
-        allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.level = VkCommandBufferLevel.VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandPool = data.Handles.CommandPool;
-        allocInfo.commandBufferCount = 1;
-
-        VkCommandBuffer commandBuffer = VkCommandBuffer.Null;
-        func.vkAllocateCommandBuffers(data.Handles.Device, &allocInfo, &commandBuffer);
-
-        VkCommandBufferBeginInfo beginInfo = new();
-        beginInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = (uint)VkCommandBufferUsageFlagBits.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-        func.vkBeginCommandBuffer(commandBuffer, &beginInfo);
+        VkCommandBuffer commandBuffer = BeginSingleTimeCommands(ref func , ref data);
 
         VkBufferCopy copyRegion = new();
         copyRegion.size = size;
         func.vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
-        func.vkEndCommandBuffer(commandBuffer);
 
-        VkSubmitInfo submitInfo = new();
-        submitInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffer;
-
-        func.vkQueueSubmit(data.Handles.GraphicQueue, 1, &submitInfo, VkFence.Null);
-        func.vkQueueWaitIdle(data.Handles.GraphicQueue);
-
-        func.vkFreeCommandBuffers(data.Handles.Device, data.Handles.CommandPool, 1, &commandBuffer);
+         EndSingleTimeCommands(ref func , ref data ,commandBuffer);
     }
 
     public unsafe static uint FindMemoryType(ref GraphicDeviceFunctions func, ref GraphicDeviceData data , uint memoryTypeBits, VkMemoryPropertyFlagBits properties)
@@ -1385,16 +1363,11 @@ VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated fr
             ref stagingBuffer, 
             ref stagingBufferMemory);
 
-        byte* imgPtr = null;
-        func.vkMapMemory(data.Handles.Device, stagingBufferMemory, 0, imageSize, 0, (void**)&imgPtr).Check("Impossible to map memory for texture");
-       
-            // void* ptr = Unsafe.AsPointer( ref  result.Data[0]);
-        fixed( byte* tex2D = &result.Data[0])
-        {
-            Unsafe.CopyBlock(imgPtr  ,tex2D ,(uint)imageSize);
-        }
-
-          
+        void* ptr = Unsafe.AsPointer( ref  result.Data[0]);
+        void* imgPtr = null;
+        func.vkMapMemory(data.Handles.Device, stagingBufferMemory, 0, imageSize, 0, &imgPtr).Check("Impossible to map memory for texture");
+        Unsafe.CopyBlock(imgPtr  ,ptr ,(uint)imageSize);
+        
         func.vkUnmapMemory(data.Handles.Device, stagingBufferMemory);
 
         if (result.Comp == ColorComponents.RedGreenBlue  )
@@ -1408,9 +1381,9 @@ VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated fr
             VkImageUsageFlagBits.VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits.VK_IMAGE_USAGE_SAMPLED_BIT, 
             VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT   );
 
-        TransitionImageLayout(ref func , ref data, format, VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED, VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        // TransitionImageLayout(ref func , ref data, format, VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED, VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
             CopyBufferToImage(ref  func,ref  data,stagingBuffer, (texWidth), (texHeight));
-        TransitionImageLayout(ref func , ref data,format, VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VkImageLayout.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        // TransitionImageLayout(ref func , ref data,format, VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VkImageLayout.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
         func.vkDestroyBuffer(data.Handles.Device, stagingBuffer, null);
         func.vkFreeMemory(data.Handles.Device, stagingBufferMemory, null);
@@ -1642,7 +1615,7 @@ VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated fr
             data.Info.UboMapped[i] = ptr;
           
             Log.Info($"-[{i}] Create Uniform Buffer : {data.Info.UniformBuffers[i]} Mem {data.Info.UniformBuffersMemory[i]}");
-            func.vkUnmapMemory(data.Handles.Device,data.Info.UniformBuffersMemory[i]);
+            // func.vkUnmapMemory(data.Handles.Device,data.Info.UniformBuffersMemory[i]);
         }   
        
     }
