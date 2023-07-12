@@ -66,6 +66,8 @@ public struct GraphicsData : IEquatable<GraphicsData>
     public VkDescriptorPool DescriptorPool = VkDescriptorPool.Null;
     public VkPipelineLayout PipelineLayout = VkPipelineLayout.Null;
     public VkPipeline Pipeline = VkPipeline.Null;
+    public VkDescriptorSet[] DescriptorSets  =  null!;
+    
 
     
     public GraphicsData() { }
@@ -86,6 +88,7 @@ public struct GraphicsConfig : IEquatable<GraphicsConfig>
     public SwapChainConfig SwapChain = new();
     public DeviceConfig Device = new();
     public RenderConfig Render = new();
+    public SceneLoadConfig SceneLoad = new();
 
     public PipelineConfig Pipeline = new();
 
@@ -158,6 +161,26 @@ public struct GraphicsConfig : IEquatable<GraphicsConfig>
         public SwapChainConfig() { }
     }        
 
+
+    public struct SceneLoadConfig
+    {
+        public Camera Camera = new();
+        public short[] Indices = null!;
+        public string VertexShaderFileNameSPV ="";
+        public string FragmentShaderFileNameSPV ="";
+        public string FragmentEntryPoint ="";
+        public string VertexEntryPoint="";
+        
+        public float[] UniformBufferArray = null!;
+        public float[] Vertices = null!;
+        public string TextureName ="";
+
+        public PushConstantsMesh PushConstants = new();
+        public GeometricPrimitive Primitive = new();
+
+        public SceneLoadConfig()  { }
+    }
+
     [StructLayout(LayoutKind.Sequential, Pack = RitaEngine.Base.BaseHelper.FORCE_ALIGNEMENT), SkipLocalsInit]
     public struct PipelineConfig
     {
@@ -193,7 +216,7 @@ public struct GraphicsConfig : IEquatable<GraphicsConfig>
         public bool                   AlphaToCoverageEnable = false;
         public bool                   AlphaToOneEnable = false ;
 
-            public FaceCullMode FaceCullMode  = FaceCullMode.Back;
+        public FaceCullMode FaceCullMode  = FaceCullMode.Back;
         /// <summary>polygonMode is the triangle rendering mode. See VkPolygonMode.  </summary>
         public PolygonFillMode PolygonFillMode = PolygonFillMode.Solid;
         public float LineWidth =1.0f;
@@ -224,9 +247,12 @@ public struct GraphicsConfig : IEquatable<GraphicsConfig>
         public VkBlendOp[] ColorBlendOperations = null!;
         public VkBlendOp[] AlphaBlendOperations = null!;
 
-        public Camera Camera = new();
-        public PipelineConfig()  { }
-        
+        public PipelineConfig()
+        {
+        }
+
+
+
         #region OVERRIDE    
         public override string ToString() => string.Format($"Depth Stencil" );
         public override int GetHashCode() => HashCode.Combine(DepthTestEnable,DepthWriteEnable ,DepthBoundsTestEnable, DepthMinDepthBounds ,DepthMaxDepthBounds );
@@ -342,8 +368,6 @@ public static partial class GraphicsImplement
 [SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public static partial class Instance
 {
-    #region INSTANCE , DEBUG & SURFACE 
-
     public unsafe static void CreateInstanceDebugAndSurface(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config , in Window window )
     {
         // VALIDATION LAYER  --------------------------------------------------------------------
@@ -479,9 +503,6 @@ public static partial class Instance
             data.App_Instance = VkInstance.Null;
         }
     }
-  
-    #endregion
-    #region HELPER
 
     [UnmanagedCallersOnly] 
     private unsafe static uint DebugMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, uint messageTypes,
@@ -504,8 +525,6 @@ public static partial class Instance
         return 1;
     }
 
-
-    #endregion
 }
 
 [SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
@@ -539,8 +558,6 @@ public static partial class Device
         Instance.DisposeInstanceDebugAndSurface(ref func ,ref data);
         func.Dispose();   
     }
-    
-    #region PHYSICAL DEVICE & Device
 
     public static unsafe void CreateDevicePhysicalLogicQueues( ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config , in Window window  )
     {
@@ -635,8 +652,6 @@ public static partial class Device
             func.Instance.vkDestroyDevice(data.Device, null);
         }  
     }
-
-    #endregion
 
     #region Helper
     private static unsafe void GetPhysicalDeviceInformations(  ref VulkanFunctions func,ref GraphicsData data, ref GraphicsConfig config , in Window window )
@@ -838,13 +853,11 @@ public static partial class Device
     private static uint ClampUInt(uint value, uint min, uint max) =>value < min ? min : value > max ? max : value;
 
     #endregion
-   
 }
 
 [SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public static partial class SwapChain
 {
-
     public unsafe static void ReCreateSwapChain(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig.SwapChainConfig config)
     {
         if ( data.SwapChain == VkSwapchainKHR.Null)return ;
@@ -956,8 +969,6 @@ public static partial class SwapChain
         }
     }
 
-    #region DEpth Buffering 
-
     public unsafe static void CreateDepthResources(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig.SwapChainConfig config)
     {
 
@@ -986,14 +997,11 @@ public static partial class SwapChain
         }
     }
 
-    #endregion
-
 }
 
 [SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public static partial class Memories
 {
-  
     public unsafe static uint FindMemoryType(ref VulkanFunctions func,ref GraphicsData data , uint memoryTypeBits, VkMemoryPropertyFlagBits properties)
     {
         uint count = data.Device_MemoryProperties.memoryTypeCount;
@@ -1671,7 +1679,6 @@ public unsafe struct QueuesTest
 [SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public static partial class RenderPass
 {
-    
     public unsafe static void DrawRenderPass(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig.PipelineConfig config, in VkCommandBuffer commandBuffer , uint imageIndex )
     {
     // FOREACH RENDER PASS 
@@ -1696,8 +1703,6 @@ public static partial class RenderPass
     //} // END FOREACH RENDER PASS 
         // END RENDER PASS --------------------------------------------------------------------------------------------------  
     }
-
-    #region RenderPass
 
     public static unsafe void CreateRenderPass(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config) 
     {
@@ -1788,10 +1793,6 @@ public static partial class RenderPass
         }
     }
 
-    #endregion
-    
-    #region FrameBuffer
-
     public static unsafe void CreateFramebuffers( ref VulkanFunctions func,ref GraphicsData data )
     {
         int size= data.SwapChain_ImageViews.Length;
@@ -1839,8 +1840,6 @@ public static partial class RenderPass
         }
     }
 
-    #endregion
-
 }
 
 [SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
@@ -1866,7 +1865,7 @@ public static partial class Pipelines
         VkDeviceSize imageSize = (ulong)(texWidth * texHeight * texChannels);
         //--------------------------------------------------   
 
-        Span<byte> shaderBytes = System.IO.File.ReadAllBytes("");
+        // Span<byte> shaderBytes = System.IO.File.ReadAllBytes("");
 
         //--------------------------------------------------
 
@@ -1877,7 +1876,7 @@ public static partial class Pipelines
         data.RenderPass_RenderArea.offset = new( );
         data.RenderPass_RenderArea.offset.x =0 ;data.RenderPass_RenderArea.offset.x =0 ; //TODO put in config
         data.RenderPass_RenderArea.extent  = data.Device_SurfaceSize;
-
+        // //LoadModel => Do in TransfertConfigRenderTo_data load vertex indeices and textures ....
     }
 
     public unsafe static void Build(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config )
@@ -1885,9 +1884,18 @@ public static partial class Pipelines
         // TODO :  see if redner pass init in Render or pipelines?  
         RenderPass.CreateRenderPass(ref func , ref data, ref config);
         RenderPass.CreateFramebuffers(ref func , ref data);
+      
+        CommandBuffers.CreateCommandPool( ref func , ref data, ref config);
+        CommandBuffers.CreateCommandBuffer( ref func , ref data, ref config);
 
-        
-        //do most stuff before Resource Cretion then resource descriptor 
+        ResourceCreation.CreateVertexIndiceBuffer( ref func , ref data , ref config);
+        ResourceCreation.CreateTextures( ref func , ref data , ref config);
+        // ResourceCreation.CreateTextureImageView
+        // ResourceCreation.CreateUniformBuffers( );
+        // ResourceCreation.CreateTextureSampler();
+   
+        ResourceDecriptor.CreateDescriptors( ref func ,ref data , ref config);
+
         CreatePipeline(ref  func,ref  data , ref config.Pipeline);
     }
 
@@ -2369,22 +2377,6 @@ public static partial class Pipelines
         // }
     }
 
-    public unsafe static void CreateTextureImageViewForResourceDescriptors(ref VulkanFunctions func,ref GraphicsData data ,VkFormat textureFormat,VkImage textureImage , ref VkImageView textureImageView)
-    {
-        Log.Info($"Create Texture Image View {textureImageView}");
-        ResourceCreation.ImageViewConfig temp = new(textureImage ,textureFormat , VkImageAspectFlagBits.VK_IMAGE_ASPECT_COLOR_BIT);
-        ResourceCreation.CreateImageView( ref func,ref data, in temp, out textureImageView);
-    }
-
-    public unsafe static void DisposeTextureImageViewForResourceDescriptors(ref VulkanFunctions func,ref GraphicsData data, ref VkImageView textureImageView)
-    {
-        if( !textureImageView.IsNull)
-        {
-            Log.Info($"Destroy Texture Image View {textureImageView}");
-            func.Device.vkDestroyImageView(data.Device, textureImageView, null);
-        }
-    }
-
     #endregion
 
     #region  Shaders
@@ -2661,99 +2653,120 @@ public static partial class ResourceCreation
             func.Device.vkDestroySampler(data.Device,textureSampler, null);
         }
     }
+    
+    #endregion
 
-    #endregion    
-}
+    internal static void CreateVertexIndiceBuffer(ref VulkanFunctions func, ref GraphicsData data, ref GraphicsConfig config)
+    {
+            // CreateBuffers(ref  func,ref  data ,  config ,ref  vertexbuffer,ref  vertexbufferMemory );
+        // CreateBuffers(ref  func,ref  data ,  config ,ref  indicebuffer,ref  indicebufferMemory );
+
+    }
+
+    internal static void CreateTextures(ref VulkanFunctions func, ref GraphicsData data, ref GraphicsConfig config)
+    {
+        // CreateTexture(ref  func,ref  data , ref  config, ref  textureimage, ref  textureimageMemory );
+        // GraphicDeviceImplement.CreateTextureImageView(ref _functions , ref _data);
+    }
+
+    }
 
 [SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public static partial class ResourceDecriptor
 {
 
-    public unsafe static void CreateDescriptors(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig.RenderConfig config )
+    public unsafe static void CreateDescriptors(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config )
     {
         //:KNOW SHADER DESCIRPTION INSIDE 
 
-        // create VkDescriptorSetLayoutBinding foreach ubo sampler , ..... 
-        //create   VkDescriptorPoolSize foreach binding  ubu sampler  .....
-
-        //Create Pool ( with VkDescriptorPoolSize )
-
         // AFTER CREATE   !!! Create  VkDescriptorSet ( need pool ) 
-
-        // VkDescriptorSetLayoutBinding uboLayoutBinding = new();
-        // uboLayoutBinding.binding = 0;
-        // uboLayoutBinding.descriptorCount = 1;
-        // uboLayoutBinding.descriptorType = VkDescriptorType. VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        // uboLayoutBinding.pImmutableSamplers = null;
-        // uboLayoutBinding.stageFlags =(uint) VkShaderStageFlagBits.VK_SHADER_STAGE_VERTEX_BIT;
-        
-        // VkDescriptorSetLayoutBinding samplerLayoutBinding =new();
-        // samplerLayoutBinding.binding = 1;
-        // samplerLayoutBinding.descriptorCount = 1;
-        // samplerLayoutBinding.descriptorType =  VkDescriptorType.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        // samplerLayoutBinding.pImmutableSamplers = null;
-        // samplerLayoutBinding.stageFlags = (uint) VkShaderStageFlagBits.VK_SHADER_STAGE_FRAGMENT_BIT;
-        
-        // VkDescriptorSetLayoutBinding* bindings = stackalloc VkDescriptorSetLayoutBinding[2] {uboLayoutBinding, samplerLayoutBinding };
-        
-        // VkDescriptorSetLayoutCreateInfo layoutInfo = new();
-        // layoutInfo.sType = VkStructureType. VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        // layoutInfo.bindingCount = 2;
-        // layoutInfo.pBindings = bindings;
-
-        // fixed( VkDescriptorSetLayout* layout = &data.Handles.DescriptorSetLayout )
-        // {
-        //     func.vkCreateDescriptorSetLayout(data.Handles.Device, &layoutInfo, null, layout).Check("failed to create descriptor set layout!");
-        // }
-        // Log.Info($"Create Descriptor Set layout : {data.Handles.DescriptorSetLayout}");
-
+        CreateDDescriptorSetLayout(ref  func,ref  data , ref  config );
 // HERE IS IMPORTATN FOR CREATE PIPELINE LAYOUT
+        CreateDDescriptorPool(ref  func,ref  data , ref  config );
 
+        CreateDescriptorsSet(ref  func,ref  data , ref  config );
+        UpdateDescriptorsSet(ref  func,ref  data , ref  config );
 
-        // VkDescriptorPoolSize* poolSizes = stackalloc VkDescriptorPoolSize[2];
+        CreatePipelineLayout( ref  func,ref  data , ref  config  );
+    }
 
-        // poolSizes[0].type =VkDescriptorType. VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        // poolSizes[0].descriptorCount = (uint)(data.Info.MAX_FRAMES_IN_FLIGHT);
+    public unsafe static void CreateDDescriptorSetLayout(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config )
+    {
         
-        // poolSizes[1].type = VkDescriptorType.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        // poolSizes[1].descriptorCount =(uint)(data.Info.MAX_FRAMES_IN_FLIGHT);
+        VkDescriptorSetLayoutBinding uboLayoutBinding = new();
+        uboLayoutBinding.binding = 0;
+        uboLayoutBinding.descriptorCount = 1;
+        uboLayoutBinding.descriptorType = VkDescriptorType. VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        uboLayoutBinding.pImmutableSamplers = null;
+        uboLayoutBinding.stageFlags =(uint) VkShaderStageFlagBits.VK_SHADER_STAGE_VERTEX_BIT;
+        
+        VkDescriptorSetLayoutBinding samplerLayoutBinding =new();
+        samplerLayoutBinding.binding = 1;
+        samplerLayoutBinding.descriptorCount = 1;
+        samplerLayoutBinding.descriptorType =  VkDescriptorType.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        samplerLayoutBinding.pImmutableSamplers = null;
+        samplerLayoutBinding.stageFlags = (uint) VkShaderStageFlagBits.VK_SHADER_STAGE_FRAGMENT_BIT;
+        
+        VkDescriptorSetLayoutBinding* bindings = stackalloc VkDescriptorSetLayoutBinding[2] {uboLayoutBinding, samplerLayoutBinding };
+        
+        VkDescriptorSetLayoutCreateInfo layoutInfo = new();
+        layoutInfo.sType = VkStructureType. VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        layoutInfo.bindingCount = 2;
+        layoutInfo.pBindings = bindings;
 
-        // VkDescriptorPoolCreateInfo poolInfo= new();
-        // poolInfo.sType =VkStructureType. VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        // poolInfo.poolSizeCount = 2;
-        // poolInfo.pPoolSizes = poolSizes;
-        // poolInfo.maxSets = (uint)(data.Info.MAX_FRAMES_IN_FLIGHT);
+        fixed( VkDescriptorSetLayout* layout = &data.DescriptorSetLayout )
+        {
+            func.Device.vkCreateDescriptorSetLayout(data.Device, &layoutInfo, null, layout).Check("failed to create descriptor set layout!");
+        }
+        Log.Info($"Create Descriptor Set layout : {data.DescriptorSetLayout}");
 
-        // fixed(VkDescriptorPool* pool =  &data.Handles.DescriptorPool)
-        // {
-        //     func.vkCreateDescriptorPool(data.Handles.Device, &poolInfo, null,pool ).Check("failed to create descriptor pool!");
-        // }
-        // Log.Info($"Create Descriptor Pool : {data.Handles.DescriptorPool}");
+    }
+    
+    public unsafe static void CreateDDescriptorPool(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config )
+    {
+         VkDescriptorPoolSize* poolSizes = stackalloc VkDescriptorPoolSize[2];
 
+        poolSizes[0].type =VkDescriptorType. VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSizes[0].descriptorCount = (uint)(config.Render.MAX_FRAMES_IN_FLIGHT);
+        
+        poolSizes[1].type = VkDescriptorType.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        poolSizes[1].descriptorCount =(uint)(config.Render.MAX_FRAMES_IN_FLIGHT);
 
+        VkDescriptorPoolCreateInfo poolInfo= new();
+        poolInfo.sType =VkStructureType. VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        poolInfo.poolSizeCount = 2;
+        poolInfo.pPoolSizes = poolSizes;
+        poolInfo.maxSets = (uint)(config.Render.MAX_FRAMES_IN_FLIGHT);
 
-        // int value = data.Info.MAX_FRAMES_IN_FLIGHT;
-        // VkDescriptorSetLayout* layouts  =  stackalloc VkDescriptorSetLayout[2] { data.Handles.DescriptorSetLayout,data.Handles.DescriptorSetLayout };
-
-        // VkDescriptorSetAllocateInfo allocInfo = new();
-        // allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        // allocInfo.descriptorPool = data.Handles.DescriptorPool;
-        // allocInfo.descriptorSetCount = (uint)(data.Info.MAX_FRAMES_IN_FLIGHT);
-        // allocInfo.pSetLayouts = layouts;
-        // allocInfo.pNext = null;
-
-        // data.Handles.DescriptorSets = new VkDescriptorSet[ data.Info.MAX_FRAMES_IN_FLIGHT];
-
-        // fixed(VkDescriptorSet* descriptor =&data.Handles.DescriptorSets[0]  )
-        // {
-        //     func.vkAllocateDescriptorSets(data.Handles.Device, &allocInfo, descriptor).Check("failed to allocate descriptor sets!");
-        // }
+        fixed(VkDescriptorPool* pool =  &data.DescriptorPool)
+        {
+            func.Device.vkCreateDescriptorPool(data.Device, &poolInfo, null,pool ).Check("failed to create descriptor pool!");
+        }
+        Log.Info($"Create Descriptor Pool : {data.DescriptorPool}");
 
     }
 
-   
+    public unsafe static void CreateDescriptorsSet(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config )
+    {
+        // int value = data.Info.MAX_FRAMES_IN_FLIGHT;
+        VkDescriptorSetLayout* layouts  =  stackalloc VkDescriptorSetLayout[2] { data.DescriptorSetLayout,data.DescriptorSetLayout };
 
-    public unsafe static void UpdateDescriptors(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig.RenderConfig config )
+        VkDescriptorSetAllocateInfo allocInfo = new();
+        allocInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.descriptorPool = data.DescriptorPool;
+        allocInfo.descriptorSetCount = (uint)(config.Render.MAX_FRAMES_IN_FLIGHT);
+        allocInfo.pSetLayouts = layouts;
+        allocInfo.pNext = null;
+
+        data.DescriptorSets = new VkDescriptorSet[ config.Render.MAX_FRAMES_IN_FLIGHT];
+
+        fixed(VkDescriptorSet* descriptor =&data.DescriptorSets[0]  )
+        {
+            func.Device.vkAllocateDescriptorSets(data.Device, &allocInfo, descriptor).Check("failed to allocate descriptor sets!");
+        }
+    }
+
+    public unsafe static void UpdateDescriptorsSet(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config )
     {
         /*
         BEFORE UPDATE NEED TO CREATE 
@@ -2764,15 +2777,15 @@ public static partial class ResourceDecriptor
 
         VkWriteDescriptorSet* descriptorWrites = stackalloc VkWriteDescriptorSet[2];
 
-        for (int i = 0; i <  config.MAX_FRAMES_IN_FLIGHT; i++) 
+        for (int i = 0; i <  config.Render.MAX_FRAMES_IN_FLIGHT; i++) 
         {
             VkDescriptorBufferInfo bufferInfo = new();
             // bufferInfo.buffer = data.Info.UniformBuffers[i];
             bufferInfo.offset = 0;
             bufferInfo.range = (uint) sizeof(float) * 3 * 16;// sizeof UNIFORM_MVP
 
-            // VkDescriptorImageInfo imageInfo =new();
-            // imageInfo.imageLayout = VkImageLayout.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            VkDescriptorImageInfo imageInfo =new();
+            imageInfo.imageLayout = VkImageLayout.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             // imageInfo.imageView = data.Info.TextureImageView;
             // imageInfo.sampler = data.Info.TextureSampler;
 
@@ -2798,7 +2811,7 @@ public static partial class ResourceDecriptor
         }
     }
 
-     public unsafe static void DisposeDescriptors(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig.RenderConfig config )
+     public unsafe static void DisposeDescriptors(ref VulkanFunctions func,ref GraphicsData data  )
     {
         //  if ( !data.Handles.DescriptorPool.IsNull)
         // {
@@ -2815,7 +2828,7 @@ public static partial class ResourceDecriptor
 
     }
 
-    public unsafe static void UpdatePushConstant( ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig.RenderConfig config)
+    public unsafe static void UpdatePushConstant( ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config)
     {
         // PUSH CONSTANTS ---------- ( do before bin pipeline)
         // void* ptr = new IntPtr( data.Info.PushConstants).ToPointer();
@@ -2833,11 +2846,9 @@ public static partial class ResourceDecriptor
 	    push_constant.size = (uint)sizeof(PushConstantsMesh); // 16 * sizeof(float) + 4 * sizeof(float)
 	    //this push constant range is accessible only in the vertex shader
 	    push_constant.stageFlags = (uint)VkShaderStageFlagBits.VK_SHADER_STAGE_VERTEX_BIT;
-
-
     }
 
-    public unsafe static void CreatePipelineLayout(ref GraphicDeviceFunctions  func,ref GraphicDeviceData data  )
+    public unsafe static void CreatePipelineLayout( ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config  )
     {
         VkPipelineLayoutCreateInfo pipelineLayoutInfo=new();
         pipelineLayoutInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -2846,7 +2857,7 @@ public static partial class ResourceDecriptor
 
         pipelineLayoutInfo.setLayoutCount = 1;     
 
-        fixed (VkDescriptorSetLayout* layout = &data.Handles.DescriptorSetLayout )
+        fixed (VkDescriptorSetLayout* layout = &data.DescriptorSetLayout )
         {
             pipelineLayoutInfo.pSetLayouts = layout;
         }         
@@ -2856,14 +2867,14 @@ public static partial class ResourceDecriptor
         pipelineLayoutInfo.pushConstantRangeCount = 1;    // Optionnel
         pipelineLayoutInfo.pPushConstantRanges = &push_constant; 
 
-        fixed( VkPipelineLayout* layout = &data.Handles.PipelineLayout )
+        fixed( VkPipelineLayout* layout = &data.PipelineLayout )
         {
-            func.vkCreatePipelineLayout(data.Handles.Device, &pipelineLayoutInfo, null, layout).Check ("failed to create pipeline layout!");
+            func.Device.vkCreatePipelineLayout(data.Device, &pipelineLayoutInfo, null, layout).Check ("failed to create pipeline layout!");
         }
-        Log.Info($"Create Pipeline Layout : {data.Handles.PipelineLayout}");
+        Log.Info($"Create Pipeline Layout : {data.PipelineLayout}");
     }
 
-     public static unsafe void DisposePipelineLayout(in GraphicDeviceFunctions  func,ref GraphicDeviceData data)
+    public static unsafe void DisposePipelineLayout(in GraphicDeviceFunctions  func,ref GraphicDeviceData data)
     {
         if( !data.Handles.Device.IsNull && !data.Handles.PipelineLayout.IsNull)
         {
@@ -2874,8 +2885,22 @@ public static partial class ResourceDecriptor
     }
 
 
+    public unsafe static void CreateTextureImageViewForResourceDescriptors(ref VulkanFunctions func,ref GraphicsData data ,VkFormat textureFormat,VkImage textureImage , ref VkImageView textureImageView)
+    {
+        Log.Info($"Create Texture Image View {textureImageView}");
+        ResourceCreation.ImageViewConfig temp = new(textureImage ,textureFormat , VkImageAspectFlagBits.VK_IMAGE_ASPECT_COLOR_BIT);
+        ResourceCreation.CreateImageView( ref func,ref data, in temp, out textureImageView);
+    }
+
+    public unsafe static void DisposeTextureImageViewForResourceDescriptors(ref VulkanFunctions func,ref GraphicsData data, ref VkImageView textureImageView)
+    {
+        if( !textureImageView.IsNull)
+        {
+            Log.Info($"Destroy Texture Image View {textureImageView}");
+            func.Device.vkDestroyImageView(data.Device, textureImageView, null);
+        }
+    }
+
 }
-
-
 
 }

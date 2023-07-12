@@ -21,7 +21,6 @@ public static class Sample_0003
         RitaEngine.Graphic.GraphicsData data = new();
         RitaEngine.Graphic.GraphicsConfig graphicsConfig = new();
         
-        
         try
         {
             config.Game_Title = "My Game";
@@ -38,8 +37,17 @@ public static class Sample_0003
             RitaEngine.Graphic.GraphicsImplement.Render.Init(ref func,ref data,ref graphicsConfig  ); 
 
             graphicsConfig.Render.BackGroundColor = RitaEngine.Math.Color.Palette.SkyBlue;
-            RitaEngine.Graphic.GraphicsImplement.Pipelines.Load(ref func,ref data,ref graphicsConfig ); 
+            graphicsConfig.Pipeline.FaceCullMode =  RitaEngine.Graphic.GraphicsConfig.FaceCullMode.None ;
+            graphicsConfig.Pipeline.FragmentEntryPoint ="main";
+            graphicsConfig.Pipeline.VertexEntryPoint ="main";
+            graphicsConfig.Pipeline.FragmentShaderFileNameSPV =  "shader_depth_frag.spv";
+            graphicsConfig.Pipeline.VertexShaderFileNameSPV =  "shader_depth_vert.spv";
+            graphicsConfig.SceneLoad.TextureName = "grid.png";
+            graphicsConfig.SceneLoad.Camera.AddCamera(new(0.0f,2.0f,-4.0f), new(0.0f,0.0f,0.0f),new(0.0f,1.0f,0.0f) );
+            graphicsConfig.SceneLoad.Camera.AddProjection( RitaEngine.Graphic.CameraProjectionType.PerspectiveFOV,45.0f,(float)1280.0f/720.0f, 0.1f,100.0f);
+            graphicsConfig.SceneLoad.Primitive = RitaEngine.Math.GeometricPrimitive.CreateBox(1.0f,1.0f,1.0f);
 
+            RitaEngine.Graphic.GraphicsImplement.Pipelines.Load(ref func,ref data,ref graphicsConfig ); 
 
             RitaEngine.Graphic.GraphicsImplement.Pipelines.Build(ref func,ref data,ref graphicsConfig  /*, Selected pipeline*/); 
             window.Show();
