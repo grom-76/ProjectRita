@@ -41,7 +41,7 @@ public static class Sample_0003
             RitaEngine.Graphic.GraphicsImplement.Pipelines.Load(ref func,ref data,ref graphicsConfig ); 
 
 
-            RitaEngine.Graphic.GraphicsImplement.Pipelines.Build(ref func,ref data,ref graphicsConfig  ); 
+            RitaEngine.Graphic.GraphicsImplement.Pipelines.Build(ref func,ref data,ref graphicsConfig  /*, Selected pipeline*/); 
             window.Show();
             clock.Reset();
             while(window.ShouldClose())

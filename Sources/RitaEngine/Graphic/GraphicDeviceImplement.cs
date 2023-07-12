@@ -1,5 +1,6 @@
 namespace RitaEngine.Graphic;
 
+using System.IO;
 using RitaEngine.API.Vulkan;
 using RitaEngine.Base;
 using RitaEngine.Base.Debug;
@@ -160,6 +161,12 @@ public struct GraphicsConfig : IEquatable<GraphicsConfig>
     [StructLayout(LayoutKind.Sequential, Pack = RitaEngine.Base.BaseHelper.FORCE_ALIGNEMENT), SkipLocalsInit]
     public struct PipelineConfig
     {
+        public UsedGeometry UsedGeometry =  UsedGeometry.Position3f_Color3f_UV2f ;//
+        public string VertexShaderFileNameSPV ="";
+        public string FragmentShaderFileNameSPV ="";
+        public string FragmentEntryPoint ="";
+        public string VertexEntryPoint="";
+        public VkPrimitiveTopology PrimitiveTopology = VkPrimitiveTopology. VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         public bool              DepthTestEnable = true;
         public bool              DepthWriteEnable = true;
         public CompareOp        DepthCompareOp = CompareOp.VK_COMPARE_OP_LESS;
@@ -228,6 +235,13 @@ public struct GraphicsConfig : IEquatable<GraphicsConfig>
         public static bool operator ==(PipelineConfig left, PipelineConfig right) => left.Equals(right);
         public static bool operator !=(PipelineConfig left, PipelineConfig  right) => !left.Equals(right);
         #endregion
+    }
+
+    public enum UsedGeometry
+    {
+        GeometryInsideShader = -1,
+        Position3f_Color3f_UV2f = 0 ,
+        Position2f_Color3f =2,
     }
 
     public enum DepthStencilState 
@@ -625,20 +639,6 @@ public static partial class Device
     #endregion
 
     #region Helper
-
-    private struct TestInstance
-    {
-        private readonly VkInstance _instance;
-
-        public TestInstance( ref GraphicsConfig config)
-        {
-            _instance = VkInstance.Null ;
-        }
-
-        public readonly VkInstance Instance => _instance;
-    }
-
-    
     private static unsafe void GetPhysicalDeviceInformations(  ref VulkanFunctions func,ref GraphicsData data, ref GraphicsConfig config , in Window window )
     {
         // GET QUEUES 
@@ -1043,7 +1043,7 @@ public static partial class Memories
 
     }
 
-    public unsafe static void TransfertMemory(ref VulkanFunctions func,ref GraphicsData data,void* ptr , VkDeviceSize bufferSize,ref VkDeviceMemory stagingBufferMemory)
+    public unsafe static void TransfertMemory(ref VulkanFunctions func,ref GraphicsData data,void* ptr , VkDeviceSize bufferSize,ref VkDeviceMemory stagingBufferMemory, bool unmap =true)
     {
         void* indicesdataPtr = null;
 
@@ -1051,7 +1051,7 @@ public static partial class Memories
 
         Unsafe.CopyBlock( indicesdataPtr , ptr ,(uint)bufferSize);
         
-        func.Device.vkUnmapMemory(data.Device, stagingBufferMemory);
+        if (unmap)func.Device.vkUnmapMemory(data.Device, stagingBufferMemory);
     }
 }
 
@@ -1292,11 +1292,11 @@ public static partial class SynchronizationCachControl
         public readonly uint BaseArrayLayer;
         public readonly uint LayerCount;
         public readonly  VkImageAspectFlagBits AspectMask;
-        public readonly  VkImageLayout OldLayout;
-        public readonly  VkImageLayout NewLayout;
+        // public readonly  VkImageLayout OldLayout;
+        // public readonly  VkImageLayout NewLayout;
 
         public TransitionImageLayoutConfig( VkCommandBuffer cb,  VkImage image,
-        uint baseMipLevel,uint levelCount,uint baseArrayLayer, uint layerCount, VkImageAspectFlagBits aspectMask,  VkImageLayout oldLayout,  VkImageLayout newLayout)
+        uint baseMipLevel,uint levelCount,uint baseArrayLayer, uint layerCount, VkImageAspectFlagBits aspectMask)
         {
             CommandBuffer = cb;
             Image = image;
@@ -1305,21 +1305,21 @@ public static partial class SynchronizationCachControl
             LevelCount = levelCount;
             LayerCount = layerCount;
             AspectMask = aspectMask;
-            OldLayout = oldLayout;
-            NewLayout = newLayout;
+            // OldLayout = oldLayout;
+            // NewLayout = newLayout;
 
         }
     }
 
     //  MEMORY BARRIER source from : https://github.com/veldrid/veldrid/blob/master/src/Veldrid/Vk/VulkanUtil.cs
-    public unsafe  static void TransitionImageLayout(ref VulkanFunctions func,in TransitionImageLayoutConfig config)
+    public unsafe  static void TransitionImageLayout(ref VulkanFunctions func,in TransitionImageLayoutConfig config,  VkImageLayout oldLayout,  VkImageLayout newLayout)
     {
 //         Debug.Assert(oldLayout != newLayout);
         VkImageMemoryBarrier barrier = default;
         barrier.sType =VkStructureType. VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         barrier.pNext = null;
-        barrier.oldLayout = config.OldLayout;
-        barrier.newLayout = config.NewLayout;
+        barrier.oldLayout = oldLayout;
+        barrier.newLayout = newLayout;
         barrier.srcQueueFamilyIndex = VK.VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex = VK.VK_QUEUE_FAMILY_IGNORED;
         barrier.image = config.Image;
@@ -1332,7 +1332,7 @@ public static partial class SynchronizationCachControl
         VkPipelineStageFlagBits srcStageFlags =VkPipelineStageFlagBits. VK_PIPELINE_STAGE_NONE;
         VkPipelineStageFlagBits dstStageFlags = VkPipelineStageFlagBits. VK_PIPELINE_STAGE_NONE;
 
-        if ((config.OldLayout == VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED || config.OldLayout == VkImageLayout.VK_IMAGE_LAYOUT_PREINITIALIZED) && config.NewLayout == VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+        if ((oldLayout == VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED || oldLayout == VkImageLayout.VK_IMAGE_LAYOUT_PREINITIALIZED) && newLayout == VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
         {
             barrier.srcAccessMask = (uint)VkAccessFlagBits.VK_ACCESS_NONE;
             barrier.dstAccessMask = (uint)VkAccessFlagBits.VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -1879,6 +1879,7 @@ public static partial class Pipelines
         data.RenderPass_RenderArea.extent  = data.Device_SurfaceSize;
 
     }
+
     public unsafe static void Build(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig config )
     {
         // TODO :  see if redner pass init in Render or pipelines?  
@@ -1939,81 +1940,95 @@ public static partial class Pipelines
     
     public static unsafe void CreatePipeline(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig.PipelineConfig config)
     {
+        int shadercount = 0;
+        if (  !string.IsNullOrEmpty( config.FragmentShaderFileNameSPV )  ) shadercount++;
+        if (  !string.IsNullOrEmpty( config.VertexShaderFileNameSPV )  ) shadercount++;
+
+
         // #region SHADERS
-        VkShaderModule[] shaderModules = new  VkShaderModule[2];
-        // Pipeline_CreateShaderModule( out VkShaderModule  vertShaderModule , ref func, ref data , data.Info.VertexShaderFileNameSPV);
-        // Pipeline_CreateShaderModule( out VkShaderModule  fragShaderModule , ref func, ref data , data.Info.FragmentShaderFileNameSPV);
-        // using RitaEngine.Base.Strings.StrUnsafe fragentryPoint = new(data.Info.FragmentEntryPoint);
-        // using RitaEngine.Base.Strings.StrUnsafe vertentryPoint = new(data.Info.VertexEntryPoint);
-       
-        // VkPipelineShaderStageCreateInfo* shaderStages = stackalloc VkPipelineShaderStageCreateInfo[2];        
-        VkPipelineShaderStageCreateInfo[] shaderStages = new VkPipelineShaderStageCreateInfo[2] ;
-        // shaderStages[0] = new();
-        // shaderStages[0].sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        // shaderStages[0].stage = VkShaderStageFlagBits.VK_SHADER_STAGE_VERTEX_BIT;
-        // shaderStages[0].module = vertShaderModule;
-        // shaderStages[0].pName = vertentryPoint;
-        // shaderStages[0].flags =0;
-        // shaderStages[0].pNext =null;
-        // shaderStages[0].pSpecializationInfo =null;
+        VkShaderModule[] shaderModules = new  VkShaderModule[shadercount];
+        VkPipelineShaderStageCreateInfo[] shaderStages = new VkPipelineShaderStageCreateInfo[shadercount] ;
 
-        // shaderStages[1] = new();
-        // shaderStages[1].sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        // shaderStages[1].stage = VkShaderStageFlagBits.VK_SHADER_STAGE_FRAGMENT_BIT;
-        // shaderStages[1].module = fragShaderModule;
-        // shaderStages[1].pName = fragentryPoint;
-        // shaderStages[1].flags =0;
-        // shaderStages[1].pNext =null;
-        // shaderStages[1].pSpecializationInfo =null;
-      
-        // #endregion
+        if (  !string.IsNullOrEmpty( config.FragmentShaderFileNameSPV )  )
+        {
+            shadercount = shadercount-1;
+            ReadOnlySpan<byte> span = File.ReadAllBytes( config.FragmentShaderFileNameSPV  ).AsSpan();
+            CreateShaderModule(ref func , ref data , span,out VkShaderModule  shader );
+         
+            using RitaEngine.Base.Strings.StrUnsafe vertentryPoint = new(config.FragmentEntryPoint);
+            shaderStages[shadercount] = new();
+            shaderStages[shadercount].sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+            shaderStages[shadercount].stage = VkShaderStageFlagBits.VK_SHADER_STAGE_FRAGMENT_BIT;
+            shaderStages[shadercount].module = shader;
+            shaderStages[shadercount].pName = vertentryPoint;
+            shaderStages[shadercount].flags =0;
+            shaderStages[shadercount].pNext =null;
+            shaderStages[shadercount].pSpecializationInfo =null;
+        }
+        if (  !string.IsNullOrEmpty( config.VertexShaderFileNameSPV )  )
+        {
+            shadercount = shadercount-1;
+            ReadOnlySpan<byte> span = File.ReadAllBytes( config.VertexShaderFileNameSPV ).AsSpan();
+            CreateShaderModule(ref func , ref data , span,out VkShaderModule  shader );
+         
+            using RitaEngine.Base.Strings.StrUnsafe vertentryPoint = new(config.VertexEntryPoint);
+            shaderStages[shadercount] = new();
+            shaderStages[shadercount].sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+            shaderStages[shadercount].stage = VkShaderStageFlagBits.VK_SHADER_STAGE_VERTEX_BIT;
+            shaderStages[shadercount].module = shader;
+            shaderStages[shadercount].pName = vertentryPoint;
+            shaderStages[shadercount].flags =0;
+            shaderStages[shadercount].pNext =null;
+            shaderStages[shadercount].pSpecializationInfo =null;
+        }
+     
+        VkPipelineVertexInputStateCreateInfo vertexInputInfo =new();
+        vertexInputInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+        vertexInputInfo.pNext = null;
+        vertexInputInfo.flags =0;
 
-        // #region VERTEX BUFFER
 
-        // VkPipelineVertexInputStateCreateInfo vertexInputInfo =new();
-        // vertexInputInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+        if ( config.UsedGeometry == 0 )// 0 = PositionColorUV do an enum
+        {
+             VkVertexInputBindingDescription bindingDescription =new();
+            bindingDescription.binding = 0; // layout 
+            bindingDescription.stride =(uint)Vertex.Stride;
+            bindingDescription.inputRate = VkVertexInputRate.VK_VERTEX_INPUT_RATE_VERTEX;
 
-  
-        // VkVertexInputBindingDescription bindingDescription =new();
-        // bindingDescription.binding = 0;
-        // bindingDescription.stride =(uint)Vertex.Stride;
-        // bindingDescription.inputRate = VkVertexInputRate.VK_VERTEX_INPUT_RATE_VERTEX;
+            VkVertexInputAttributeDescription* attributeDescriptions = stackalloc VkVertexInputAttributeDescription[3] ;
+            attributeDescriptions[0].binding = 0;
+            attributeDescriptions[0].location = 0;
+            attributeDescriptions[0].format = VkFormat.VK_FORMAT_R32G32B32_SFLOAT;
+            attributeDescriptions[0].offset = (uint)Vertex.OffsetPosition;
 
-        // VkVertexInputAttributeDescription* attributeDescriptions = stackalloc VkVertexInputAttributeDescription[3] ;
-        // attributeDescriptions[0].binding = 0;
-        // attributeDescriptions[0].location = 0;
-        // attributeDescriptions[0].format = VkFormat.VK_FORMAT_R32G32B32_SFLOAT;
-        // attributeDescriptions[0].offset = (uint)Vertex.OffsetPosition;
-
-        // attributeDescriptions[1].binding = 0;
-        // attributeDescriptions[1].location = 1;
-        // attributeDescriptions[1].format = VkFormat.VK_FORMAT_R32G32B32_SFLOAT;
-        // attributeDescriptions[1].offset =   (uint)Vertex.FormatNormal;
-        
-        // attributeDescriptions[2].binding = 0;
-        // attributeDescriptions[2].location = 2;
-        // attributeDescriptions[2].format = VkFormat.VK_FORMAT_R32G32_SFLOAT;
-        // attributeDescriptions[2].offset =   (uint)Vertex.OffsetTexCoord; 
+            attributeDescriptions[1].binding = 0;
+            attributeDescriptions[1].location = 1;
+            attributeDescriptions[1].format = VkFormat.VK_FORMAT_R32G32B32_SFLOAT;
+            attributeDescriptions[1].offset =   (uint)Vertex.FormatNormal;
             
-        // vertexInputInfo.vertexBindingDescriptionCount = 1;
-        // vertexInputInfo.vertexAttributeDescriptionCount = 3;
-        // vertexInputInfo.pNext = null;
-        // vertexInputInfo.flags =0;
-        // vertexInputInfo.pVertexAttributeDescriptions=attributeDescriptions;
-        // vertexInputInfo.pVertexBindingDescriptions=&bindingDescription;
-
-        // #endregion
-
-        // #region INPUT ASSEMBLY
-        // VkPipelineInputAssemblyStateCreateInfo inputAssembly=new();
-        // inputAssembly.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-        // inputAssembly.topology = VkPrimitiveTopology. VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        // inputAssembly.primitiveRestartEnable = VK.VK_FALSE;
-        // inputAssembly.flags =0;
-        // inputAssembly.pNext =null;       
-        // #endregion
-
-        #region COLOR BLENDING
+            attributeDescriptions[2].binding = 0;
+            attributeDescriptions[2].location = 2;
+            attributeDescriptions[2].format = VkFormat.VK_FORMAT_R32G32_SFLOAT;
+            attributeDescriptions[2].offset =   (uint)Vertex.OffsetTexCoord; 
+                
+            vertexInputInfo.vertexBindingDescriptionCount = 1;
+            vertexInputInfo.vertexAttributeDescriptionCount = 3;
+          
+            vertexInputInfo.pVertexAttributeDescriptions=attributeDescriptions;
+            vertexInputInfo.pVertexBindingDescriptions=&bindingDescription;
+        }
+        else
+        {
+            vertexInputInfo.vertexBindingDescriptionCount = 0;
+            vertexInputInfo.vertexAttributeDescriptionCount = 0;
+        }
+       
+        VkPipelineInputAssemblyStateCreateInfo inputAssembly=new();
+        inputAssembly.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+        inputAssembly.topology =config.PrimitiveTopology;
+        inputAssembly.primitiveRestartEnable = VK.VK_FALSE;
+        inputAssembly.flags =0;
+        inputAssembly.pNext =null;       
 
         VkPipelineColorBlendAttachmentState colorBlendAttachment =new();
         colorBlendAttachment.colorWriteMask = (uint)(VkColorComponentFlagBits.VK_COLOR_COMPONENT_R_BIT | VkColorComponentFlagBits.VK_COLOR_COMPONENT_G_BIT | VkColorComponentFlagBits.VK_COLOR_COMPONENT_B_BIT | VkColorComponentFlagBits.VK_COLOR_COMPONENT_A_BIT);
@@ -2037,12 +2052,8 @@ public static partial class Pipelines
         colorBlending.blendConstants[3] = 0.0f;
         colorBlending.flags =0;
         colorBlending.pNext=null;
-        #endregion
 
-      
 
-        // // Pipeline.CreateColorBlending(ref renderConfig.Pipeline_ColorBlending ,out VkPipelineColorBlendStateCreateInfo colorBlending );
-        // Pipeline.CreateRasterization( ref renderConfig.Pipeline_Rasterization , out VkPipelineRasterizationStateCreateInfo rasterizer) ;
         VkPipelineRasterizationStateCreateInfo rasterizer =new();
         rasterizer.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
         rasterizer.rasterizerDiscardEnable = config.RasterizerDiscardEnable?   VK.VK_TRUE : VK.VK_FALSE ;// VK.VK_FALSE;
@@ -2057,7 +2068,7 @@ public static partial class Pipelines
         rasterizer.depthBiasClamp = config.DepthBiasClamp ; // 0.0f;
         rasterizer.depthBiasConstantFactor =config.DepthBiasConstantFactor ;  // 1.0f;
         rasterizer.depthBiasSlopeFactor = config.DepthBiasSlopeFactor ;   //1.0f;
-        // CreateMultisampling(ref renderConfig.Pipeline, out VkPipelineMultisampleStateCreateInfo multisampling );
+
         VkPipelineMultisampleStateCreateInfo multisampling=new();
         multisampling.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
         multisampling.pNext = null;
@@ -2069,7 +2080,7 @@ public static partial class Pipelines
         multisampling.minSampleShading =config.MinSampleShading;
         uint* samplemask = null;
         multisampling.pSampleMask =samplemask;
-        // Pipeline.CreateDepthStencil( ref renderConfig.Pipeline , out VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo);
+
         VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo=new();
         depthStencilStateCreateInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
         depthStencilStateCreateInfo.pNext = null;
@@ -2085,12 +2096,9 @@ public static partial class Pipelines
         depthStencilStateCreateInfo.back = config.DepthBack ;
 
         uint dynamicCount =0 ;
-
         if ( config.DynamicStatesWithViewport) dynamicCount++;
         if ( config.DynamicStatesWithScissor) dynamicCount++;
         if ( config.DynamicStatesWithLineWidth) dynamicCount++;
-
-        // Pipeline.CreateDynamicStates( ref renderConfig.Pipeline_DynamicStates , out  VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo );
         VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo = new();
         dynamicStateCreateInfo.sType = VkStructureType. VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
         dynamicStateCreateInfo.pNext = null;
@@ -2100,18 +2108,14 @@ public static partial class Pipelines
         if ( dynamicCount != 0)
         {
             VkDynamicState[] dynamicStates2  = new VkDynamicState[dynamicCount];
-
             if ( config.DynamicStatesWithViewport) dynamicStates2[--dynamicCount] = VkDynamicState.VK_DYNAMIC_STATE_VIEWPORT;
             if ( config.DynamicStatesWithScissor) dynamicStates2[--dynamicCount] = VkDynamicState.VK_DYNAMIC_STATE_SCISSOR;
             if ( config.DynamicStatesWithLineWidth) dynamicStates2[--dynamicCount] = VkDynamicState.VK_DYNAMIC_STATE_LINE_WIDTH;
-
             fixed( VkDynamicState* dynamicStates = &dynamicStates2[0] ){
                 dynamicStateCreateInfo.pDynamicStates =dynamicStates;
             }
         }
-      
-        // #region VIEWPORT
-        // TODO if VIEWPORT NOT CHANGE DELETE DYNAMIC STATE
+
         config.DynamicStatesViewport.x = 0.0f;
         config.DynamicStatesViewport.y = 0.0f;
         config.DynamicStatesViewport.width = (float) data.Device_SurfaceSize.width;
@@ -2120,7 +2124,6 @@ public static partial class Pipelines
         config.DynamicStatesViewport.maxDepth = 1.0f;
         config.DynamicStatesScissor.offset = new();
         config.DynamicStatesScissor.extent = data.Device_SurfaceSize ;
-        
         VkPipelineViewportStateCreateInfo viewportState =new();
         viewportState.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
         viewportState.viewportCount = 1;
@@ -2135,35 +2138,26 @@ public static partial class Pipelines
         }
         viewportState.flags=0;
         viewportState.pNext = null;
-        // #endregion
-       
-        #region Tesslation
-        //not used 
+        
         VkPipelineTessellationStateCreateInfo tessellationStateCreateInfo = new();
         tessellationStateCreateInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
         tessellationStateCreateInfo.pNext = null;
         tessellationStateCreateInfo.flags =0 ;
         uint numberOfControlPointsPerPatch =0;
         tessellationStateCreateInfo.patchControlPoints = numberOfControlPointsPerPatch;
-        #endregion
 
         VkGraphicsPipelineCreateInfo pipelineInfo =new();
         pipelineInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
         pipelineInfo.pNext = null;
-
         pipelineInfo.flags = (uint)VkPipelineCreateFlagBits.VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT ;
-        
         pipelineInfo.renderPass = data.RenderPass;
         pipelineInfo.subpass = 0;
-        
         pipelineInfo.stageCount =(uint)shaderStages.Length;
         fixed(VkPipelineShaderStageCreateInfo* ss = &shaderStages[0]){
             pipelineInfo.pStages = ss;
         }
-        
-        // pipelineInfo.pVertexInputState = &vertexInputInfo;
-        // pipelineInfo.pInputAssemblyState = &inputAssembly;
-        
+        pipelineInfo.pVertexInputState = &vertexInputInfo;
+        pipelineInfo.pInputAssemblyState = &inputAssembly;
         pipelineInfo.pColorBlendState = &colorBlending;
         pipelineInfo.pViewportState = &viewportState;
         pipelineInfo.pRasterizationState = &rasterizer;
@@ -2172,7 +2166,6 @@ public static partial class Pipelines
         pipelineInfo.pTessellationState = &tessellationStateCreateInfo;
         pipelineInfo.pDepthStencilState = &depthStencilStateCreateInfo;
         pipelineInfo.pDynamicState = &dynamicStateCreateInfo;
-        
         pipelineInfo.basePipelineIndex =0;
         pipelineInfo.basePipelineHandle = VkPipeline.Null;
         
@@ -2246,119 +2239,83 @@ public static partial class Pipelines
 
     #region Materials 
 
-    // Textures 
-    //Uniforms ( sampler )
-
-    #region Mipmaping
-// //29_mipmapping.cpp
-// // generateMipmaps(textureImage, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, mipLevels);
-//     }
-
-//     private void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels) 
-//      {
-//         // Check if image format supports linear blitting
-//         // VkFormatProperties formatProperties;
-//         // vkGetPhysicalDeviceFormatProperties(physicalDevice, imageFormat, &formatProperties);
-
+    public unsafe static void GenerateMipmaps(  ref VulkanFunctions func,ref GraphicsData data , ref TextureConfig config, ref VkImage image) 
+    {
 //         // if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
 //         //     throw std::runtime_error("texture image format does not support linear blitting!");
 //         // }
+        VkCommandBuffer commandBuffer =CommandBuffers.BeginSingleTimeCommands(ref func , ref data);
+        
+        int mipWidth = (int)config.Width;
+        int mipHeight = (int)config.Height;
 
-//         // VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+        for (uint i = 1; i < config.MipmapLevel ; i++)
+        {
+            SynchronizationCachControl.TransitionImageLayoutConfig transitionImageLayoutConfig = new(commandBuffer, image,i - 1,0,1,1,VkImageAspectFlagBits.VK_IMAGE_ASPECT_COLOR_BIT );
+            SynchronizationCachControl.TransitionImageLayout( ref  func,transitionImageLayoutConfig , VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL ,VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL );
 
-//         // VkImageMemoryBarrier barrier{};
-//         // barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-//         // barrier.image = image;
-//         // barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-//         // barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-//         // barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-//         // barrier.subresourceRange.baseArrayLayer = 0;
-//         // barrier.subresourceRange.layerCount = 1;
-//         // barrier.subresourceRange.levelCount = 1;
+            VkImageBlit blit = new();
 
-//         // int32_t mipWidth = texWidth;
-//         // int32_t mipHeight = texHeight;
+            VkOffset3D srcOffset3D = new();
+            VkOffset3D srcOffset3D2 = new();srcOffset3D2.x = mipWidth;srcOffset3D2.y = mipHeight; srcOffset3D2.z =1;
+            
+            blit.srcOffsets[0] = &srcOffset3D;
+            blit.srcOffsets[1] = &srcOffset3D2;
+            blit.srcSubresource.aspectMask = (uint) VkImageAspectFlagBits.VK_IMAGE_ASPECT_COLOR_BIT;
+            blit.srcSubresource.mipLevel = i - 1;
+            blit.srcSubresource.baseArrayLayer = 0;
+            blit.srcSubresource.layerCount = 1;
 
-//         // for (uint32_t i = 1; i < mipLevels; i++) {
-//         //     barrier.subresourceRange.baseMipLevel = i - 1;
-//         //     barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-//         //     barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-//         //     barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-//         //     barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+            VkOffset3D dstOffset3D = new();
+            VkOffset3D dstOffset3D2 = new();
+                dstOffset3D2.x = mipWidth > 1 ? mipWidth / 2 : 1;
+                dstOffset3D2.y = mipHeight > 1 ? mipHeight / 2 : 1; 
+                dstOffset3D2.z =1;
 
-//         //     vkCmdPipelineBarrier(commandBuffer,
-//         //         VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
-//         //         0, nullptr,
-//         //         0, nullptr,
-//         //         1, &barrier);
+            blit.dstOffsets[0] = &dstOffset3D;
+            blit.dstOffsets[1] = &dstOffset3D2;
+            blit.dstSubresource.aspectMask = (uint) VkImageAspectFlagBits.VK_IMAGE_ASPECT_COLOR_BIT;
+            blit.dstSubresource.mipLevel = i;
+            blit.dstSubresource.baseArrayLayer = 0;
+            blit.dstSubresource.layerCount = 1;
 
-//         //     VkImageBlit blit{};
-//         //     blit.srcOffsets[0] = {0, 0, 0};
-//         //     blit.srcOffsets[1] = {mipWidth, mipHeight, 1};
-//         //     blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-//         //     blit.srcSubresource.mipLevel = i - 1;
-//         //     blit.srcSubresource.baseArrayLayer = 0;
-//         //     blit.srcSubresource.layerCount = 1;
-//         //     blit.dstOffsets[0] = {0, 0, 0};
-//         //     blit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1 };
-//         //     blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-//         //     blit.dstSubresource.mipLevel = i;
-//         //     blit.dstSubresource.baseArrayLayer = 0;
-//         //     blit.dstSubresource.layerCount = 1;
+            func.Device.vkCmdBlitImage(commandBuffer,
+                image,  VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                image,  VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                1, &blit,
+                VkFilter. VK_FILTER_LINEAR);
+            
+            if (mipWidth > 1) mipWidth /= 2;
+            if (mipHeight > 1) mipHeight /= 2;
+            SynchronizationCachControl.TransitionImageLayout( ref  func,transitionImageLayoutConfig , VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL ,VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL );
+        }
 
-//         //     vkCmdBlitImage(commandBuffer,
-//         //         image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-//         //         image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-//         //         1, &blit,
-//         //         VK_FILTER_LINEAR);
+        CommandBuffers.EndSingleTimeCommands(ref func , ref data, commandBuffer );
 
-//         //     barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-//         //     barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-//         //     barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-//         //     barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-//         //     vkCmdPipelineBarrier(commandBuffer,
-//         //         VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
-//         //         0, nullptr,
-//         //         0, nullptr,
-//         //         1, &barrier);
-
-//         //     if (mipWidth > 1) mipWidth /= 2;
-//         //     if (mipHeight > 1) mipHeight /= 2;
-//         // }
-
-//         // barrier.subresourceRange.baseMipLevel = mipLevels - 1;
-//         // barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-//         // barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-//         // barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-//         // barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-//         // vkCmdPipelineBarrier(commandBuffer,
-//         //     VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
-//         //     0, nullptr,
-//         //     0, nullptr,
-//         //     1, &barrier);
-
-//         // endSingleTimeCommands(commandBuffer);
-//     }
+    }
     
-    #endregion
-    
-    public unsafe struct TextureConfig
+    public readonly unsafe struct TextureConfig
     {
+        public readonly VkFilter Filter = VkFilter.VK_FILTER_LINEAR;
+        public readonly VkSamplerAddressMode SamplerMode =   VkSamplerAddressMode.VK_SAMPLER_ADDRESS_MODE_REPEAT;
         public readonly VkDeviceSize ImageSize;
         public unsafe readonly void* DataPtr;
         public readonly VkFormat Format;
         public readonly uint Width;
         public readonly uint Height;
+        public readonly uint MipmapLevel;
+        public readonly bool WithMemorieBarrier;
 
-        public TextureConfig(void* dataPtr, VkDeviceSize imageSize , VkFormat format , uint width, uint height)
+        public TextureConfig(void* dataPtr, VkDeviceSize imageSize , VkFormat format , uint width, uint height,uint mipmaplevel,  bool withMemorieBarrier= false)
         {
             ImageSize = imageSize; 
             DataPtr = dataPtr;
             Format = format;
             Width =width;
             Height= height;
+            MipmapLevel = mipmaplevel;
+            WithMemorieBarrier = withMemorieBarrier;
+
         }
     }
 
@@ -2377,9 +2334,12 @@ public static partial class Pipelines
             new(config.Width,config.Height, 1) , config.Format,VkImageTiling.VK_IMAGE_TILING_OPTIMAL  ,
             VkImageUsageFlagBits.VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits.VK_IMAGE_USAGE_SAMPLED_BIT  
             ,VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+       if( config.WithMemorieBarrier) {
+            // SynchronizationCachControl.TransitionImageLayout transitionImageLayout = new(   )
+            // Memories.TransitionImageLayout(ref func , ref data, format, VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED, VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+       }
         
-//-------------------------------------------------- Update Record  Command buffer ( WITH MEMORY BARRIERE ) only if in loop 
-        // TransitionImageLayout(ref func , ref data, format, VkImageLayout.VK_IMAGE_LAYOUT_UNDEFINED, VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
        ResourceCreation.CopyBufferToImage(ref  func,ref  data,ref image , ref stagingBuffer, config.Width,config.Height);
         // TransitionImageLayout(ref func , ref data,format, VkImageLayout.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VkImageLayout.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
@@ -2387,18 +2347,18 @@ public static partial class Pipelines
         func.Device.vkFreeMemory(data.Device, stagingBufferMemory, null);
     }
     
-    public unsafe static void DisposeTextureImage(in GraphicDeviceFunctions  func, ref GraphicDeviceData data)
+    public unsafe static void DisposeTextureImage(ref VulkanFunctions func,ref GraphicsData data, ref VkImage image, ref VkDeviceMemory imageMemory  )
     {
-        // if( !data.Info.TextureImage.IsNull)
-        // {
-        //     Log.Info($"Create Texture Image {data.Info.TextureImage} ");
-        //     func.vkDestroyImage(data.Handles.Device, data.Info.TextureImage, null);
-        // }
-        // if( !data.Info.TextureImageMemory.IsNull)
-        // {
-        //     Log.Info($"Create Texture Image Memory {data.Info.TextureImageMemory} ");
-        //     func.vkFreeMemory(data.Handles.Device, data.Info.TextureImageMemory, null);
-        // }
+        if( !image.IsNull)
+        {
+            Log.Info($"Create Texture Image {image} ");
+            func.Device.vkDestroyImage(data.Device, image, null);
+        }
+        if( !imageMemory.IsNull)
+        {
+            Log.Info($"Create Texture Image Memory {imageMemory} ");
+            func.Device.vkFreeMemory(data.Device, imageMemory, null);
+        }
 
 
         //This is for DEscriptor  NOt texture buffer Image
@@ -2407,6 +2367,22 @@ public static partial class Pipelines
         //     Log.Info($"Destroy Texture Image View {data.Info.TextureImageView}");
         //     func.vkDestroyImageView(data.Handles.Device, data.Info.TextureImageView, null);
         // }
+    }
+
+    public unsafe static void CreateTextureImageViewForResourceDescriptors(ref VulkanFunctions func,ref GraphicsData data ,VkFormat textureFormat,VkImage textureImage , ref VkImageView textureImageView)
+    {
+        Log.Info($"Create Texture Image View {textureImageView}");
+        ResourceCreation.ImageViewConfig temp = new(textureImage ,textureFormat , VkImageAspectFlagBits.VK_IMAGE_ASPECT_COLOR_BIT);
+        ResourceCreation.CreateImageView( ref func,ref data, in temp, out textureImageView);
+    }
+
+    public unsafe static void DisposeTextureImageViewForResourceDescriptors(ref VulkanFunctions func,ref GraphicsData data, ref VkImageView textureImageView)
+    {
+        if( !textureImageView.IsNull)
+        {
+            Log.Info($"Destroy Texture Image View {textureImageView}");
+            func.Device.vkDestroyImageView(data.Device, textureImageView, null);
+        }
     }
 
     #endregion
@@ -2427,17 +2403,14 @@ public static partial class Pipelines
         func.Device.vkCreateShaderModule(data.Device, &createInfoFrag, null,  &fragShaderModule ).Check($"Create  Shader Module Failed"); 
         shader = fragShaderModule;
     }
-
     
     #endregion
-
 }
 
 [SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public static partial class ResourceCreation
 {
-
-    #region IMAGE
+    #region IMAGE VIEW FOR FRAMEBUFFER : SWAPCHAIN AND DEPTHBUFFER
     public readonly struct ImageViewConfig 
     {
         public readonly VkImage Image;
@@ -2446,9 +2419,9 @@ public static partial class ResourceCreation
         public readonly VkImageAspectFlagBits Aspect = VkImageAspectFlagBits. VK_IMAGE_ASPECT_COLOR_BIT;
         public readonly int ComponentSwizzle =0;
 
-        public ImageViewConfig( VkImage image,VkFormat format ,   VkImageAspectFlagBits aspect = VkImageAspectFlagBits. VK_IMAGE_ASPECT_COLOR_BIT , int componentSwizzle =0)
+        public ImageViewConfig( VkImage image,VkFormat format ,   VkImageAspectFlagBits aspect = VkImageAspectFlagBits. VK_IMAGE_ASPECT_COLOR_BIT , VkImageViewType imageviewType = VkImageViewType. VK_IMAGE_VIEW_TYPE_2D, int componentSwizzle =0)
         {
-            Image= image; Format=format;Aspect = aspect;ComponentSwizzle =componentSwizzle;
+            Image= image; Format=format;Aspect = aspect;ComponentSwizzle =componentSwizzle;ImageviewType = imageviewType;
         }
     }
 
@@ -2507,6 +2480,9 @@ public static partial class ResourceCreation
         
     }
     
+    #endregion
+
+    #region IMAGE  
     public unsafe static void CreateImage2( ref VulkanFunctions func, ref GraphicsData data,ref  VkImage image,ref VkDeviceMemory imageMemory, 
         VkExtent3D extend3D, VkFormat format, VkImageTiling tiling,VkImageUsageFlagBits usage, VkMemoryPropertyFlagBits MemoryProperties   )
     {
@@ -2602,37 +2578,22 @@ public static partial class ResourceCreation
     
     #region  UNIFORM BUFFER
 
-    public unsafe static void CreateUniformBuffers(ref GraphicDeviceFunctions func, ref GraphicDeviceData data   ) 
+    public unsafe static void CreateUniformBuffers(ref VulkanFunctions func,ref GraphicsData data,ref VkDeviceSize size  ,ref VkBuffer uniformBuffers,ref VkDeviceMemory uniformBuffersMemory,void* uboMapped, bool unamap =false) 
     {
-        ulong uboAlignment  = data.Info.PhysicalDeviceProperties.limits.minUniformBufferOffsetAlignment;
-        ulong uboSize = (ulong)data.Info.UniformBufferArray.Length * sizeof(float);
-        var align = (((ulong)uboSize / uboAlignment) * uboAlignment + (((ulong)uboSize % uboAlignment) > 0 ? uboAlignment : 0));
-        
-        VkDeviceSize bufferSize = (uint)align;
-        
-        data.Info.UboSize = (ulong) bufferSize;
-        
-        VkBuffer[] UniformBuffers = new VkBuffer[ data.Info.MAX_FRAMES_IN_FLIGHT];
-        VkDeviceMemory[] UniformBuffersMemory = new VkDeviceMemory[data.Info.MAX_FRAMES_IN_FLIGHT];
-        data.Info.UboMapped = new void* [ data.Info.MAX_FRAMES_IN_FLIGHT] ;
-        
-        // for (int i = 0; i < data.Info.MAX_FRAMES_IN_FLIGHT; i++) 
-        // {
-        //     CreateBuffer(ref func, ref data, bufferSize, 
-        //     VkBufferUsageFlagBits.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
-        //     VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
-        //     VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        //     ref data.Info.UniformBuffers[i],ref data.Info.UniformBuffersMemory[i]);
-
-        //     void* ptr = null;
-        //     func.vkMapMemory(data.Handles.Device,data.Info.UniformBuffersMemory[i], 0, bufferSize, 0, &ptr ).Check("Map Memeory Unifommr pb");
-        //     Guard.ThrowWhenConditionIsTrue( ptr == null);
-        //     data.Info.UboMapped[i] = ptr;
-          
-        //     Log.Info($"-[{i}] Create Uniform Buffer : {data.Info.UniformBuffers[i]} Mem {data.Info.UniformBuffersMemory[i]}");
-        //     func.vkUnmapMemory(data.Handles.Device,data.Info.UniformBuffersMemory[i]);
-        // }   
+        ulong uboAlignment  = data.Device_Properties.limits.minUniformBufferOffsetAlignment;
        
+        VkDeviceSize bufferSize =((size / uboAlignment) * uboAlignment + ((size % uboAlignment) > 0 ? uboAlignment : 0));
+        
+        size = (ulong) bufferSize;
+
+        CreateBuffer(ref func, ref data, bufferSize, 
+        VkBufferUsageFlagBits.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
+        VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
+        VkMemoryPropertyFlagBits.VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        ref uniformBuffers,ref uniformBuffersMemory);
+
+        Memories.TransfertMemory( ref func,ref data,uboMapped,size,ref  uniformBuffersMemory, false);
+        Log.Info($"Create Uniform Buffer : {uniformBuffers} Mem {uniformBuffersMemory}");
     }
 
     public unsafe static void DisposeUniformBuffers(in GraphicDeviceFunctions  func, ref GraphicDeviceData data ) 
@@ -2660,18 +2621,15 @@ public static partial class ResourceCreation
         }
     }
 
-    public unsafe static void UpdateUniformBuffer(in GraphicDeviceFunctions  func,ref GraphicDeviceData data, uint  CurrentFrame)
-    {
-        fixed( void* local  = &data.Info.UniformBufferArray[0] )
-        {
-            Unsafe.CopyBlock( data.Info.UboMapped[CurrentFrame] , local ,(uint) data.Info.UboSize);
-        }
+    public unsafe static void UpdateUniformBuffer(ref VulkanFunctions func,ref GraphicsData data, VkDeviceSize size, float* uboData,void* uboMapped)
+    {      
+        Unsafe.CopyBlock( uboMapped ,uboData ,(uint)size);
     }
 
     #endregion
 
     #region SAMPLER OU DANS RESOURCE DESCRIPTOR ?
-    public unsafe static void CreateTextureSampler(ref GraphicDeviceFunctions  func, ref GraphicDeviceData data)
+    public unsafe static void CreateTextureSampler(ref VulkanFunctions func,ref GraphicsData data,ref VkSampler textureSampler )
     {
         VkSamplerCreateInfo samplerInfo = new();
         samplerInfo.sType =  VkStructureType.VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -2681,28 +2639,27 @@ public static partial class ResourceCreation
         samplerInfo.addressModeV = VkSamplerAddressMode.VK_SAMPLER_ADDRESS_MODE_REPEAT;
         samplerInfo.addressModeW = VkSamplerAddressMode.VK_SAMPLER_ADDRESS_MODE_REPEAT;
         samplerInfo.anisotropyEnable = VK.VK_TRUE;
-        samplerInfo.maxAnisotropy = data.Info.PhysicalDeviceProperties.limits.maxSamplerAnisotropy;
+        samplerInfo.maxAnisotropy = data.Device_Properties.limits.maxSamplerAnisotropy;
         samplerInfo.borderColor = VkBorderColor . VK_BORDER_COLOR_INT_OPAQUE_BLACK;
         samplerInfo.unnormalizedCoordinates = VK.VK_FALSE;
         samplerInfo.compareEnable = VK.VK_FALSE;
         samplerInfo.compareOp = VkCompareOp.VK_COMPARE_OP_ALWAYS;
         samplerInfo.mipmapMode = VkSamplerMipmapMode .VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
-        fixed(VkSampler* sampler  = &data.Info.TextureSampler)
+        fixed(VkSampler* sampler  = &textureSampler)
         {
-            func.vkCreateSampler(data.Handles.Device, &samplerInfo, null, sampler).Check("failed to create texture sampler!");
+            func.Device.vkCreateSampler(data.Device, &samplerInfo, null, sampler).Check("failed to create texture sampler!");
         }   
-        Log.Info($"Create Texture sampler {data.Info.TextureSampler}");
+        Log.Info($"Create Texture sampler {textureSampler}");
     }
 
-    public unsafe static void DisposeTextureSampler(in GraphicDeviceFunctions  func, ref GraphicDeviceData data)
+    public unsafe static void DisposeTextureSampler(ref  VulkanFunctions func,ref GraphicsData data, ref VkSampler textureSampler)
     {
-        if( !data.Info.TextureSampler.IsNull)
+        if(!data.Device.IsNull && !textureSampler.IsNull)
         {
-            Log.Info($"Destroy Texture sampler {data.Info.TextureSampler}");
-            func.vkDestroySampler(data.Handles.Device,data.Info.TextureSampler, null);
+            Log.Info($"Destroy Texture sampler {textureSampler}");
+            func.Device.vkDestroySampler(data.Device,textureSampler, null);
         }
-      
     }
 
     #endregion    
@@ -2722,9 +2679,6 @@ public static partial class ResourceDecriptor
         //Create Pool ( with VkDescriptorPoolSize )
 
         // AFTER CREATE   !!! Create  VkDescriptorSet ( need pool ) 
-
-
-
 
         // VkDescriptorSetLayoutBinding uboLayoutBinding = new();
         // uboLayoutBinding.binding = 0;
@@ -2797,6 +2751,8 @@ public static partial class ResourceDecriptor
 
     }
 
+   
+
     public unsafe static void UpdateDescriptors(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig.RenderConfig config )
     {
         /*
@@ -2806,39 +2762,40 @@ public static partial class ResourceDecriptor
         IN RESOURCE CREATION 
         */
 
-      //VkWriteDescriptorSet* descriptorWrites = stackalloc VkWriteDescriptorSet[2];
+        VkWriteDescriptorSet* descriptorWrites = stackalloc VkWriteDescriptorSet[2];
 
-        // for (int i = 0; i <  data.Info.MAX_FRAMES_IN_FLIGHT; i++) 
-        // {
-        //     VkDescriptorBufferInfo bufferInfo = new();
-        //     bufferInfo.buffer = data.Info.UniformBuffers[i];
-        //     bufferInfo.offset = 0;
-        //     bufferInfo.range = (uint) sizeof(float) * 3 * 16;// sizeof UNIFORM_MVP
+        for (int i = 0; i <  config.MAX_FRAMES_IN_FLIGHT; i++) 
+        {
+            VkDescriptorBufferInfo bufferInfo = new();
+            // bufferInfo.buffer = data.Info.UniformBuffers[i];
+            bufferInfo.offset = 0;
+            bufferInfo.range = (uint) sizeof(float) * 3 * 16;// sizeof UNIFORM_MVP
 
-        //     VkDescriptorImageInfo imageInfo =new();
-        //     imageInfo.imageLayout = VkImageLayout.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        //     imageInfo.imageView = data.Info.TextureImageView;
-        //     imageInfo.sampler = data.Info.TextureSampler;
+            // VkDescriptorImageInfo imageInfo =new();
+            // imageInfo.imageLayout = VkImageLayout.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            // imageInfo.imageView = data.Info.TextureImageView;
+            // imageInfo.sampler = data.Info.TextureSampler;
 
-        //     descriptorWrites[0].sType = VkStructureType. VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        //     descriptorWrites[0].dstSet = data.Handles.DescriptorSets[i];
-        //     descriptorWrites[0].dstBinding = 0;
-        //     descriptorWrites[0].dstArrayElement = 0;
-        //     descriptorWrites[0].descriptorType = VkDescriptorType.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        //     descriptorWrites[0].descriptorCount = 1;
-        //     descriptorWrites[0].pBufferInfo = &bufferInfo;
+            // descriptorWrites[0].sType = VkStructureType. VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            // descriptorWrites[0].dstSet = data.Handles.DescriptorSets[i];
+            // descriptorWrites[0].dstBinding = 0;
+            // descriptorWrites[0].dstArrayElement = 0;
+            // descriptorWrites[0].descriptorType = VkDescriptorType.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            // descriptorWrites[0].descriptorCount = 1;
+            // descriptorWrites[0].pBufferInfo = &bufferInfo;
 
-        //     descriptorWrites[1].sType = VkStructureType.VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        //     descriptorWrites[1].dstSet = data.Handles.DescriptorSets[i];
-        //     descriptorWrites[1].dstBinding = 1;
-        //     descriptorWrites[1].dstArrayElement = 0;
-        //     descriptorWrites[1].descriptorType =VkDescriptorType.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        //     descriptorWrites[1].descriptorCount = 1;
-        //     descriptorWrites[1].pImageInfo = &imageInfo;
+            // descriptorWrites[1].sType = VkStructureType.VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            // descriptorWrites[1].dstSet = data.Handles.DescriptorSets[i];
+            // descriptorWrites[1].dstBinding = 1;
+            // descriptorWrites[1].dstArrayElement = 0;
+            // descriptorWrites[1].descriptorType =VkDescriptorType.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            // descriptorWrites[1].descriptorCount = 1;
+            // descriptorWrites[1].pImageInfo = &imageInfo;
 
-        //     func.vkUpdateDescriptorSets(data.Handles.Device, 2, descriptorWrites, 0, null);
-        //     Log.Info($"-{i}  Create Descriptor Sets : {data.Handles.DescriptorSets[i]}");
-        // }
+            func.Device.vkUpdateDescriptorSets(data.Device, 2, descriptorWrites, 0, null);
+
+            // Log.Info($"-{i}  Create Descriptor Sets : {data.Handles.DescriptorSets[i]}");
+        }
     }
 
      public unsafe static void DisposeDescriptors(ref VulkanFunctions func,ref GraphicsData data , ref GraphicsConfig.RenderConfig config )
