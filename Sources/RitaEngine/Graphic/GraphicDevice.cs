@@ -2236,22 +2236,19 @@ VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated fr
             fixed(void* ptr = &data.Info.PushConstants ){
                 func.vkCmdPushConstants(commandBuffer,data.Handles.PipelineLayout, (uint) VkShaderStageFlagBits.VK_SHADER_STAGE_VERTEX_BIT, 0,(uint)sizeof(PushConstantsMesh), ptr );
             }
-            
+             // SEND DATA To SHADER
+            fixed(VkDescriptorSet* desc =  &data.Handles.DescriptorSets[CurrentFrame] )
+            {
+                func.vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint.VK_PIPELINE_BIND_POINT_GRAPHICS, data.Handles.PipelineLayout, 0, 1, desc, 0, null);
+            }
+            // SET DYNAMIC STATES
+            fixed(VkViewport* viewport = &data.Info.Viewport ){ func.vkCmdSetViewport(commandBuffer, 0, 1,viewport); }
+            fixed( VkRect2D* scissor = &data.Info.Scissor) { func.vkCmdSetScissor(commandBuffer, 0, 1, scissor); }
+            func.vkCmdSetLineWidth( commandBuffer,data.Handles.DynamicStatee_LineWidth);
+
             // USE SHADER 
                 func.vkCmdBindPipeline(commandBuffer, VkPipelineBindPoint.VK_PIPELINE_BIND_POINT_GRAPHICS, data.Handles.Pipeline);
-                
-            // SEND DATA To SHADER
-                fixed(VkDescriptorSet* desc =  &data.Handles.DescriptorSets[CurrentFrame] )
-                {
-                    func.vkCmdBindDescriptorSets(commandBuffer, VkPipelineBindPoint.VK_PIPELINE_BIND_POINT_GRAPHICS, data.Handles.PipelineLayout, 0, 1, desc, 0, null);
-                }
-                
-            // SET DYNAMIC STATES
-                fixed(VkViewport* viewport = &data.Info.Viewport ){ func.vkCmdSetViewport(commandBuffer, 0, 1,viewport); }
-                fixed( VkRect2D* scissor = &data.Info.Scissor) { func.vkCmdSetScissor(commandBuffer, 0, 1, scissor); }
-                func.vkCmdSetLineWidth( commandBuffer,data.Handles.DynamicStatee_LineWidth);
-               
-
+         
             // BIND VERTEX AND INDICES
                 VkDeviceSize* offsets = stackalloc VkDeviceSize[]{0};
                 VkBuffer* vertexBuffers = stackalloc VkBuffer[] { data.Handles.VertexBuffer};

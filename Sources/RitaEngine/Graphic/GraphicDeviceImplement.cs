@@ -362,7 +362,7 @@ public struct GraphicsConfig : IEquatable<GraphicsConfig>
 }
 
 [SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
-public static partial class GraphicsImplement
+public static partial class GraphicsImplement // GraphcisCodes / GraphicsProcedure / GraphicsServices / GraphicsMethods / GraphicsSystem / GraphicsApp / GraphicsProtocols / GraphicsContrats
 {
 
 [SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
@@ -1625,6 +1625,7 @@ public unsafe struct QueuesTest
     private readonly VkQueue _present;
     private readonly VkQueue _graphic;
     private readonly VkQueue _compute;
+    private readonly VkQueue _transfert;
 
     public QueuesTest( VkDevice device , uint[] queueFamiliyIndices )
     {
@@ -1638,6 +1639,14 @@ public unsafe struct QueuesTest
         fixed ( VkQueue* present = &_present){
             vkGetDeviceQueue(_device, queueFamiliyIndices[2], 0,present); 
         }
+        _transfert = Create(2);
+    }
+
+    private unsafe VkQueue Create( uint queueFamiliyIndice )
+    {
+        VkQueue queue = VkQueue.Null;
+        vkGetDeviceQueue(_device, queueFamiliyIndice, 0,&queue); 
+        return queue;
     }
 
     // SUBMIT GRAPHICS COMMAND BUFFERS
