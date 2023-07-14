@@ -1061,6 +1061,7 @@ public static partial class Memories
         
         if (unmap)func.Device.vkUnmapMemory(data.Device, stagingBufferMemory);
     }
+
 }
 
 [SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
@@ -1616,74 +1617,7 @@ public static partial class Render
 
 }
 
-public unsafe struct QueuesTest
-{
-    public unsafe readonly  delegate* unmanaged< VkQueue,UInt32,VkSubmitInfo*,VkFence,VkResult > vkQueueSubmit = null;
-    public unsafe readonly  delegate* unmanaged< VkQueue,VkPresentInfoKHR*,VkResult > vkQueuePresentKHR = null;
-    public unsafe readonly  delegate* unmanaged< VkDevice,UInt32,UInt32,VkQueue*,void > vkGetDeviceQueue = null;
-    private readonly VkDevice _device;
-    private readonly VkQueue _present;
-    private readonly VkQueue _graphic;
-    private readonly VkQueue _compute;
-    private readonly VkQueue _transfert;
 
-    public QueuesTest( VkDevice device , uint[] queueFamiliyIndices )
-    {
-        _device = device;
-        fixed ( VkQueue* graphic = &_graphic){
-            vkGetDeviceQueue(_device, queueFamiliyIndices[0], 0, graphic); 
-        }
-        fixed ( VkQueue* compute = &_compute){
-            vkGetDeviceQueue(_device, queueFamiliyIndices[1], 0, compute); 
-        }
-        fixed ( VkQueue* present = &_present){
-            vkGetDeviceQueue(_device, queueFamiliyIndices[2], 0,present); 
-        }
-        _transfert = Create(2);
-    }
-
-    private unsafe VkQueue Create( uint queueFamiliyIndice )
-    {
-        VkQueue queue = VkQueue.Null;
-        vkGetDeviceQueue(_device, queueFamiliyIndice, 0,&queue); 
-        return queue;
-    }
-
-    // SUBMIT GRAPHICS COMMAND BUFFERS
-    public unsafe void SubmitGraphicCommandBuffer(VkCommandBuffer commandBuffer, VkSemaphore* waitSemaphores,UInt32* waitStages,VkSemaphore*   signalSemaphores , VkFence CurrentinFlightFence)
-    {
-        VkSubmitInfo submitInfo = default;
-        submitInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = waitSemaphores;
-        submitInfo.pWaitDstStageMask =  waitStages;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffer;      
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = signalSemaphores ;
-        submitInfo.pNext = null;    
-        vkQueueSubmit(_graphic, 1, &submitInfo,  CurrentinFlightFence ).Check("failed to submit draw command buffer!");
-    }
-
-    public unsafe VkResult PresentImage(VkSwapchainKHR* swapChains , VkSemaphore* signalSemaphores, uint imageIndex )
-    {
-        VkPresentInfoKHR presentInfo =  default;
-        presentInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PRESENT_INFO_KHR; 
-        presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = signalSemaphores;
-        presentInfo.pImageIndices = &imageIndex;
-        presentInfo.swapchainCount = 1;
-        presentInfo.pSwapchains = swapChains;
-        presentInfo.pNext =null;
-        presentInfo.pResults = null;   
-        return  vkQueuePresentKHR(_present, &presentInfo); 
-    }
-
-    public void Dispose()
-    {
-
-    }
-}
 
 [SuppressUnmanagedCodeSecurity, StructLayout(LayoutKind.Sequential, Pack = BaseHelper.FORCE_ALIGNEMENT),SkipLocalsInit]
 public static partial class RenderPass
