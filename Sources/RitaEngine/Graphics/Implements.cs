@@ -92,7 +92,10 @@ public unsafe readonly struct DeviceData
     public unsafe readonly  delegate* unmanaged< VkQueue,VkPresentInfoKHR*,VkResult > vkQueuePresentKHR = null;
     public unsafe readonly  delegate* unmanaged< VkDevice,UInt32,UInt32,VkQueue*,void > vkGetDeviceQueue = null;
 
-    
+    public unsafe readonly  delegate* unmanaged< VkInstance,VkDebugUtilsMessengerCreateInfoEXT*,VkAllocationCallbacks*,VkDebugUtilsMessengerEXT*,VkResult > vkCreateDebugUtilsMessengerEXT = null;
+    public unsafe readonly  delegate* unmanaged< VkInstance,UInt32*,VkPhysicalDevice*,VkResult > vkEnumeratePhysicalDevices = null;
+    public unsafe readonly  delegate* unmanaged< VkInstance, VkWin32SurfaceCreateInfoKHR*, VkAllocationCallbacks*, VkSurfaceKHR*,VkResult > vkCreateWin32SurfaceKHR = null;
+    public unsafe readonly  delegate* unmanaged< VkPhysicalDevice,VkDeviceCreateInfo*,VkAllocationCallbacks*,VkDevice*,VkResult > vkCreateDevice = null;    
 
     public readonly string[] App_ValidationLayers = null!;
     public readonly string[] App_InstanceExtensions = null!;
@@ -120,6 +123,7 @@ public unsafe readonly struct DeviceData
     public readonly VkExtent2D Device_SurfaceSize = new();
     public readonly VkColorSpaceKHR Device_ImageColor = VkColorSpaceKHR.VK_COLOR_SPACE_SRGB_NONLINEAR_KHR ;
     public readonly VkSurfaceTransformFlagBitsKHR Device_Transform = VkSurfaceTransformFlagBitsKHR.VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    
 
     public DeviceData( ref DeviceConfig config , Window window)
     {
@@ -217,6 +221,10 @@ public unsafe readonly struct DeviceData
         VK.VK_KHR_swapchain=true;// //Special dont understand pour chage swapchain car nvidia n'a pas l'extension presente
         VkHelper.ValidateExtensionsForLoad(ref App_InstanceExtensions,0 );
 
+        vkCreateDebugUtilsMessengerEXT = (delegate* unmanaged<VkInstance,VkDebugUtilsMessengerCreateInfoEXT*,VkAllocationCallbacks*,VkDebugUtilsMessengerEXT*,VkResult>) vkGetInstanceProcAddr(App_Instance,nameof(vkCreateDebugUtilsMessengerEXT)); 
+        vkEnumeratePhysicalDevices = (delegate* unmanaged<VkInstance,UInt32*,VkPhysicalDevice*,VkResult>) vkGetInstanceProcAddr(App_Instance,nameof(vkEnumeratePhysicalDevices)); 
+        // vkDestroySurfaceKHR=  (delegate* unmanaged<VkInstance, VkSurfaceKHR,VkAllocationCallbacks*  , void>)load(App_Instance,nameof(vkDestroySurfaceKHR));
+        vkCreateWin32SurfaceKHR = (delegate* unmanaged<VkInstance,VkWin32SurfaceCreateInfoKHR*, VkAllocationCallbacks*,VkSurfaceKHR*  , VkResult> )vkGetInstanceProcAddr(App_Instance,nameof(vkCreateWin32SurfaceKHR));
 
         // CREATE DEBUG ------------------------------------------------------------------------
         if ( !config.EnableDebugMode  )
@@ -308,13 +316,9 @@ public unsafe readonly struct DeviceData
        Log.Info($"Create Device :{Device}");
 
 //    Device = new(vkGetDeviceProcAddr, Device );
-
-
-
-
-
-
-
+        vkGetDeviceQueue = (delegate* unmanaged<VkDevice,UInt32,UInt32,VkQueue*,void>) vkGetDeviceProcAddr(Device,nameof(vkGetDeviceQueue)); 
+        vkDeviceWaitIdle = (delegate* unmanaged<VkDevice,VkResult>) vkGetDeviceProcAddr(Device,nameof(vkDeviceWaitIdle)); 
+        vkQueuePresentKHR = (delegate* unmanaged<VkQueue,VkPresentInfoKHR*,VkResult>) vkGetDeviceProcAddr(Device,nameof(vkQueuePresentKHR)); 
 
         fixed(VkQueue* gq =&Device_GraphicQueue)
         {
@@ -350,12 +354,12 @@ public unsafe readonly struct DeviceData
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores ;
         submitInfo.pNext = null;    
-        vkQueueSubmit(_graphic, 1, &submitInfo,  CurrentinFlightFence ).Check("failed to submit draw command buffer!");
+        vkQueueSubmit(Device_GraphicQueue, 1, &submitInfo,  CurrentinFlightFence ).Check("failed to submit draw command buffer!");
     }
 
     public unsafe void Wait()
     {
-        vkQueueWaitIdle(_graphic);
+        vkQueueWaitIdle(Device_GraphicQueue);
     }
 
     public unsafe VkResult PresentImage(VkSwapchainKHR* swapChains , VkSemaphore* signalSemaphores, uint imageIndex )
@@ -369,7 +373,7 @@ public unsafe readonly struct DeviceData
         presentInfo.pSwapchains = swapChains;
         presentInfo.pNext =null;
         presentInfo.pResults = null;   
-        return  vkQueuePresentKHR(_present, &presentInfo); 
+        return  vkQueuePresentKHR(Device_PresentQueue, &presentInfo); 
     }
 
      [UnmanagedCallersOnly] 
