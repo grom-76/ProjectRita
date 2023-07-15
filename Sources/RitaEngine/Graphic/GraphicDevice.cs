@@ -2208,7 +2208,7 @@ VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated fr
 
     private static unsafe void RecordCommandBuffer(in GraphicDeviceFunctions  func,ref GraphicDeviceData data, in VkCommandBuffer commandBuffer, uint imageIndex)
     {
-        func.vkResetCommandBuffer(commandBuffer, (uint)VkCommandBufferResetFlagBits.VK_COMMAND_BUFFER_RESET_RELEASE_NONE);
+        // func.vkResetCommandBuffer(commandBuffer, (uint)VkCommandBufferResetFlagBits.VK_COMMAND_BUFFER_RESET_RELEASE_NONE);
     // COMMAND BUFFER ----------------------------------------------------------------------------------------------------
         VkCommandBufferBeginInfo beginInfo = default;
         beginInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO; 
@@ -2217,6 +2217,8 @@ VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated fr
         beginInfo.pInheritanceInfo= null;
         
         func.vkBeginCommandBuffer(commandBuffer, &beginInfo).Check("Failed to Begin command buffer");
+
+        //if ( Graphics Queuse != Present Queue )UseMemoryBarrier From Present To Draw  ( source :https://github.com/discosultan/VulkanCore/blob/master/Samples/MiniFramework/VulkanApp.cs )
 
             VkClearValue* clearValues = stackalloc VkClearValue[2] {data.Info.ClearColor,data.Info.ClearColor2 };
         // RENDER PASS --------------------------------------------------------------------------------------------------
@@ -2258,7 +2260,8 @@ VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated fr
                 func.vkCmdDrawIndexed(commandBuffer, data.Handles.IndicesSize, 1, 0, 0, 0);
 
             func.vkCmdEndRenderPass(commandBuffer);
-        // RENDER PASS --------------------------------------------------------------------------------------------------        
+        // RENDER PASS --------------------------------------------------------------------------------------------------  
+        //if ( Graphics Queuse != Present Queue )UseMemoryBarrier From Draw To Present  ( source :https://github.com/discosultan/VulkanCore/blob/master/Samples/MiniFramework/VulkanApp.cs )      
         func.vkEndCommandBuffer(commandBuffer).Check("Failed to End command buffer ");
     // COMMAND BUFFER ----------------------------------------------------------------------------------------------------    
     }
@@ -2267,19 +2270,32 @@ VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated fr
     // [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public static unsafe  void DrawPipeline(ref GraphicDeviceFunctions func, ref GraphicDeviceData data )
     {
-        uint imageIndex=0;
-        VkFence CurrentinFlightFence = data.Handles.InFlightFences[/*data.*/CurrentFrame];
-        VkSemaphore CurrentImageAvailableSemaphore =  data.Handles.ImageAvailableSemaphores[/*data.*/CurrentFrame];
+        
+ /*Render Fence*/ VkFence CurrentinFlightFence = data.Handles.InFlightFences[/*data.*/CurrentFrame];
+/*Present Semaphore */VkSemaphore CurrentImageAvailableSemaphore =  data.Handles.ImageAvailableSemaphores[/*data.*/CurrentFrame];
         VkSemaphore CurrentRenderFinishedSemaphore = data.Handles.RenderFinishedSemaphores[/*data.*/CurrentFrame];
+
         VkSemaphore* waitSemaphores = stackalloc VkSemaphore[1] {CurrentImageAvailableSemaphore};// VkSemaphore[] waitSemaphores = {CurrentImageAvailableSemaphore};
-        UInt32* waitStages  = stackalloc UInt32[1]{(uint)VkPipelineStageFlagBits.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT }; //*VkPipelineStageFlags*/UInt32[] waitStages = {(uint)VkPipelineStageFlagBits.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
         VkSemaphore*   signalSemaphores  = stackalloc VkSemaphore[1] {CurrentRenderFinishedSemaphore} ;// VkSemaphore[] signalSemaphores = {CurrentRenderFinishedSemaphore};
+
         VkSwapchainKHR* swapChains = stackalloc  VkSwapchainKHR[1]{ data.Handles.SwapChain };// VkSwapchainKHR[] swapChains = { data.Handles.SwapChain };
         VkCommandBuffer commandBuffer =data.Handles.CommandBuffers[/*data.*/CurrentFrame];
 
-        func.vkWaitForFences(data.Handles.Device, 1,&CurrentinFlightFence, VK.VK_TRUE, data.Info.tick_timeout).Check("Acquire Image");
+//wait until the gpu has finished rendering the last frame. Timeout of 1 second
+// source : https://github.com/vblanco20-1/vulkan-guide/blob/all-chapters/chapter-5/vk_engine.cpp
+func.vkWaitForFences(data.Handles.Device, 1,&CurrentinFlightFence, VK.VK_TRUE, data.Info.tick_timeout).Check("Acquire Image");
+func.vkResetFences(data.Handles.Device, 1, &CurrentinFlightFence);
+        
+        // func.vkWaitForFences(data.Handles.Device, 1,&CurrentinFlightFence, VK.VK_TRUE, data.Info.tick_timeout).Check("Acquire Image");
+        
 
-        VkResult result = func.vkAcquireNextImageKHR(data.Handles.Device, data.Handles.SwapChain, data.Info.tick_timeout,CurrentImageAvailableSemaphore, VkFence.Null, &imageIndex);
+//now that we are sure that the commands finished executing, we can safely reset the command buffer to begin recording again.
+func.vkResetCommandBuffer(commandBuffer, (uint)VkCommandBufferResetFlagBits.VK_COMMAND_BUFFER_RESET_RELEASE_NONE);
+
+
+//request image from the swapchain =>  // Acquire an index of drawing image for this frame.
+uint imageIndex=0;
+VkResult result = func.vkAcquireNextImageKHR(data.Handles.Device, data.Handles.SwapChain, data.Info.tick_timeout,CurrentImageAvailableSemaphore, VkFence.Null, &imageIndex);
 
         if ( result == VkResult.VK_ERROR_OUT_OF_DATE_KHR)
         {
@@ -2293,25 +2309,35 @@ VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated fr
 
         UpdateUniformBuffer( func,ref  data);
                 
-        func.vkResetFences(data.Handles.Device, 1, &CurrentinFlightFence);
+        // func.vkResetFences(data.Handles.Device, 1, &CurrentinFlightFence);
 
  
         RecordCommandBuffer(  func,ref data, in  commandBuffer, imageIndex);
 
+//prepare the submission to the queue. 
+//we want to wait on the _presentSemaphore, as that semaphore is signaled when the swapchain is ready
+//we will signal the _renderSemaphore, to signal that rendering has finished
+//(uint)VkPipelineStageFlagBits. VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | (uint)VkPipelineStageFlagBits.VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT
+ UInt32* waitStages  = stackalloc UInt32[2]{(uint)VkPipelineStageFlagBits.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, (uint)VkPipelineStageFlagBits.VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT  };
 
         VkSubmitInfo submitInfo = default;
         submitInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = waitSemaphores;
-        submitInfo.pWaitDstStageMask =  waitStages;
+        submitInfo.pWaitDstStageMask =  waitStages;// Pipeline.StagesColorAttachement
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &commandBuffer;      
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores ;
         submitInfo.pNext = null;
-        
+//submit command buffer to the queue and execute it.
+// _renderFence "CurrentinFlightFence" will now block until the graphic commands finish execution        
         func.vkQueueSubmit(data.Handles.GraphicQueue, 1, &submitInfo,  CurrentinFlightFence ).Check("failed to submit draw command buffer!");
-        
+
+//prepare present
+// this will put the image we just rendered to into the visible window.
+// we want to wait on the _renderSemaphore for that, 
+// as its necessary that drawing commands have finished before the image is displayed to the user        
         VkPresentInfoKHR presentInfo =  default;
         presentInfo.sType = VkStructureType.VK_STRUCTURE_TYPE_PRESENT_INFO_KHR; 
         presentInfo.waitSemaphoreCount = 1;
@@ -2332,7 +2358,7 @@ VK_COMMAND_POOL_CREATE_PROTECTED_BIT specifies that command buffers allocated fr
         {
             throw new Exception("Failed to  present swap chain Images");
         }
-
+//increase the number of frames drawn
        CurrentFrame = ((CurrentFrame + 1) % data.Info.MAX_FRAMES_IN_FLIGHT);   
     }
 
